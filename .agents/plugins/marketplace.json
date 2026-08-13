@@ -1,7 +1,7 @@
 {
-  "name": "nestor-plugins",
+  "name": "massdo-marketplace",
   "interface": {
-    "displayName": "Nestor Plugins"
+    "displayName": "Massdo Marketplace"
   },
   "plugins": [
     {

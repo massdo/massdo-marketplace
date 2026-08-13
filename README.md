@@ -1,4 +1,4 @@
-# Nestor plugins
+# Massdo marketplace
 
 This repository is the canonical source for the Nestor journal skill and its Codex, Claude Code, and Cursor plugins.
 
@@ -43,8 +43,8 @@ After each successful `git pull` or merge, the hook runs `npx skills update`. It
 ## Install the Claude Code plugin
 
 ```bash
-claude plugin marketplace add massdo/nestor-plugins
-claude plugin install nestor-journal-assistant@nestor-plugins
+claude plugin marketplace add massdo/massdo-marketplace
+claude plugin install nestor-journal-assistant@massdo-marketplace
 ```
 
 The Claude manifest omits `version`. Claude Code therefore uses the Git commit SHA as the plugin version.
@@ -52,8 +52,8 @@ The Claude manifest omits `version`. Claude Code therefore uses the Git commit S
 ## Install the Codex plugin from a clone
 
 ```bash
-codex plugin marketplace add /absolute/path/to/nestor-plugins
-codex plugin add nestor-journal-assistant@nestor-plugins
+codex plugin marketplace add /absolute/path/to/massdo-marketplace
+codex plugin add nestor-journal-assistant@massdo-marketplace
 ```
 
 The public OpenAI plugin is managed separately through the OpenAI submission portal. Published MCP metadata and skill snapshots remain reviewed artifacts. A public skill change requires a new scan, review, and publication.
@@ -64,7 +64,7 @@ Load the plugin locally while developing:
 
 ```bash
 mkdir -p ~/.cursor/plugins/local
-ln -s /absolute/path/to/nestor-plugins/plugins/nestor-journal-assistant \
+ln -s /absolute/path/to/massdo-marketplace/plugins/nestor-journal-assistant \
   ~/.cursor/plugins/local/nestor-journal-assistant
 ```
 
@@ -79,7 +79,7 @@ The public Cursor Marketplace listing is submitted separately at [cursor.com/mar
 ```bash
 python3 scripts/validate.py
 ./scripts/test-npx-skills.sh
-./scripts/test-npx-skills.sh massdo/nestor-plugins
+./scripts/test-npx-skills.sh massdo/massdo-marketplace
 ```
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.

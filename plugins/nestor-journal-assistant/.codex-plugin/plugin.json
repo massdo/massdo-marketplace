@@ -6,8 +6,8 @@
     "name": "Dorian Massoulier",
     "url": "https://github.com/massdo"
   },
-  "homepage": "https://github.com/massdo/nestor-plugins",
-  "repository": "https://github.com/massdo/nestor-plugins",
+  "homepage": "https://github.com/massdo/massdo-marketplace",
+  "repository": "https://github.com/massdo/massdo-marketplace",
   "keywords": [
     "journal",
     "tasks",
@@ -27,7 +27,7 @@
       "Interactive",
       "Write"
     ],
-    "websiteURL": "https://github.com/massdo/nestor-plugins",
+    "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
       "What should I work on next?",
       "Add this task to my journal.",

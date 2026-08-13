@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-npx --yes skills@latest add massdo/nestor-plugins \
+npx --yes skills@latest add massdo/massdo-marketplace \
   --skill nestor-journal \
   --global \
   --agent codex \
