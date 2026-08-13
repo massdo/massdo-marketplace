@@ -35,7 +35,7 @@ Enable the repository's opt-in Git hook:
 ./scripts/enable-hooks.sh
 ```
 
-After each successful `git pull` or merge, the hook reinstalls the checked-out skill for Codex and Claude Code.
+After each successful `git pull` or merge, the hook runs `npx skills update`. It installs the GitHub skill first when needed.
 
 ## Install the Claude Code plugin
 
