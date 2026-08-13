@@ -60,7 +60,7 @@ The public OpenAI plugin is managed separately through the OpenAI submission por
 ```bash
 python3 scripts/validate.py
 ./scripts/test-npx-skills.sh
+./scripts/test-npx-skills.sh massdo/nestor-plugins
 ```
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.
-
