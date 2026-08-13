@@ -6,5 +6,6 @@ npx --yes skills@latest add massdo/nestor-plugins \
   --global \
   --agent codex \
   --agent claude-code \
+  --agent cursor \
   --yes
 

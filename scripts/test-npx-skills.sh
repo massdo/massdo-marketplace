@@ -13,6 +13,7 @@ npx --yes skills@latest add "$source" \
   --skill nestor-journal \
   --agent codex \
   --agent claude-code \
+  --agent cursor \
   --yes
 
 test -f "$test_root/.agents/skills/nestor-journal/SKILL.md"

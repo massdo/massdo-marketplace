@@ -17,22 +17,32 @@ def read_json(path: Path) -> dict:
 
 codex_manifest = read_json(PLUGIN / ".codex-plugin" / "plugin.json")
 claude_manifest = read_json(PLUGIN / ".claude-plugin" / "plugin.json")
+cursor_manifest = read_json(PLUGIN / ".cursor-plugin" / "plugin.json")
 mcp = read_json(PLUGIN / ".mcp.json")
+cursor_mcp = read_json(PLUGIN / "mcp.json")
 codex_marketplace = read_json(ROOT / ".agents" / "plugins" / "marketplace.json")
 claude_marketplace = read_json(ROOT / ".claude-plugin" / "marketplace.json")
+cursor_marketplace = read_json(ROOT / ".cursor-plugin" / "marketplace.json")
+
+MCP_URL = "https://journal.mcp-marketplace.org/mcp"
 
 assert codex_manifest["name"] == "nestor-journal-assistant"
 assert codex_manifest["skills"] == "./skills/"
 assert codex_manifest["mcpServers"] == "./.mcp.json"
 assert claude_manifest["name"] == "nestor-journal-assistant"
 assert "version" not in claude_manifest
-assert mcp["mcpServers"]["nestor-journal-assistant"]["url"] == (
-    "https://journal.mcp-marketplace.org/mcp"
-)
+assert cursor_manifest["name"] == "nestor-journal-assistant"
+assert cursor_manifest["mcpServers"] == "./mcp.json"
+assert mcp["mcpServers"]["nestor-journal-assistant"]["url"] == MCP_URL
+assert cursor_mcp["mcpServers"]["nestor-journal-assistant"]["url"] == MCP_URL
+assert cursor_mcp["mcpServers"]["nestor-journal-assistant"]["type"] == "http"
 assert codex_marketplace["plugins"][0]["source"]["path"] == (
     "./plugins/nestor-journal-assistant"
 )
 assert claude_marketplace["plugins"][0]["source"] == (
+    "./plugins/nestor-journal-assistant"
+)
+assert cursor_marketplace["plugins"][0]["source"] == (
     "./plugins/nestor-journal-assistant"
 )
 

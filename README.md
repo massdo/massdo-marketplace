@@ -1,19 +1,22 @@
 # Nestor plugins
 
-This repository is the canonical source for the Nestor journal skill and its Codex and Claude Code plugins.
+This repository is the canonical source for the Nestor journal skill and its Codex, Claude Code, and Cursor plugins.
 
 ## Layout
 
-- `plugins/nestor-journal-assistant/skills/nestor-journal/`: shared skill for Codex and Claude Code.
+- `plugins/nestor-journal-assistant/skills/nestor-journal/`: shared skill for Codex, Claude Code, and Cursor.
 - `plugins/nestor-journal-assistant/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor-journal-assistant/.claude-plugin/`: Claude Code plugin manifest.
-- `plugins/nestor-journal-assistant/.mcp.json`: shared public MCP connection.
+- `plugins/nestor-journal-assistant/.cursor-plugin/`: Cursor plugin manifest.
+- `plugins/nestor-journal-assistant/.mcp.json`: Claude Code and Codex public MCP connection.
+- `plugins/nestor-journal-assistant/mcp.json`: Cursor public MCP connection.
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
+- `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
 
 ## Install the shared skill
 
-Install the skill globally for Codex and Claude Code:
+Install the skill globally for Codex, Claude Code, and Cursor:
 
 ```bash
 ./scripts/install-skills.sh
@@ -54,6 +57,22 @@ codex plugin add nestor-journal-assistant@nestor-plugins
 ```
 
 The public OpenAI plugin is managed separately through the OpenAI submission portal. Published MCP metadata and skill snapshots remain reviewed artifacts. A public skill change requires a new scan, review, and publication.
+
+## Install the Cursor plugin
+
+Load the plugin locally while developing:
+
+```bash
+mkdir -p ~/.cursor/plugins/local
+ln -s /absolute/path/to/nestor-plugins/plugins/nestor-journal-assistant \
+  ~/.cursor/plugins/local/nestor-journal-assistant
+```
+
+Then reload Cursor (**Developer: Reload Window**) and check **Customize** for the skill and MCP server.
+
+Teams and Enterprise can import this repository as a team marketplace from **Dashboard → Plugins → Import from Repo**.
+
+The public Cursor Marketplace listing is submitted separately at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
 ## Validate
 

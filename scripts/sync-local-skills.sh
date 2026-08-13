@@ -8,5 +8,6 @@ npx --yes skills@latest add "$repo_root" \
   --global \
   --agent codex \
   --agent claude-code \
+  --agent cursor \
   --yes
 

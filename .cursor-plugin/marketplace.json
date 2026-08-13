@@ -1,0 +1,23 @@
+{
+  "name": "nestor-plugins",
+  "owner": {
+    "name": "Dorian Massoulier"
+  },
+  "metadata": {
+    "description": "Nestor journal integrations for Cursor."
+  },
+  "plugins": [
+    {
+      "name": "nestor-journal-assistant",
+      "source": "./plugins/nestor-journal-assistant",
+      "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+      "category": "productivity",
+      "tags": [
+        "journal",
+        "tasks",
+        "notes",
+        "mcp"
+      ]
+    }
+  ]
+}
