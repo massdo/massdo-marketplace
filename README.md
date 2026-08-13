@@ -14,32 +14,6 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
 
-## Install the shared skill
-
-Install the skill globally for Codex, Claude Code, and Cursor:
-
-```bash
-./scripts/install-skills.sh
-```
-
-Update a tracked installation from GitHub:
-
-```bash
-./scripts/update-skills.sh
-```
-
-`npx skills update` tracks the skill folder hash. It does not require a plugin version bump.
-
-## Enable automatic local synchronization
-
-Enable the repository's opt-in Git hook:
-
-```bash
-./scripts/enable-hooks.sh
-```
-
-After each successful `git pull` or merge, the hook runs `npx skills update`. It installs the GitHub skill first when needed.
-
 ## Install the Claude Code plugin
 
 ```bash
@@ -78,8 +52,6 @@ The public Cursor Marketplace listing is submitted separately at [cursor.com/mar
 
 ```bash
 python3 scripts/validate.py
-./scripts/test-npx-skills.sh
-./scripts/test-npx-skills.sh massdo/massdo-marketplace
 ```
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.

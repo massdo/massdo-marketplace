@@ -1,9 +1,0 @@
-#!/bin/sh
-
-repo_root=$(git rev-parse --show-toplevel)
-
-if ! "$repo_root/scripts/update-skills.sh"; then
-  printf '%s\n' "Nestor skill update failed. Run scripts/update-skills.sh manually." >&2
-fi
-
-exit 0
