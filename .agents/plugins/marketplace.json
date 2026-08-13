@@ -1,0 +1,21 @@
+{
+  "name": "nestor-plugins",
+  "interface": {
+    "displayName": "Nestor Plugins"
+  },
+  "plugins": [
+    {
+      "name": "nestor-journal-assistant",
+      "source": {
+        "source": "local",
+        "path": "./plugins/nestor-journal-assistant"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
+

@@ -1,0 +1,38 @@
+{
+  "name": "nestor-journal-assistant",
+  "version": "0.1.0",
+  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+  "author": {
+    "name": "Dorian Massoulier",
+    "url": "https://github.com/massdo"
+  },
+  "homepage": "https://github.com/massdo/nestor-plugins",
+  "repository": "https://github.com/massdo/nestor-plugins",
+  "keywords": [
+    "journal",
+    "tasks",
+    "notes",
+    "productivity",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Nestor Journal Assistant",
+    "shortDescription": "Use your canonical Nestor journal",
+    "longDescription": "Keep tasks, notes, reminders, projects, and history in one canonical journal. Capture, find, organize, review, and update your work through natural requests.",
+    "developerName": "Dorian Massoulier",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/massdo/nestor-plugins",
+    "defaultPrompt": [
+      "What should I work on next?",
+      "Add this task to my journal.",
+      "Find my notes about this project."
+    ]
+  }
+}
+

@@ -1,0 +1,10 @@
+{
+  "name": "nestor-journal-assistant",
+  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+  "author": {
+    "name": "Dorian Massoulier"
+  },
+  "homepage": "https://github.com/massdo/nestor-plugins",
+  "repository": "https://github.com/massdo/nestor-plugins"
+}
+

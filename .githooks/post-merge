@@ -1,0 +1,10 @@
+#!/bin/sh
+
+repo_root=$(git rev-parse --show-toplevel)
+
+if ! "$repo_root/scripts/sync-local-skills.sh"; then
+  printf '%s\n' "Nestor skill synchronization failed. Run scripts/sync-local-skills.sh manually." >&2
+fi
+
+exit 0
+
