@@ -4,3 +4,8 @@ node_modules/
 
 package.json
 package-lock.json
+
+.claude/settings.local.json
+.claude/.cc-writes/
+
+CLAUDE.md
