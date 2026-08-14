@@ -1,0 +1,25 @@
+{
+  "name": "massdo-skills",
+  "displayName": "Massdo Skills",
+  "version": "0.1.0",
+  "description": "Install and update skills from the massdo marketplace with npx skills.",
+  "author": {
+    "name": "Dorian Massoulier"
+  },
+  "homepage": "https://github.com/massdo/massdo-marketplace",
+  "repository": "https://github.com/massdo/massdo-marketplace",
+  "keywords": [
+    "skills",
+    "marketplace",
+    "sync",
+    "productivity"
+  ],
+  "category": "productivity",
+  "tags": [
+    "skills",
+    "marketplace",
+    "sync"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/"
+}

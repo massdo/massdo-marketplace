@@ -18,6 +18,17 @@
         "notes",
         "mcp"
       ]
+    },
+    {
+      "name": "massdo-skills",
+      "source": "./plugins/massdo-skills",
+      "description": "Install and update skills from the massdo marketplace with npx skills.",
+      "category": "productivity",
+      "tags": [
+        "skills",
+        "marketplace",
+        "sync"
+      ]
     }
   ]
 }
