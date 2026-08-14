@@ -34,6 +34,14 @@ MANIFESTS = {
     "cursor": ".cursor-plugin/plugin.json",
 }
 
+# Codex parses its catalog into a Rust enum: an unknown variant rejects the
+# whole file, so the marketplace stops being addable at all.
+# codex-rs/core-plugins/src/marketplace.rs
+CODEX_POLICY = {
+    "installation": {"AVAILABLE", "NOT_AVAILABLE"},
+    "authentication": {"ON_INSTALL", "ON_USE"},
+}
+
 errors: list[str] = []
 
 
@@ -78,6 +86,15 @@ for ecosystem, (catalog_path, source_of) in CATALOGS.items():
             manifest.is_file(),
             f"{rel}: {name} is listed but ships no {MANIFESTS[ecosystem]}",
         )
+
+        if ecosystem == "codex":
+            for key, allowed in CODEX_POLICY.items():
+                value = entry.get("policy", {}).get(key)
+                check(
+                    value is None or value in allowed,
+                    f"{rel}: {name} policy.{key}={value!r}, expected one of "
+                    f"{sorted(allowed)} — an unknown value rejects the catalog",
+                )
 
 # --- Each plugin is internally coherent. ------------------------------------
 
