@@ -1,5 +1,5 @@
 {
-  "name": "nestor-journal-assistant",
+  "name": "nestor",
   "displayName": "Nestor Journal Assistant",
   "version": "0.1.0",
   "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
@@ -22,5 +22,7 @@
     "notes",
     "mcp"
   ],
+  "skills": "./skills/",
+  "commands": "./commands/",
   "mcpServers": "./mcp.json"
 }

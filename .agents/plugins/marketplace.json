@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "nestor-journal-assistant",
+      "name": "nestor",
       "source": {
         "source": "local",
-        "path": "./plugins/nestor-journal-assistant"
+        "path": "./plugins/nestor"
       },
       "policy": {
         "installation": "AVAILABLE",

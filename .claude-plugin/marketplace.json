@@ -6,8 +6,8 @@
   "description": "Nestor journal integrations for Claude Code.",
   "plugins": [
     {
-      "name": "nestor-journal-assistant",
-      "source": "./plugins/nestor-journal-assistant",
+      "name": "nestor",
+      "source": "./plugins/nestor",
       "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
       "category": "productivity",
       "tags": [

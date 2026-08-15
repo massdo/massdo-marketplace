@@ -1,12 +1,12 @@
 interface:
   display_name: "Nestor Journal Assistant"
   short_description: "Automatically use the canonical Nestor journal"
-  default_prompt: "Use $nestor-journal to consult or update my journal."
+  default_prompt: "Use $nestor to consult or update my journal."
 
 dependencies:
   tools:
     - type: "mcp"
-      value: "nestor-journal-assistant"
+      value: "nestor"
       description: "Canonical MCP server for the Nestor journal"
       transport: "streamable_http"
       url: "https://journal.mcp-marketplace.org/mcp"
