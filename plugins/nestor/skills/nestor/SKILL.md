@@ -1,5 +1,5 @@
 ---
-name: nestor-journal
+name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, tracking logs, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
@@ -7,7 +7,7 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Use the MCP as the source of truth
 
-- Use the `nestor-journal-assistant` MCP server. Accept `nestor-task-assistant` as its legacy local name.
+- Use the `nestor` MCP server.
 - Make at least one relevant MCP call before giving a substantive journal answer.
 - Verify current data through the MCP instead of relying on conversation memory.
 - Never bypass the MCP by reading or changing SQLite databases, journal files, exports, or repository data.

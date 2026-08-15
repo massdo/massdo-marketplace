@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "nestor-journal-assistant": {
+    "nestor": {
       "type": "http",
       "url": "https://journal.mcp-marketplace.org/mcp"
     }
