@@ -76,7 +76,7 @@ A view holds one kind of item, and each one hides something on purpose:
 | `notes`                              | notes  | every task                          |
 
 So `active` alone answers "what is moving", never "show me everything". Join views with
-`+` to widen the answer, and pass them to `get_journal_tree` as `views`:
+`+` to widen the answer, and pass them to `get_tree` as `views`:
 
 ```
 /nestor:tree nestor-ai active+notes
@@ -88,92 +88,32 @@ When the user asks for the whole project rather than current work, use
 default is right for an overview: a tree without its notes looks complete while it is not.
 
 **`notes` carries no hierarchy.** Notes do not have a parent task — they arrive without
-one. When `notes` is the only view, render a flat list in the order the server returned,
-and skip the rest of the tree-building rules below. That order is stable across calls, so
-two runs on unchanged data render the same list.
+one. A note is rendered under the task it documents, or in the final `NOTES` group when
+that task is absent from the tree.
 
-## Read the hierarchy
+## Ask for the tree
 
-Call `get_journal_tree` once with the scope, views, depth, and optional rootItemId. The
-server builds the tree on its side. The response arrives structured.
+Call `get_tree` once with the scope, the views, the depth, and the optional rootItemId.
 
-The result `nodes` is a flat list. Each node carries `depth` (1 for a root, 2 for its
-direct child, and so on), `parentTaskId`, and `parentOutsideSelection`. The field
-`hiddenChildCount` tells you how many direct children were cut by `depth` — it is `0`
-when nothing is cut.
+The server returns the finished tree as text. It groups the tasks by status, draws the
+hierarchy, picks the tags and the dates, and aligns the columns. **Print that text
+unchanged, in a fenced code block.** Do not re-sort it, do not re-align it, do not drop
+or add a line. Two calls on unchanged data return the same text.
 
-The skill does not paginate anymore; `truncated` signals whether the read was incomplete.
+**Depth.** Pass `level` to the server as `depth`. The server cuts the tree there and marks
+each cut branch with `… +N`, where `N` counts the direct children it hid.
 
-## Build the tree
-
-**Grouping.** A root task goes into the group of its own status, in this order, empty
-groups skipped: `in_progress`, `need_review`, `todo`, then `completed` and `cancelled`
-when the views carry them. Working states come first because they answer "what is moving".
-
-**Hierarchy wins inside a group.** A subtask is rendered under its parent whatever its
-own status, and carries a `[status]` tag when it differs from its group. Moving it to
-another group would cut the branch in two, and the branch is the reason for this skill.
-
-**Notes.** The response includes `noteLinks`, a list of relations `{ noteId, taskId, taskRendered }`.
-Render a note directly under the task it documents when `taskRendered` is `true`, marked
-`(note)`. Notes do not consume a depth level. Every other note goes into the final `NOTES`
-group: those whose `taskRendered` is `false`, because the task sits outside the tree or was
-cut by `depth`, and those that appear in no `noteLinks` entry at all because they document
-nothing.
-
-**Depth.** Pass `level` to the server as `depth`. The server cuts the tree and fills
-`hiddenChildCount` with the number of direct children at that level.
-
-**Rooted on an item.** When `item` is given, pass it to the server as `rootItemId`. Do
-not start from the project roots: the user asked for one branch, not a map. Views do not
-apply in this mode — the server returns the whole branch whatever the status of its tasks,
-so `item` on a completed task works. Say in the closing line that `view` was ignored, when
+**Rooted on an item.** When `item` is given, pass it to the server as `rootItemId`. Do not
+start from the project roots: the user asked for one branch, not a map. Views do not apply
+in this mode — the server returns the whole branch whatever the status of its tasks, so
+`item` on a completed task works. Say in the closing line that `view` was ignored, when
 the user passed one.
-
-## Output shape
-
-Keep the id first on every line. It is what the user copies into the next command.
-
-```
-nestor-ai · views: active+notes · depth: 3 · 21 items
-
-IN PROGRESS ─────────────────────────────────────────────
-  TcSV  Publier Nestor sur le marketplace officiel OpenAI
-  ├── 1y5T  Fournir un compte de démonstration sans MFA
-  ├── PJdT  Enregistrer la vidéo de démonstration          [todo]
-  └── HKTZ  Remplir la fiche et soumettre                  [todo] … +2
-  ·── 1BbP  (note) Textes de la fiche publique
-
-TODO ────────────────────────────────────────────────────
-  Lyom  Connecter chaque utilisateur au MCP                [urgent] 2026-08-03
-  └── E7KJ  Basculer OAuth en production                   [urgent] 2026-08-04
-↳ UHWU  Retirer le mode statique du serveur MCP            [high] 2026-08-17
-
-NOTES ───────────────────────────────────────────────────
-  MZcJ  Audit externe du 2026-08-05
-```
-
-Three markers, each tied to a field in the response:
-
-- `·──` when `noteLinks` holds an entry with `taskRendered: true` for that note.
-- `↳` when `parentOutsideSelection` is `true`.
-- `… +N` when `hiddenChildCount` is greater than 0; `N` is the number of direct children.
-
-Show `[status]` only when it differs from the group, and priority only when it is `high`
-or `urgent`. A tree that repeats `[normal]` on every line stops being readable.
-
-Show one date only: `scheduledAt` when present, `dueAt` otherwise, and mark the second
-form with a trailing `!` since a due date is a deadline. A date is either a full day
-(`date: "YYYY-MM-DD"` with `isAllDay: true`) or the day part of an instant. Write it as
-`YYYY-MM-DD`.
-
-Render the tree in a fenced code block, so terminals and web clients keep the alignment.
 
 ## After the tree
 
-Close with one line: the item count, the views rendered, and `truncated` when true. Also
-note any `level` that was corrected. Do not summarise the tree in prose; the reader just
-looked at it.
+The first line of the server's answer already states the scope, the views, the depth, the
+item count, and `truncated` when the read was incomplete. Do not repeat it.
 
-Count the nodes you rendered, not `totalCount`. `totalCount` describes the whole selection
-before the depth cut, so with `item` it counts branches the reader never saw.
+Add one line only when you have something the server could not know: a `level` you
+corrected, or a `view` you ignored because `item` was given. Otherwise say nothing. Do not
+summarise the tree in prose; the reader just looked at it.
