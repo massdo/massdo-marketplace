@@ -18,6 +18,7 @@ The harness passes the raw argument string. Parse it yourself, and accept two fo
 
 ```
 /nestor:tree project:nestor-ai view:today level:2
+/nestor:tree project:nestor-ai verbose:true
 /nestor:tree item:azd23
 ```
 
@@ -38,16 +39,32 @@ A missing parameter keeps its default. Never ask the user for a parameter that h
 | `view`    | `active` | One view, or several joined by `+`. See "Choose the views".  |
 | `level`   | `3`      | Task depth to render. See "Depth" below.                     |
 | `item`    | none     | Item id, named form only. Roots the tree on that item.       |
+| `verbose` | `false`  | `true` adds every title. See "Titles are opt-in" below.      |
 
 Parsing rules, so that the same input always gives the same tree:
 
 - Read `key:value` tokens first. What remains is positional, in the order above.
 - A quoted value keeps its spaces: `project:"my long name"`. Without quotes, read the
   value up to the next `key:` token.
-- An unknown or repeated key stops the run. Name the offending key and list the four
+- An unknown or repeated key stops the run. Name the offending key and list the five
   valid ones, rather than guessing and rendering the wrong tree.
 - A `level` below 1 or above 6, or not an integer, falls back to 3 and says so in the
   closing line.
+- `verbose` accepts `true` and `false` only. Anything else stops the run.
+
+## Titles are opt-in
+
+By default the server renders each item as `id  slug`, with no title. That is the shape to
+prefer: it answers "what is the shape of this project" and "which item do I address next"
+in a fraction of the tokens.
+
+Pass `verbose:true` only when the request needs the wording of the items — the user asks
+what a task is about, looks for an item by its name, or wants to read the project rather
+than navigate it. `verbose` is also the right choice when the user names no project and is
+exploring.
+
+Never pass `verbose:true` "just in case". A tree the user then re-reads with titles costs
+two calls; a tree that never needed them costs one.
 
 ## Resolve the project
 
@@ -93,7 +110,8 @@ that task is absent from the tree.
 
 ## Ask for the tree
 
-Call `get_tree` once with the scope, the views, the depth, and the optional rootItemId.
+Call `get_tree` once with the scope, the views, the depth, the optional rootItemId, and
+`verbose` when titles are needed.
 
 The server returns the finished tree as text. It groups the tasks by status, draws the
 hierarchy, picks the tags and the dates, and aligns the columns. **Print that text
@@ -101,7 +119,9 @@ unchanged, in a fenced code block.** Do not re-sort it, do not re-align it, do n
 or add a line. Two calls on unchanged data return the same text.
 
 **Depth.** Pass `level` to the server as `depth`. The server cuts the tree there and marks
-each cut branch with `… +N`, where `N` counts the direct children it hid.
+each cut branch with `+N` in a left gutter, where `N` counts the direct children it hid.
+
+**Titles.** Pass `verbose` straight through. Omitted, the server sends `id  slug` per line.
 
 **Rooted on an item.** When `item` is given, pass it to the server as `rootItemId`. Do not
 start from the project roots: the user asked for one branch, not a map. Views do not apply
@@ -117,3 +137,6 @@ item count, and `truncated` when the read was incomplete. Do not repeat it.
 Add one line only when you have something the server could not know: a `level` you
 corrected, or a `view` you ignored because `item` was given. Otherwise say nothing. Do not
 summarise the tree in prose; the reader just looked at it.
+
+When you rendered without titles and the user then asks what an item is about, call
+`get_item` on that id rather than re-rendering the whole tree with `verbose:true`.
