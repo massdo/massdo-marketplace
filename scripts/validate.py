@@ -17,6 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PLUGINS = ROOT / "plugins"
 
+SEMVER = re.compile(r"\d+\.\d+\.\d+")
+
 # Root catalog -> how that ecosystem spells a plugin's source path.
 CATALOGS = {
     "codex": (ROOT / ".agents" / "plugins" / "marketplace.json",
@@ -107,18 +109,26 @@ for plugin in plugin_dirs:
     }
     check(manifests, f"{name}: no ecosystem manifest, the plugin is unreachable")
 
+    # Claude Code falls back to the Git commit SHA when a manifest pins no
+    # version, so a missing version there would drift from Codex and Cursor,
+    # which pin. One shared number releases the three ecosystems at once.
+    versions: dict[str, object] = {}
     for ecosystem, manifest in manifests.items():
         check(
             manifest.get("name") == name,
             f"{name}: {ecosystem} manifest declares {manifest.get('name')!r}",
         )
-        # Claude Code falls back to the Git commit SHA, so pinning a version
-        # here would freeze every install at a stale number.
-        if ecosystem == "claude":
-            check(
-                "version" not in manifest,
-                f"{name}: the Claude manifest must not pin a version",
-            )
+        version = manifest.get("version")
+        check(
+            isinstance(version, str) and SEMVER.fullmatch(version) is not None,
+            f"{name}: {ecosystem} manifest declares version={version!r}, expected semver",
+        )
+        versions[ecosystem] = version
+
+    check(
+        len(set(versions.values())) <= 1,
+        f"{name}: manifests disagree on the version: {versions}",
+    )
 
     # A path a manifest declares must resolve, or the ecosystem loads nothing.
     for ecosystem, manifest in manifests.items():
