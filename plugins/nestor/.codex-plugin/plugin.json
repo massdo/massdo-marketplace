@@ -1,6 +1,6 @@
 {
-  "name": "Nestor",
-  "version": "0.1.2",
+  "name": "nestor",
+  "version": "0.1.3",
   "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
   "author": {
     "name": "Dorian Massoulier",
@@ -18,7 +18,7 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Nestor Journal Assistant",
+    "displayName": "Nestor",
     "shortDescription": "Use your canonical Nestor journal",
     "longDescription": "Keep tasks, notes, reminders, projects, and history in one canonical journal. Capture, find, organize, review, and update your work through natural requests.",
     "developerName": "Dorian Massoulier",
