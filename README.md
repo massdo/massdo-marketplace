@@ -50,6 +50,15 @@ Teams and Enterprise can import this repository as a team marketplace from **Das
 
 The public Cursor Marketplace listing is submitted separately at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
+## Plugin release document
+
+`plugins/nestor/plugin-release.json` is the public version-and-changelog document. The journal server reads it without authentication.
+
+- Format: `{ "version": "X.Y.Z", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
+- Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/nestor/plugin-release.json`
+- Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
+- Maximum size: 4096 bytes. A larger document is treated as unreadable.
+
 ## Validate
 
 ```bash
