@@ -6,6 +6,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 
 - `plugins/nestor/skills/nestor/`: shared journal skill for Codex, Claude Code, and Cursor.
 - `plugins/nestor/skills/tree/`: shared tree-rendering skill, also exposed as a Claude Code and Cursor command.
+- `plugins/nestor/skills/check-for-updates/`: explicit plugin version check, also exposed as `/nestor:check-for-updates`.
 - `plugins/nestor/commands/`: Claude Code and Cursor commands.
 - `plugins/nestor/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor/.claude-plugin/`: Claude Code plugin manifest.

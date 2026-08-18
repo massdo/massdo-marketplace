@@ -1,4 +1,4 @@
 {
-  "version": "0.1.4",
-  "changelog": "You can check which plugin revision is loaded."
+  "version": "0.1.5",
+  "changelog": "You can now see when your Nestor plugin is out of date, and what changed."
 }
