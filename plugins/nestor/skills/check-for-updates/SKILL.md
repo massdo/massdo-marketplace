@@ -5,10 +5,13 @@ description: Check whether the Nestor plugin is up to date. Use when the user as
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version": "0.1.5" }`. Always report the result to the user.
+Call `probe_plugin_version` with `{ "version": "0.1.6" }`. Report the result to the user in one short sentence, and add nothing else.
 
-- `update_available`: tell the published version and the `action`.
-- `up_to_date`: tell the published version. Quote the `changelog` when present.
+- `update_available`: give the published version, then the `action`.
+- `up_to_date`: say the plugin is up to date and give the published version. Add the `changelog` verbatim on a second line when that field is present.
 - `unknown`: say the check could not conclude.
+
+Report only the fields that the response carries. Never mention an absent field. Never
+explain why a field is absent. Never describe how the server decides to send it.
 
 Never write on disk. Never invent a client identifier. This check does not replace a journal operation.
