@@ -6,6 +6,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 
 - `plugins/nestor/skills/nestor/`: shared journal skill for Codex, Claude Code, and Cursor.
 - `plugins/nestor/skills/tree/`: shared tree-rendering skill, also exposed as a Claude Code and Cursor command.
+- `plugins/nestor/skills/check-for-updates/`: explicit plugin version check, also exposed as `/nestor:check-for-updates`.
 - `plugins/nestor/commands/`: Claude Code and Cursor commands.
 - `plugins/nestor/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor/.claude-plugin/`: Claude Code plugin manifest.
@@ -49,6 +50,15 @@ Then reload Cursor (**Developer: Reload Window**) and check **Customize** for th
 Teams and Enterprise can import this repository as a team marketplace from **Dashboard → Plugins → Import from Repo**.
 
 The public Cursor Marketplace listing is submitted separately at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
+
+## Plugin release document
+
+`plugins/nestor/plugin-release.json` is the public version-and-changelog document. The journal server reads it without authentication.
+
+- Format: `{ "version": "X.Y.Z", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
+- Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/nestor/plugin-release.json`
+- Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
+- Maximum size: 4096 bytes. A larger document is treated as unreadable.
 
 ## Validate
 
