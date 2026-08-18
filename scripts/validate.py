@@ -10,6 +10,7 @@ or reordering a catalog does not break the script.
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -55,6 +56,34 @@ def check(condition: object, message: str) -> None:
 def read_json(path: Path) -> dict:
     with path.open(encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def read_json_at(ref: str, path: Path) -> dict | None:
+    """Read a tracked file as of ref. None when the ref or the file is absent."""
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{path.relative_to(ROOT).as_posix()}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+# A release is published by the file tree alone, so every check below reads the
+# tree. Comparing a release to the one before it needs the previous commit,
+# which only a local hook has: the CI checkout is shallow.
+argv = sys.argv[1:]
+if argv[:1] == ["--baseline"] and len(argv) == 2:
+    BASELINE: str | None = argv[1]
+elif not argv:
+    BASELINE = None
+else:
+    raise SystemExit("usage: validate.py [--baseline <git-ref>]")
 
 
 plugin_dirs = sorted(p for p in PLUGINS.iterdir() if p.is_dir())
@@ -175,6 +204,21 @@ for plugin in plugin_dirs:
                         1 <= len(changelog_lines) <= 3,
                         f"{name}: plugin-release.json changelog has "
                         f"{len(changelog_lines)} non-empty lines, expected 1 to 3",
+                    )
+
+                # The changelog is what a client shows for the new version. A
+                # bump that keeps the previous text describes the wrong release.
+                published = (
+                    read_json_at(BASELINE, release_path)
+                    if BASELINE is not None
+                    else None
+                )
+                if isinstance(published, dict):
+                    check(
+                        published.get("version") == release.get("version")
+                        or published.get("changelog") != release.get("changelog"),
+                        f"{name}: version {published.get('version')!r} becomes "
+                        f"{release.get('version')!r} but the changelog is unchanged",
                     )
 
         skill_text = namesake_skill.read_text(encoding="utf-8")

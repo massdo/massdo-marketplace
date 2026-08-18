@@ -1,0 +1,7 @@
+#!/bin/sh
+# The validator is the only check this repository has. CI runs it after the
+# push, which is too late for a direct commit on main.
+# --baseline HEAD adds the one check CI cannot make on its own: a version bump
+# that keeps the changelog of the previous release.
+set -e
+exec python3 "$(git rev-parse --show-toplevel)/scripts/validate.py" --baseline HEAD
