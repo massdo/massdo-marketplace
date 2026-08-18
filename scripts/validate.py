@@ -130,6 +130,81 @@ for plugin in plugin_dirs:
         f"{name}: manifests disagree on the version: {versions}",
     )
 
+    # A namesake skill is the installable plugin itself. Its hard-coded version
+    # and the public changelog document must match the manifests, or a client
+    # reports it is current when it is not.
+    namesake_skill = plugin / "skills" / name / "SKILL.md"
+    if namesake_skill.is_file():
+        agreed = next(iter(set(versions.values())), None)
+        release_path = plugin / "plugin-release.json"
+        check(
+            release_path.is_file(),
+            f"{name}: missing plugin-release.json next to the namesake skill",
+        )
+        if release_path.is_file():
+            check(
+                release_path.stat().st_size <= 4096,
+                f"{name}: plugin-release.json exceeds 4096 bytes",
+            )
+            try:
+                release = read_json(release_path)
+            except json.JSONDecodeError as error:
+                errors.append(f"{name}: plugin-release.json is not JSON: {error}")
+                release = None
+            if isinstance(release, dict):
+                check(
+                    set(release) == {"version", "changelog"},
+                    f"{name}: plugin-release.json keys={sorted(release)}, "
+                    "expected exactly version and changelog",
+                )
+                check(
+                    release.get("version") == agreed,
+                    f"{name}: plugin-release.json version={release.get('version')!r}, "
+                    f"expected {agreed!r}",
+                )
+                changelog = release.get("changelog")
+                check(
+                    isinstance(changelog, str) and changelog.strip() != "",
+                    f"{name}: plugin-release.json changelog must be a non-empty string",
+                )
+                if isinstance(changelog, str):
+                    changelog_lines = [
+                        line for line in changelog.splitlines() if line.strip() != ""
+                    ]
+                    check(
+                        1 <= len(changelog_lines) <= 3,
+                        f"{name}: plugin-release.json changelog has "
+                        f"{len(changelog_lines)} non-empty lines, expected 1 to 3",
+                    )
+
+        skill_text = namesake_skill.read_text(encoding="utf-8")
+        frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)
+        plugin_version = None
+        if frontmatter is not None:
+            match = re.search(
+                r"^pluginVersion: *(\d+\.\d+\.\d+)$",
+                frontmatter.group("body"),
+                re.MULTILINE,
+            )
+            if match is not None:
+                plugin_version = match.group(1)
+        check(
+            plugin_version == agreed,
+            f"{name}: namesake skill pluginVersion={plugin_version!r}, "
+            f"expected {agreed!r}",
+        )
+
+        for skill in sorted(plugin.rglob("SKILL.md")):
+            text = skill.read_text(encoding="utf-8")
+            if "probe_plugin_version" not in text:
+                continue
+            declared = re.search(r'"version": *"(\d+\.\d+\.\d+)"', text)
+            where = skill.relative_to(ROOT)
+            check(
+                declared is not None and declared.group(1) == agreed,
+                f"{where}: probe_plugin_version version does not match {agreed!r}",
+            )
+
     # A path a manifest declares must resolve, or the ecosystem loads nothing.
     for ecosystem, manifest in manifests.items():
         for key in ("skills", "commands", "mcpServers", "hooks", "agents", "rules"):
