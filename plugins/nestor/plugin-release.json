@@ -1,4 +1,4 @@
 {
-  "version": "0.1.6",
-  "changelog": "The update check now answers in one short line."
+  "version": "0.1.7",
+  "changelog": "Every journal tool call now carries the plugin version, so an outdated client is warned without a first-use probe."
 }

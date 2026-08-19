@@ -1,24 +1,22 @@
 ---
 name: nestor
-pluginVersion: 0.1.6
+pluginVersion: 0.1.7
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, tracking logs, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
 # Nestor Journal
 
-## Check the plugin version
+## Pass the plugin version
 
-This plugin version is 0.1.6.
+This plugin version is 0.1.7.
 
-On the first Nestor use in a conversation, call `probe_plugin_version` with `{ "version": "0.1.6" }` before other journal work. Then continue the requested operation.
+Pass `"version": "0.1.7"` on every MCP tool call. The server compares it to the published release.
 
-- If the status is `update_available`, tell the user the `action` once in this conversation.
-- If the status is `up_to_date` and a `changelog` is present, mention it once.
-- If the status is `unknown`, continue silently.
+Never send `unknown`: that value is for a client with no Nestor skill loaded.
+
+Do not call `probe_plugin_version` automatically. `/nestor:check-for-updates` remains the manual check and always reports an explicit result.
 
 Never block the requested journal operation. Never write on disk. Never invent a client identifier.
-
-`/nestor:check-for-updates` always reports the probe result, including `unknown`.
 
 ## Use the MCP as the source of truth
 
