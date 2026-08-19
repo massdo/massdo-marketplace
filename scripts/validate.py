@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PLUGINS = ROOT / "plugins"
 
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
+VERSION_HASH = re.compile(r"[0-9a-f]{16}")
 
 # Root catalog -> how that ecosystem spells a plugin's source path.
 CATALOGS = {
@@ -166,6 +167,7 @@ for plugin in plugin_dirs:
     if namesake_skill.is_file():
         agreed = next(iter(set(versions.values())), None)
         release_path = plugin / "plugin-release.json"
+        release: dict | None = None
         check(
             release_path.is_file(),
             f"{name}: missing plugin-release.json next to the namesake skill",
@@ -182,14 +184,21 @@ for plugin in plugin_dirs:
                 release = None
             if isinstance(release, dict):
                 check(
-                    set(release) == {"version", "changelog"},
+                    set(release) == {"version", "version_hash", "changelog"},
                     f"{name}: plugin-release.json keys={sorted(release)}, "
-                    "expected exactly version and changelog",
+                    "expected exactly version, version_hash and changelog",
                 )
                 check(
                     release.get("version") == agreed,
                     f"{name}: plugin-release.json version={release.get('version')!r}, "
                     f"expected {agreed!r}",
+                )
+                version_hash = release.get("version_hash")
+                check(
+                    isinstance(version_hash, str)
+                    and VERSION_HASH.fullmatch(version_hash) is not None,
+                    f"{name}: plugin-release.json version_hash={version_hash!r}, "
+                    "expected 16 lowercase hex characters",
                 )
                 changelog = release.get("changelog")
                 check(
@@ -220,6 +229,15 @@ for plugin in plugin_dirs:
                         f"{name}: version {published.get('version')!r} becomes "
                         f"{release.get('version')!r} but the changelog is unchanged",
                     )
+                    # The hash is what the server compares. A bump that keeps
+                    # it tells outdated clients they are current.
+                    check(
+                        published.get("version") == release.get("version")
+                        or published.get("version_hash") != release.get("version_hash"),
+                        f"{name}: version {published.get('version')!r} becomes "
+                        f"{release.get('version')!r} but version_hash is unchanged "
+                        "— regenerate it (openssl rand -hex 8)",
+                    )
 
         skill_text = namesake_skill.read_text(encoding="utf-8")
         frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)
@@ -238,15 +256,20 @@ for plugin in plugin_dirs:
             f"expected {agreed!r}",
         )
 
+        # A skill hard-codes the hash it sends. A stale one would mark every
+        # up-to-date install as outdated.
+        published_hash = (
+            release.get("version_hash") if isinstance(release, dict) else None
+        )
         for skill in sorted(plugin.rglob("SKILL.md")):
             text = skill.read_text(encoding="utf-8")
-            if "probe_plugin_version" not in text:
+            if "version_hash" not in text:
                 continue
-            declared = re.search(r'"version": *"(\d+\.\d+\.\d+)"', text)
+            declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
             where = skill.relative_to(ROOT)
             check(
-                declared is not None and declared.group(1) == agreed,
-                f"{where}: probe_plugin_version version does not match {agreed!r}",
+                declared is not None and declared.group(1) == published_hash,
+                f"{where}: version_hash does not match plugin-release.json",
             )
 
     # A path a manifest declares must resolve, or the ecosystem loads nothing.

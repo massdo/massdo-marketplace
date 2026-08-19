@@ -1,4 +1,5 @@
 {
-  "version": "0.1.6",
-  "changelog": "The update check now answers in one short line."
+  "version": "0.2.0",
+  "version_hash": "7b077772236c5f45",
+  "changelog": "Tool calls now carry an unpredictable version hash instead of a semver."
 }
