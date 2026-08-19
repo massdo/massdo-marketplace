@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Activity"
+  short_description: "Track and report time by activity"
+  default_prompt: "Use $activity to start, stop, repair, or report my activity time."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: true

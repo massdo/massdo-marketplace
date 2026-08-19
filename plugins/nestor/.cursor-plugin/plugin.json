@@ -1,8 +1,8 @@
 {
   "name": "nestor",
   "displayName": "Nestor",
-  "version": "0.2.0",
-  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+  "version": "0.3.0",
+  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, history, and activity time tracking.",
   "author": {
     "name": "Dorian Massoulier"
   },
@@ -12,6 +12,7 @@
     "journal",
     "tasks",
     "notes",
+    "time-tracking",
     "productivity",
     "mcp"
   ],
@@ -20,6 +21,7 @@
     "journal",
     "tasks",
     "notes",
+    "time-tracking",
     "mcp"
   ],
   "skills": "./skills/",

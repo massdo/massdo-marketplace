@@ -1,7 +1,7 @@
 {
   "name": "nestor",
-  "version": "0.2.0",
-  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+  "version": "0.3.0",
+  "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, history, and activity time tracking.",
   "author": {
     "name": "Dorian Massoulier",
     "url": "https://github.com/massdo"
@@ -12,6 +12,7 @@
     "journal",
     "tasks",
     "notes",
+    "time-tracking",
     "productivity",
     "mcp"
   ],
@@ -20,7 +21,7 @@
   "interface": {
     "displayName": "Nestor",
     "shortDescription": "Use your canonical Nestor journal",
-    "longDescription": "Keep tasks, notes, reminders, projects, and history in one canonical journal. Capture, find, organize, review, and update your work through natural requests.",
+    "longDescription": "Keep tasks, notes, reminders, projects, history, and activity time in one canonical journal. Capture, find, organize, review, and track your work through natural requests.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [
@@ -31,8 +32,9 @@
     "defaultPrompt": [
       "What should I work on next?",
       "Add this task to my journal.",
-      "Find my notes about this project."
+      "Find my notes about this project.",
+      "Start tracking my work activity.",
+      "How much time did I spend by activity this week?"
     ]
   }
 }
-

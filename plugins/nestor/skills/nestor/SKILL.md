@@ -1,16 +1,16 @@
 ---
 name: nestor
-pluginVersion: 0.2.0
-description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, tracking logs, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
+pluginVersion: 0.3.0
+description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.2.0, hashed as `7b077772236c5f45`.
+This plugin version is 0.3.0, hashed as `f918b2acb9fb1103`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "7b077772236c5f45", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "f918b2acb9fb1103", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - If a tool response carries a plugin update warning, relay it to the user once in this conversation.
 - If the server rejects `version_hash` as unknown, say the plugin is too old and must be updated.
@@ -87,4 +87,3 @@ Never block the requested journal operation. Never write on disk. Never invent a
 - Mutate only the requested records and fields.
 - Obtain explicit user confirmation before trashing an item or confirming deletion of a tag or project.
 - After each mutation, report the confirmed result, affected identifier, and any warning.
-

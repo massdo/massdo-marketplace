@@ -8,12 +8,13 @@
     {
       "name": "nestor",
       "source": "./plugins/nestor",
-      "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, and history.",
+      "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, history, and activity time tracking.",
       "category": "productivity",
       "tags": [
         "journal",
         "tasks",
         "notes",
+        "time-tracking",
         "mcp"
       ]
     },
@@ -30,4 +31,3 @@
     }
   ]
 }
-
