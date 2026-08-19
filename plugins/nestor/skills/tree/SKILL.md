@@ -12,7 +12,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2995a679105fea81" }` on every Nestor MCP call.
+Pass `{ "version_hash": "918aceaf0fa6e0b8" }` on every Nestor MCP call.
 
 ## Arguments
 

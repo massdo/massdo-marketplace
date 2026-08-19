@@ -1,7 +1,7 @@
 {
   "name": "nestor",
   "displayName": "Nestor",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Use the canonical Nestor journal for tasks, notes, reminders, projects, history, and activity time tracking.",
   "author": {
     "name": "Dorian Massoulier"
