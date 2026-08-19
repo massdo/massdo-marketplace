@@ -5,10 +5,10 @@ description: Check whether the Nestor plugin is up to date. Use when the user as
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version_hash": "f918b2acb9fb1103" }`. Report the result to the user in one short sentence, and add nothing else.
+Call `probe_plugin_version` with `{ "version_hash": "f918b2acb9fb1103" }`.
 
-- `update_available`: give the published version, then the `action`.
-- `up_to_date`: say the plugin is up to date and give the published version. Add the `changelog` verbatim on a second line when that field is present.
+- `update_available`: say exactly `Une mise à jour est disponible.` When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content. Do not report the version, action, platform, installation, or automatic-update text.
+- `up_to_date`: say the plugin is up to date. When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content.
 - `unknown`: say the check could not conclude.
 
 Report only the fields that the response carries. Never mention an absent field. Never

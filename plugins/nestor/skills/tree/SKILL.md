@@ -12,8 +12,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "f918b2acb9fb1103" }` on every Nestor MCP call. Relay a plugin
-update warning once in the conversation, without blocking the tree request.
+Pass `{ "version_hash": "f918b2acb9fb1103" }` on every Nestor MCP call.
 
 ## Arguments
 

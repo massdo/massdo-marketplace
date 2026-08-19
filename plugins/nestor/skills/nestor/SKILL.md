@@ -12,7 +12,9 @@ This plugin version is 0.3.0, hashed as `f918b2acb9fb1103`.
 
 Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "f918b2acb9fb1103", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
-- If a tool response carries a plugin update warning, relay it to the user once in this conversation.
+- After every tool response that carries a plugin update warning, say exactly `Une mise à jour est disponible.`
+- When that warning carries a `changelog`, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content.
+- Do not relay the version, action, platform, installation, or automatic-update text from the warning.
 - If the server rejects `version_hash` as unknown, say the plugin is too old and must be updated.
 
 Never block the requested journal operation. Never write on disk. Never invent a client identifier.

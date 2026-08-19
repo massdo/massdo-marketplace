@@ -15,10 +15,6 @@ This skill ships with Nestor 0.3.0, hashed as `f918b2acb9fb1103`.
 Pass `version_hash` on every tool call, for example
 `{ "version_hash": "f918b2acb9fb1103", ... }`. Never send a different value.
 
-- Relay a plugin update warning once in the conversation.
-- If the server rejects the hash as unknown, say that the plugin must be updated.
-- Never block the requested activity operation because of an update warning.
-
 ## Choose the operation
 
 Activities are independent from journal tasks and projects. Never pass a journal scope,
