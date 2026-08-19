@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
-  "version_hash": "f918b2acb9fb1103",
-  "changelog": "Track and report time by activity with the new /nestor:activity command."
+  "version": "0.3.1",
+  "version_hash": "2995a679105fea81",
+  "changelog": "Update notices now show only that an update is available and include new features when provided."
 }

@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.3.0
+pluginVersion: 0.3.1
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
@@ -8,9 +8,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.3.0, hashed as `f918b2acb9fb1103`.
+This plugin version is 0.3.1, hashed as `2995a679105fea81`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "f918b2acb9fb1103", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "2995a679105fea81", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response that carries a plugin update warning, say exactly `Une mise à jour est disponible.`
 - When that warning carries a `changelog`, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content.
