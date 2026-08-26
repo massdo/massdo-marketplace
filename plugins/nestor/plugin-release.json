@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
-  "version_hash": "0e87a44fad01cd01",
-  "changelog": "Append text to an item body with append_body, without rewriting the existing content."
+  "version": "0.4.1",
+  "version_hash": "011ef0047cd81908",
+  "changelog": "Update an item without a preventive read: read it again only when the server refuses the change."
 }

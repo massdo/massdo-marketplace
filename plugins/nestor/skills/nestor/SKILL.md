@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.0
+pluginVersion: 0.4.1
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
@@ -8,9 +8,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.0, hashed as `0e87a44fad01cd01`.
+This plugin version is 0.4.1, hashed as `011ef0047cd81908`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "0e87a44fad01cd01", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "011ef0047cd81908", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -63,20 +63,20 @@ Never block the requested journal operation. Never write on disk. Never invent a
 - Use `get_project` or `list_projects` to resolve a project. Never guess a project identifier.
 - Report incomplete results whenever a response has `hasMore: true`.
 
-## Update items safely
+## Update items
 
-- Use `get_item` to obtain the current state and a matched version-and-ETag pair.
-- Before `update_item`, call `get_item` if no matched pair is held.
-- If a pair is already held, call `get_item_version`. Reuse the pair when the version matches. Refresh it with `get_item` when the version differs.
-- Pass the matched values as `expectedVersion` and `expectedEtag`. Never combine values from different reads.
-- After a mutation or conflict, discard the pair. Acquire a new pair before another mutation.
+- Call `update_item` directly for the requested operation. Never read the item first only to prepare a precondition.
+- Pass `expectedVersion` and `expectedEtag` when a matched pair from an earlier `get_item` is still held. Send no precondition otherwise.
+- If the server rejects the mutation for a missing, invalid, or stale precondition, call `get_item` once, then repeat the same operation with `item.version` and `etag` from that response.
+- Never combine values from different reads. Discard the pair after every mutation and after every conflict.
+- Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
+- Use `append_body` to add text to a body. Never read an item only to resend an unchanged body.
 - Use `update_item` only for requested fields and operations.
 - Treat `need_review` as active work. Use it for review requests and return it to `in_progress` when changes are required.
-- Follow the active tool schema and server instructions when they differ from this skill.
 
 ## Use other journal tools
 
-- Use `get_item_version` only to validate a held version-and-ETag pair. It cannot establish a new pair because it returns no ETag.
+- Use `get_item_version` for a freshness check only. It never prepares a mutation, because it returns no ETag.
 - Use `item_history`, `list_events`, or `project_history` for history.
 - Use `list_tags` and `manage_tag` for tags.
 - Use `list_projects`, `get_project`, `manage_project`, and `project_history` for projects.
