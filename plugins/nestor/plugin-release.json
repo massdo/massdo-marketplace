@@ -1,5 +1,5 @@
 {
-  "version": "0.3.2",
-  "version_hash": "918aceaf0fa6e0b8",
-  "changelog": "Read automatic update notices from structuredContent.pluginUpdate."
+  "version": "0.4.0",
+  "version_hash": "0e87a44fad01cd01",
+  "changelog": "Append text to an item body with append_body, without rewriting the existing content."
 }
