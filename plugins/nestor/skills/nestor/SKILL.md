@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.1
+pluginVersion: 0.4.2
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 ---
 
@@ -8,9 +8,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.1, hashed as `011ef0047cd81908`.
+This plugin version is 0.4.2, hashed as `d38554f310145da4`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "011ef0047cd81908", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "d38554f310145da4", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -65,8 +65,9 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Update items
 
-- Call `update_item` directly for the requested operation. Never read the item first only to prepare a precondition.
+- Call `update_item` directly for the requested operation. Never call `get_item` only to prepare a precondition.
 - Pass `expectedVersion` and `expectedEtag` when a matched pair from an earlier `get_item` is still held. Send no precondition otherwise.
+- Call `get_item_version` before reusing a held pair. Reuse the pair when the version matches. Replace it with a new `get_item` when the version differs.
 - If the server rejects the mutation for a missing, invalid, or stale precondition, call `get_item` once, then repeat the same operation with `item.version` and `etag` from that response.
 - Never combine values from different reads. Discard the pair after every mutation and after every conflict.
 - Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
