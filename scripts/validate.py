@@ -240,6 +240,34 @@ for plugin in plugin_dirs:
                     )
 
         skill_text = namesake_skill.read_text(encoding="utf-8")
+        if name == "nestor":
+            check(
+                re.search(r"^antipattern:", skill_text, re.MULTILINE) is not None,
+                "nestor: namesake skill declares no antipattern field",
+            )
+            for antipattern in (
+                "preventive_get_item_before_update",
+                "post_success_get_item",
+                "stale_version_etag_pair",
+                "mixed_version_etag_reads",
+            ):
+                check(
+                    antipattern in skill_text,
+                    f"nestor: namesake skill omits antipattern {antipattern!r}",
+                )
+            check(
+                "never call `get_item` immediately before `update_item`" in skill_text,
+                "nestor: skill does not forbid the preventive get_item pattern",
+            )
+            check(
+                "never call `get_item` after a successful `update_item`" in skill_text,
+                "nestor: skill does not forbid the post-success get_item pattern",
+            )
+            check(
+                "When no valid pair is held, call `update_item` without a precondition."
+                in skill_text,
+                "nestor: skill does not permit a direct mutation without a held pair",
+            )
         frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)
         plugin_version = None
         if frontmatter is not None:

@@ -1,5 +1,5 @@
 {
-  "version": "0.4.2",
-  "version_hash": "d38554f310145da4",
-  "changelog": "Check a held read precondition with get_item_version before updating an item, so a change is never sent with an outdated version."
+  "version": "0.4.3",
+  "version_hash": "890015e77049139e",
+  "changelog": "Declare mutation antipatterns so agents avoid preventive and post-success get_item calls."
 }
