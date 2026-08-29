@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.3
+pluginVersion: 0.4.4
 antipattern:
   - preventive_get_item_before_update
   - post_success_get_item
@@ -13,9 +13,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.3, hashed as `890015e77049139e`.
+This plugin version is 0.4.4, hashed as `370691e183c12bec`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "890015e77049139e", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "370691e183c12bec", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -62,6 +62,7 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Find items and projects
 
+- Use `get_item` when id or slug is known.
 - Use `search_items` when the user describes content.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.

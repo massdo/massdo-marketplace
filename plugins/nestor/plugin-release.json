@@ -1,5 +1,5 @@
 {
-  "version": "0.4.3",
-  "version_hash": "890015e77049139e",
-  "changelog": "Declare mutation antipatterns so agents avoid preventive and post-success get_item calls."
+  "version": "0.4.4",
+  "version_hash": "370691e183c12bec",
+  "changelog": "Fix tool descriptions so get_item is the preferred read when id or slug is known."
 }
