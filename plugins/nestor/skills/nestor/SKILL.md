@@ -1,7 +1,8 @@
 ---
 name: nestor
-pluginVersion: 0.4.4
+pluginVersion: 0.4.5
 antipattern:
+  - search_for_known_identity
   - preventive_get_item_before_update
   - post_success_get_item
   - stale_version_etag_pair
@@ -13,9 +14,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.4, hashed as `370691e183c12bec`.
+This plugin version is 0.4.5, hashed as `e1f345d3a9652117`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "370691e183c12bec", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "e1f345d3a9652117", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -62,8 +63,8 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Find items and projects
 
-- Use `get_item` when id or slug is known.
-- Use `search_items` when the user describes content.
+- Use `get_item` when id or slug is known, whatever the read is for. A single field, a status check, and a full read all take the same tool.
+- Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
 - Use `get_project` or `list_projects` to resolve a project. Never guess a project identifier.
@@ -71,8 +72,9 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## antipattern
 
-An `antipattern` is an action the agent must avoid at all costs. These entries protect optimistic mutations:
+An `antipattern` is an action the agent must avoid at all costs. The first entry protects deterministic reads; the others protect optimistic mutations:
 
+- `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
 - `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
 - `stale_version_etag_pair`: never reuse a pair after a mutation or conflict. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.

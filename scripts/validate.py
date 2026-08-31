@@ -246,6 +246,7 @@ for plugin in plugin_dirs:
                 "nestor: namesake skill declares no antipattern field",
             )
             for antipattern in (
+                "search_for_known_identity",
                 "preventive_get_item_before_update",
                 "post_success_get_item",
                 "stale_version_etag_pair",
@@ -255,6 +256,11 @@ for plugin in plugin_dirs:
                     antipattern in skill_text,
                     f"nestor: namesake skill omits antipattern {antipattern!r}",
                 )
+            check(
+                "never call `search_items` or `list_items` to reach an item whose id "
+                "or slug is already known" in skill_text,
+                "nestor: skill does not forbid searching for a known identity",
+            )
             check(
                 "never call `get_item` immediately before `update_item`" in skill_text,
                 "nestor: skill does not forbid the preventive get_item pattern",
