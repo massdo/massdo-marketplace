@@ -68,11 +68,19 @@ The public Cursor Marketplace listing is submitted separately at [cursor.com/mar
 only ever ships what has been tried. It reaches the same three ecosystems and is listed in
 the same three catalogs, under its own name.
 
-It ships **no MCP file, on purpose**. Once `nestor` is installed its journal server is
-registered for the session, and a skill in any plugin can call those tools; a second
-declaration here would expose every Nestor tool twice. The Claude Code manifest adds
-`"dependencies": ["nestor"]` so installing the beta plugin installs `nestor` too. Codex and
-Cursor have no equivalent field, so there `nestor` must already be installed.
+It ships `mcp.json` but **no `.mcp.json`, on purpose**, and that asymmetry is the whole
+trick. On Codex and Cursor a plugin exposes only what it declares itself: neither reads the
+Claude Code `dependencies` field, so without its own MCP declaration the beta skills would
+load with no journal tools at all. Both manifests therefore point `mcpServers` at
+`./mcp.json`.
+
+Claude Code reads only the dotted `.mcp.json`, which this plugin does not ship, so it finds
+no server here and registers none. It gets the journal server from `nestor` instead, pulled
+in by `"dependencies": ["nestor"]` in the Claude Code manifest. That is what keeps the
+Nestor tools from appearing twice, under two plugin prefixes, in a Claude Code session.
+
+One consequence to keep in mind: a Codex or Cursor install that also has `nestor` does
+declare the same server twice, once per plugin.
 
 Iterate without publishing anything, reloading with `/reload-plugins` after each edit:
 
