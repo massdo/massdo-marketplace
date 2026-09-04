@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "nestor": {
-      "type": "http",
-      "url": "https://journal.mcp-marketplace.org/mcp"
-    }
-  }
-}

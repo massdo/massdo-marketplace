@@ -1,6 +1,6 @@
 {
   "name": "nestor-beta",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
   "author": {
     "name": "Dorian Massoulier",
@@ -15,7 +15,6 @@
     "productivity"
   ],
   "skills": "./skills/",
-  "mcpServers": "./mcp.json",
   "interface": {
     "displayName": "Nestor Beta",
     "shortDescription": "Nestor skills under test",
