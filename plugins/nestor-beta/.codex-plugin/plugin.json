@@ -1,0 +1,33 @@
+{
+  "name": "nestor-beta",
+  "version": "0.1.0",
+  "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
+  "author": {
+    "name": "Dorian Massoulier",
+    "url": "https://github.com/massdo"
+  },
+  "homepage": "https://github.com/massdo/massdo-marketplace",
+  "repository": "https://github.com/massdo/massdo-marketplace",
+  "keywords": [
+    "journal",
+    "beta",
+    "staging",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Nestor Beta",
+    "shortDescription": "Nestor skills under test",
+    "longDescription": "Staging area for Nestor skills and commands being written or reworked. Install the nestor plugin alongside it: the journal MCP server these skills call is provided there.",
+    "developerName": "Dorian Massoulier",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/massdo/massdo-marketplace",
+    "defaultPrompt": [
+      "Build this Nestor task end to end."
+    ]
+  }
+}

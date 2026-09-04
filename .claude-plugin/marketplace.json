@@ -19,6 +19,17 @@
       ]
     },
     {
+      "name": "nestor-beta",
+      "source": "./plugins/nestor-beta",
+      "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
+      "category": "productivity",
+      "tags": [
+        "journal",
+        "beta",
+        "staging"
+      ]
+    },
+    {
       "name": "massdo-skills",
       "source": "./plugins/massdo-skills",
       "description": "Install and update skills from the massdo marketplace with npx skills.",

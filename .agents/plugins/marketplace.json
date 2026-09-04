@@ -17,6 +17,18 @@
       "category": "Productivity"
     },
     {
+      "name": "nestor-beta",
+      "source": {
+        "source": "local",
+        "path": "./plugins/nestor-beta"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "massdo-skills",
       "source": {
         "source": "local",

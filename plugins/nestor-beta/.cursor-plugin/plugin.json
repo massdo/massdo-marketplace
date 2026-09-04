@@ -1,0 +1,25 @@
+{
+  "name": "nestor-beta",
+  "displayName": "Nestor Beta",
+  "version": "0.1.0",
+  "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
+  "author": {
+    "name": "Dorian Massoulier"
+  },
+  "homepage": "https://github.com/massdo/massdo-marketplace",
+  "repository": "https://github.com/massdo/massdo-marketplace",
+  "keywords": [
+    "journal",
+    "beta",
+    "staging",
+    "productivity"
+  ],
+  "category": "productivity",
+  "tags": [
+    "journal",
+    "beta",
+    "staging"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/"
+}
