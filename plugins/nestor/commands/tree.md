@@ -1,6 +1,7 @@
 ---
 description: Render a Nestor project as an ASCII tree, grouped by status then by parent-child hierarchy.
 argument-hint: "[project] [view] [level] — or project:x view:y level:n item:id"
+disable-model-invocation: true
 ---
 
 Raw arguments: `$ARGUMENTS`. Parse them as the instructions below describe. Empty means no parameter was given, so every default applies.

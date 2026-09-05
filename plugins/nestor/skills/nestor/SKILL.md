@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.5
+pluginVersion: 0.4.6
 antipattern:
   - search_for_known_identity
   - preventive_get_item_before_update
@@ -14,9 +14,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.5, hashed as `e1f345d3a9652117`.
+This plugin version is 0.4.6, hashed as `d6253857072898f9`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "e1f345d3a9652117", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "d6253857072898f9", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`

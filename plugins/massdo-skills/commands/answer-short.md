@@ -1,6 +1,7 @@
 ---
 description: Passer les réponses en anglais technique simplifié ASD-STE100 rédigé en français, sous un budget de mots. Reste actif jusqu'à /massdo-skills:answer-short reset.
 argument-hint: "[budget en mots (défaut 120), ou reset]"
+disable-model-invocation: true
 ---
 
 Argument reçu : `$1`. Vide vaut 120 mots.

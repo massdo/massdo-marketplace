@@ -1,6 +1,7 @@
 ---
 description: Track an activity or report activity time from Nestor.
 argument-hint: "start <name> | switch <name> | stop | report [period] | repair or merge"
+disable-model-invocation: true
 ---
 
 Raw arguments: `$ARGUMENTS`. Treat them as the user's activity request. Empty arguments

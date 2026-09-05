@@ -1,6 +1,7 @@
 ---
 name: tree
 description: Render an ASCII tree of a Nestor project's tasks and notes, grouped by status then by parent-child hierarchy. Use it whenever someone wants to see the shape of a project rather than a flat list — asking for an overview, a map, a tree, a structure, the hierarchy of tasks, what hangs under a given task, or how a project is organised. Also use it when the request names a project and asks "where are we" or "what hangs under this task", in any language. Prefer this skill over a plain list whenever parent-child relationships or per-status grouping carry the answer.
+user-invocable: false
 ---
 
 # Nestor Tree
@@ -12,7 +13,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "e1f345d3a9652117" }` on every Nestor MCP call.
+Pass `{ "version_hash": "d6253857072898f9" }` on every Nestor MCP call.
 
 ## Arguments
 

@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
   "displayName": "Massdo Skills",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Response-style skills: short ASD-STE100 answers and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier"

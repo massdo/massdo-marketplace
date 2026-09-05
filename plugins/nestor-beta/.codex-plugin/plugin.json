@@ -1,6 +1,6 @@
 {
   "name": "nestor-beta",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
   "author": {
     "name": "Dorian Massoulier",

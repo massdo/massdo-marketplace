@@ -1,5 +1,5 @@
 {
-  "version": "0.4.5",
-  "version_hash": "e1f345d3a9652117",
-  "changelog": "Add an antipattern for nestor: never search for an item whose id or slug is already known."
+  "version": "0.4.6",
+  "version_hash": "d6253857072898f9",
+  "changelog": "Keep activity, tree, and check-for-updates off the user skill picker; invoke them via slash commands."
 }

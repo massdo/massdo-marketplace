@@ -1,6 +1,7 @@
 ---
 name: activity
 description: Track and report time spent on named activities in Nestor. Use when the user starts, switches, or stops an activity timer; asks for daily, weekly, or monthly activity totals; or wants to rename, merge, adjust, or delete activity data. Do not use for task status changes or general questions about physical activities.
+user-invocable: false
 ---
 
 # Nestor Activity
@@ -10,10 +11,10 @@ database, its files, or an export.
 
 ## Identify the plugin version
 
-This skill ships with Nestor 0.4.5, hashed as `e1f345d3a9652117`.
+This skill ships with Nestor 0.4.6, hashed as `d6253857072898f9`.
 
 Pass `version_hash` on every tool call, for example
-`{ "version_hash": "e1f345d3a9652117", ... }`. Never send a different value.
+`{ "version_hash": "d6253857072898f9", ... }`. Never send a different value.
 
 ## Choose the operation
 

@@ -1,11 +1,12 @@
 ---
 name: check-for-updates
 description: Check whether the Nestor plugin is up to date. Use when the user asks if Nestor is current, wants the latest changelog, or types /nestor:check-for-updates or /check-for-updates.
+user-invocable: false
 ---
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version_hash": "e1f345d3a9652117" }`.
+Call `probe_plugin_version` with `{ "version_hash": "d6253857072898f9" }`.
 
 - `update_available`: say exactly `Une mise à jour est disponible.` When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content. Do not report the version, action, platform, installation, or automatic-update text.
 - `up_to_date`: say the plugin is up to date. When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content.
