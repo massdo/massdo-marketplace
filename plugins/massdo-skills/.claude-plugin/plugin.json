@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.2.2",
-  "description": "Install and update skills from the massdo marketplace with npx skills.",
+  "version": "0.3.0",
+  "description": "Response-style skills: short ASD-STE100 answers and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier"
   },
