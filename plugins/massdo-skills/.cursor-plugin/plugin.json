@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
   "displayName": "Massdo Skills",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Install and update skills from the massdo marketplace with npx skills.",
   "author": {
     "name": "Dorian Massoulier"

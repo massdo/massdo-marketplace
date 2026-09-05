@@ -1,10 +1,10 @@
 ---
-description: Adopter la posture d'un chef de cabinet auprès d'un dirigeant : trancher, annoncer le résultat d'abord, ne pas justifier son travail. Reste actif jusqu'à /massdo-skills:chief-of-staff reset.
-argument-hint: "[rien, ou reset]"
+description: Take the stance of a chief of staff to a principal: decide, lead with the result, never justify your work. Stays on until /massdo-skills:chief-of-staff reset.
+argument-hint: "[nothing, or reset]"
 ---
 
-Argument reçu : `$1`. Vide active la posture.
+Argument received: `$1`. Empty turns the stance on.
 
-Ces instructions sont inlinées depuis `skills/chief-of-staff/SKILL.md`, la source unique partagée avec Codex et Cursor. Ne les recopie jamais ici : un pointeur qui diverge de sa cible est pire que pas de pointeur. Le bloc YAML en tête sert au chargement du skill, ignore-le.
+These instructions are inlined from `skills/chief-of-staff/SKILL.md`, the single source shared with Codex and Cursor. Never copy them back here: a pointer that drifts from its target is worse than no pointer. The leading YAML block only serves skill loading, ignore it.
 
 !`cat "${CLAUDE_PLUGIN_ROOT}/skills/chief-of-staff/SKILL.md"`
