@@ -2,7 +2,7 @@
   "name": "massdo-skills",
   "displayName": "Massdo Skills",
   "version": "0.2.1",
-  "description": "Install and update skills from the massdo marketplace with npx skills.",
+  "description": "Shape how Claude answers: a bounded reply length and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier"
   },
@@ -11,14 +11,14 @@
   "keywords": [
     "skills",
     "marketplace",
-    "sync",
+    "posture",
     "productivity"
   ],
   "category": "productivity",
   "tags": [
     "skills",
     "marketplace",
-    "sync"
+    "posture"
   ],
   "skills": "./skills/",
   "commands": "./commands/"

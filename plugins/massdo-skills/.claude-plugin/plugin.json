@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
   "version": "0.2.1",
-  "description": "Install and update skills from the massdo marketplace with npx skills.",
+  "description": "Shape how Claude answers: a bounded reply length and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier"
   },
