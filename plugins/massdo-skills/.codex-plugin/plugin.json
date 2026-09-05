@@ -1,6 +1,6 @@
 {
   "name": "massdo-skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Install and update skills from the massdo marketplace with npx skills.",
   "author": {
     "name": "Dorian Massoulier",
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Massdo Skills",
     "shortDescription": "Outils du marketplace massdo",
-    "longDescription": "Installer et mettre à jour les skills du marketplace massdo, et borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français.",
+    "longDescription": "Installer et mettre à jour les skills du marketplace massdo, borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, et adopter une posture de chef de cabinet qui tranche au lieu de proposer des menus.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [
@@ -27,6 +27,7 @@
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
       "Réponds court à partir de maintenant.",
+      "Passe en mode chef de cabinet.",
       "Mets à jour mes skills du marketplace massdo."
     ]
   }
