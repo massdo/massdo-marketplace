@@ -2,6 +2,7 @@
 name: build
 description: Build a specified Nestor task end to end into a validated target branch, delegate its implementation, audit every commit, close the task, and optionally ship with prod after explicit confirmation. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
 disable-model-invocation: true
+user-invocable: false
 ---
 
 # Nestor Build
