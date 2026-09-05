@@ -2,6 +2,7 @@
 name: answer-short
 description: Rédiger les réponses en anglais technique simplifié ASD-STE100 transposé au français, sous un plafond de mots, et lever ce verrou sur demande. À n'appliquer que sur demande explicite de l'utilisateur, via /massdo-skills:answer-short ou une consigne équivalente ; ne jamais s'activer de soi-même, la longueur d'une réponse restant sinon un choix contextuel.
 disable-model-invocation: true
+user-invocable: false
 ---
 
 L'argument passé à l'invocation décide du mode :
