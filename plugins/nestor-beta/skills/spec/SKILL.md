@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Turn a raw idea into a Nestor task tree, one question at a time. Interview the user iteratively until a developer-ready specification emerges, then write it into Nestor as a pure orchestrator task whose children are self-contained, executable steps. Invoke this skill only after a direct user action such as /nestor-beta:spec with an idea. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. An idea mentioned in conversation is not a spec request.
+description: Turn a raw idea, or an existing Nestor task given by id or slug, into a Nestor task tree, one question at a time. Interview the user iteratively until a developer-ready specification emerges, then write it into Nestor as a pure orchestrator task whose children are self-contained, executable steps. Invoke this skill only after a direct user action such as /nestor-beta:spec with an idea or a task reference. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. An idea mentioned in conversation is not a spec request.
 disable-model-invocation: true
 user-invocable: false
 ---
@@ -27,17 +27,43 @@ Pass `{ "version_hash": "d6253857072898f9" }` on every Nestor MCP call.
 ## Arguments
 
 ```
-/nestor-beta:spec <idea…> [project:<name-or-id>]
+/nestor-beta:spec <idea… | id-or-slug> [project:<name-or-id>]
 ```
 
-Everything that is not the `project:` argument is the idea, however loosely phrased.
-Preserve everything after the first colon in `project:`, including spaces in a project name.
+Everything that is not the `project:` argument is the starting point. Preserve everything
+after the first colon in `project:`, including spaces in a project name.
 
 An empty argument string is not an error. There is nothing to guess wrong here: the idea is
 whatever the user is about to say. Ask for it in one line, then start from the answer.
 
 The project is resolved late, at Stage 4, not now. A session that ends early then costs
 nothing, and the user is not interrupted before the work has taken shape.
+
+### The starting point is either prose or a Nestor task
+
+**Treat the argument as a task reference only when it is a single token with no whitespace**
+that looks like a Nestor identity: a `color_animal` slug, which an underscore gives away, or
+an id. Anything else is the idea itself, written as prose. One token is the whole test —
+a real idea, however short, arrives as a sentence, and a sentence is never mistaken for a
+slug.
+
+For a reference, read the task with `get_item`, passing it as `slug` or as `id` — never
+both; the underscore tells you which. Its title and body become the starting material, in
+place of the prose the user would otherwise have typed.
+
+**If an unmistakable reference resolves to nothing, stop and say so.** A `color_animal` slug
+and a full 22-character id can be nothing but references, so a failed read there is a typo
+worth surfacing: someone who typed `brown_turtle` wants that task, and opening an interview
+about the words "brown turtle" wastes a whole session before the mistake appears.
+
+A short bare word is the ambiguous case — `dashboard` is a plausible id prefix *and* a
+plausible one-word idea. Read it, and when the server finds nothing, take it for the idea it
+almost certainly was and carry on without comment. Guessing from the shape of the string
+cannot separate those two; a failed read can, and it costs one call.
+
+Keep the task's identity: it is the root of the tree, and Stage 4 writes the specification
+into it rather than creating a second item beside it. Hold the `version` and `etag` that
+`get_item` returned — Stage 4 uses them.
 
 ## Stage 1 — The interview
 
@@ -49,8 +75,11 @@ question *n+1* should be; asked together, the second question is aimed at a targ
 has not appeared yet. And a person answering six questions at once answers all six
 briefly, which is the opposite of what a specification needs.
 
-**Open where the risk is.** The first question shows you read the idea: aim it at the
-largest unknown, not at a restatement of what the user just wrote.
+**Open where the risk is.** The first question shows you read the starting point: aim it at
+the largest unknown, not at a restatement of what the user just gave you. When the session
+started from a Nestor task, its body is often several paragraphs they already thought
+through — asking anything it already answers is the surest way to look like you never read
+it, and it spends the one thing the interview is trying to protect.
 
 **Follow the answers, not a checklist.** Over the session the ground to cover is the
 problem and who has it, the expected behaviour and its edge cases, the data — shape,
@@ -132,14 +161,19 @@ all of its children are — an orchestrator that gets closed on its own hides un
 The root is always a pure orchestrator, and it carries the full specification from Stage 2
 in its body. That is what makes the tree readable a month later.
 
+**When the session started from a Nestor task, that task is the root.** It already holds the
+intent and the identity the user has been referring to; creating a second item beside it
+would split one chantier into two records, and leave the original as a stub nobody updates.
+
 Give a section its own intermediate orchestrator when it holds enough actionable steps to
 be followed on its own — roughly three or more. **Never create an orchestrator with a
 single child**: a level that organises one thing organises nothing.
 
 That rule holds at the root too. When the whole idea turns out to fit in one actionable
-task, write that single task and nothing above it. The specification then lives in its
-body, alongside the steps. A tree is a way to make progress visible, not a formality to
-satisfy.
+task, write that single task and nothing above it — or, when a source task is the root,
+write the specification and the steps into it and give it no children at all. The
+specification then lives beside the steps. A tree is a way to make progress visible, not a
+formality to satisfy.
 
 **An actionable task** is the unit someone picks up and finishes. Its body is read by an
 executor who did not attend the interview and may have no way to ask a question — so it
@@ -164,6 +198,12 @@ common heading. That is what makes closing the parent mean something.
 node — orchestrator or actionable. Then ask for confirmation. Creating the tree is N
 writes; undoing it is N trash confirmations, each of which the user has to give by hand.
 
+When a source task is the root, say in that same line that the specification will replace
+its body, and name it by its slug. Overwriting is the one destructive act in this skill, so
+it has to be visible — but it belongs to the confirmation the user is already giving, not to
+a second question. Nestor keeps the previous body in the item's history, which is what makes
+one informed confirmation enough.
+
 ### Resolve the project
 
 Only once the user has confirmed the tree.
@@ -172,6 +212,11 @@ Only once the user has confirmed the tree.
 gave during the interview. Ask which project the work belongs to only when it is missing,
 in one line. If the user explicitly says the work belongs to no project, use
 `{ "mode": "global" }`.
+
+**A source task already answers this.** When the session started from a Nestor task, its
+project is the project of the whole tree, and `get_item` reported it — so ask nothing and
+resolve nothing. An explicit `project:` argument still wins, since the user typed it while
+knowing where the task lived.
 
 Reuse an id already resolved for the chosen project. Otherwise resolve the supplied value
 with `get_project` before creating any task:
@@ -190,32 +235,43 @@ with `get_project` before creating any task:
 Resolve silently when the result is unambiguous. Call `list_projects` only when the user
 asks what projects exist; never list them to accompany the project question.
 
-### Create the tasks
+### Write the tree
 
-Every call carries `version_hash` and the resolved `scope`.
+Every call carries `version_hash` and the resolved `scope`. The root comes first either
+way, because every child needs its id.
 
-1. Create the root with `create_item`, `type: "task"`, no `parentTaskId`, and the full
-   specification as `body`.
-2. Create each remaining task with the id its parent returned. A child needs its parent's
-   id, so the tree is written top-down.
-3. Use `backlog: true` on every task. This is planned work, not work due today, and
-   scheduling twenty tasks onto the current day buries the rest of the journal.
+**With a source task**, write the specification into it with `update_item`, sending the
+`version` and `etag` held since the opening read. A whole interview stands between those two
+calls, so the server may well reject the pair as stale — that is the expected path, not an
+error: call `get_item` once and repeat the same update. Never refresh the pair preventively,
+and never send a `version` and an `etag` that came from different reads.
+
+**Without one**, create the root with `create_item`, `type: "task"`, no `parentTaskId`, and
+the specification as `body`.
+
+Then create each remaining task with the id its parent returned; a child needs its parent,
+so the tree is written top-down. Use `backlog: true` on every task you create — this is
+planned work, not work due today, and scheduling twenty tasks onto the current day buries
+the rest of the journal. Leave the source task's own scheduling alone: the user chose it,
+and this skill was not asked to reschedule anything.
 
 Titles are short and imperative, in the style of a commit subject.
 
-**If a creation fails partway through, stop.** Report exactly which tasks exist, with their
+**If a write fails partway through, stop.** Report exactly which tasks exist, with their
 slugs, and which one failed. Never restart the tree from the root: that duplicates
 everything already written, and two parallel trees are far more expensive to untangle than
 one half-written one.
 
-A lost response is not a refusal. A timeout may well have created the task, so report that
+A lost response is not a refusal. A timeout may well have applied the write, so report that
 node as unknown rather than failed, and check what exists before anyone resumes.
 
 ### Report
 
-Give the root's identifier — its slug when the creation returned one, its id otherwise —
-and the number of tasks created. Nothing more: the tree was shown before the write, so
-repeating it spends the user's attention on something they just approved.
+Give the root's identifier — its slug when a write returned one, its id otherwise — and the
+number of tasks created. When the root is a source task, say that its body now holds the
+specification, so the user knows the overwrite happened. Nothing more: the tree was shown
+before the write, so repeating it spends the user's attention on something they just
+approved.
 
 ## What this skill never does
 
@@ -226,5 +282,8 @@ repeating it spends the user's attention on something they just approved.
 - It never writes into Nestor before the user has confirmed the tree.
 - It never leaves an open decision in an actionable task.
 - It never creates an orchestrator with a single child.
+- It never creates a second root beside a source task, and never overwrites that task's body
+  without having named the overwrite in the confirmation.
+- It never falls back to prose when a task reference resolves to nothing.
 - It never writes code, edits a file, or creates a branch. It specifies; it does not
   implement.
