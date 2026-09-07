@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.6
+pluginVersion: 0.4.7
 antipattern:
   - search_for_known_identity
   - preventive_get_item_before_update
@@ -14,9 +14,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.6, hashed as `d6253857072898f9`.
+This plugin version is 0.4.7, hashed as `e761f821a63c69cb`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "d6253857072898f9", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "e761f821a63c69cb", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -78,7 +78,7 @@ An `antipattern` is an action the agent must avoid at all costs. The first entry
 - `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
 - `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, so a mutation right after a creation or another mutation needs no `get_item`.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
-- `stale_version_etag_pair`: never reuse the pair you already sent to a mutation, and never reuse any pair after a conflict. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
+- `stale_version_etag_pair`: never reuse the pair you already sent to a mutation, and never reuse any pair after a conflict. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. A pair belongs to the item, not to the operation that returned it: the pair handed back by a status `patch` is the one the next `add_link`, `add_tags`, `remove_tags`, `append_body` or `move` on that same item must send. Treating a different operation as a fresh start is how a held pair gets dropped and a `get_item` gets paid for nothing. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
 - `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, or `update_item`.
 
 ## Update items
@@ -86,7 +86,7 @@ An `antipattern` is an action the agent must avoid at all costs. The first entry
 - Pass `expectedVersion` and `expectedEtag` directly when a matched pair from an earlier `get_item`, `create_item`, or `update_item` is still held. Never refresh a held pair immediately before the mutation.
 - When no valid pair is held, call `update_item` without a precondition.
 - If the server rejects the mutation for a missing, invalid, or stale precondition, call `get_item` once, then repeat the same operation with `item.version` and `etag` from that response.
-- Never combine values from different responses. After a conflict, discard the pair and read again. After a successful mutation, use the pair that response returns for the next change.
+- Never combine values from different responses. After a conflict, discard the pair and read again. After a successful mutation, use the pair that response returns for the next change on that item, whatever operation that change performs.
 - Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
 - Use `append_body` to add text to a body. Never read an item only to resend an unchanged body.
 - Use `update_item` only for requested fields and operations.
