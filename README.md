@@ -55,12 +55,18 @@ The public Cursor Marketplace listing is submitted separately at [cursor.com/mar
 
 ## Plugin release document
 
-`plugins/nestor/plugin-release.json` is the public version-and-changelog document. The journal server reads it without authentication.
+`plugin-release.json` is a plugin's public version-and-changelog document. The journal server reads it without authentication. Two plugins publish one: `nestor` and `nestor-beta`.
 
-- Format: `{ "version": "X.Y.Z", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
-- Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/nestor/plugin-release.json`
+- Format: `{ "version": "X.Y.Z", "version_hash": "16 hex", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
+- Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/<name>/plugin-release.json`
 - Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
 - Maximum size: 4096 bytes. A larger document is treated as unreadable.
+
+### Two documents, one server that reads a single one
+
+The server still compares every `version_hash` it receives against `nestor`'s document alone, because a call carries a hash and no plugin name — the contract `yellow_jackal` settled. `nestor-beta` therefore publishes a release its skills do not yet send: `build` and `spec` keep sending `nestor`'s hash, since sending their own would be rejected as an outdated client on the very next call.
+
+That is deliberate, and it is the state to leave in place until the server is refactored to read the document of the plugin that identifies itself on the call. Until then, `scripts/validate.py` holds the weaker rule that fits both worlds: a hash a skill hard-codes must be published by *some* `plugin-release.json` here. A plugin that ships its own `.mcp.json` is held to the exact match instead, since its skills identify that very plugin.
 
 ## Beta staging plugin
 

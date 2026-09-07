@@ -1,0 +1,5 @@
+{
+  "version": "0.3.1",
+  "version_hash": "4bb9ad2a653b1e1c",
+  "changelog": "Add the spec skill: an interview that turns an idea, or an existing Nestor task, into a tree of Nestor tasks.\nSpell the skill arguments out for Codex, which shows no argument hint for a skill."
+}

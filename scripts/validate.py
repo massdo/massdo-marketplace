@@ -130,6 +130,10 @@ for ecosystem, (catalog_path, source_of) in CATALOGS.items():
 
 # --- Each plugin is internally coherent. ------------------------------------
 
+# Plugin name -> the hash its plugin-release.json publishes. Filled below, read
+# by the pass that checks the hashes skills hard-code.
+published_hashes: dict[str, str] = {}
+
 for plugin in plugin_dirs:
     name = plugin.name
     manifests = {
@@ -160,85 +164,93 @@ for plugin in plugin_dirs:
         f"{name}: manifests disagree on the version: {versions}",
     )
 
-    # A namesake skill is the installable plugin itself. Its hard-coded version
-    # and the public changelog document must match the manifests, or a client
-    # reports it is current when it is not.
+    # plugin-release.json is the public version-and-changelog document the
+    # journal server reads. Shipping one is what makes a plugin released, and
+    # the document must agree with the manifests, or a client reports it is
+    # current when it is not.
+    #
+    # The document itself is the trigger, not a namesake skill: nestor-beta
+    # publishes a release without shipping a skill named after it. A namesake
+    # skill still requires one, since that skill *is* the installable plugin.
+    agreed = next(iter(set(versions.values())), None)
     namesake_skill = plugin / "skills" / name / "SKILL.md"
-    if namesake_skill.is_file():
-        agreed = next(iter(set(versions.values())), None)
-        release_path = plugin / "plugin-release.json"
-        release: dict | None = None
+    release_path = plugin / "plugin-release.json"
+    release: dict | None = None
+    check(
+        release_path.is_file() or not namesake_skill.is_file(),
+        f"{name}: missing plugin-release.json next to the namesake skill",
+    )
+    if release_path.is_file():
         check(
-            release_path.is_file(),
-            f"{name}: missing plugin-release.json next to the namesake skill",
+            release_path.stat().st_size <= 4096,
+            f"{name}: plugin-release.json exceeds 4096 bytes",
         )
-        if release_path.is_file():
+        try:
+            release = read_json(release_path)
+        except json.JSONDecodeError as error:
+            errors.append(f"{name}: plugin-release.json is not JSON: {error}")
+            release = None
+        if isinstance(release, dict):
             check(
-                release_path.stat().st_size <= 4096,
-                f"{name}: plugin-release.json exceeds 4096 bytes",
+                set(release) == {"version", "version_hash", "changelog"},
+                f"{name}: plugin-release.json keys={sorted(release)}, "
+                "expected exactly version, version_hash and changelog",
             )
-            try:
-                release = read_json(release_path)
-            except json.JSONDecodeError as error:
-                errors.append(f"{name}: plugin-release.json is not JSON: {error}")
-                release = None
-            if isinstance(release, dict):
+            check(
+                release.get("version") == agreed,
+                f"{name}: plugin-release.json version={release.get('version')!r}, "
+                f"expected {agreed!r}",
+            )
+            version_hash = release.get("version_hash")
+            check(
+                isinstance(version_hash, str)
+                and VERSION_HASH.fullmatch(version_hash) is not None,
+                f"{name}: plugin-release.json version_hash={version_hash!r}, "
+                "expected 16 lowercase hex characters",
+            )
+            if isinstance(version_hash, str):
+                published_hashes[name] = version_hash
+            changelog = release.get("changelog")
+            check(
+                isinstance(changelog, str) and changelog.strip() != "",
+                f"{name}: plugin-release.json changelog must be a non-empty string",
+            )
+            if isinstance(changelog, str):
+                changelog_lines = [
+                    line for line in changelog.splitlines() if line.strip() != ""
+                ]
                 check(
-                    set(release) == {"version", "version_hash", "changelog"},
-                    f"{name}: plugin-release.json keys={sorted(release)}, "
-                    "expected exactly version, version_hash and changelog",
+                    1 <= len(changelog_lines) <= 3,
+                    f"{name}: plugin-release.json changelog has "
+                    f"{len(changelog_lines)} non-empty lines, expected 1 to 3",
                 )
-                check(
-                    release.get("version") == agreed,
-                    f"{name}: plugin-release.json version={release.get('version')!r}, "
-                    f"expected {agreed!r}",
-                )
-                version_hash = release.get("version_hash")
-                check(
-                    isinstance(version_hash, str)
-                    and VERSION_HASH.fullmatch(version_hash) is not None,
-                    f"{name}: plugin-release.json version_hash={version_hash!r}, "
-                    "expected 16 lowercase hex characters",
-                )
-                changelog = release.get("changelog")
-                check(
-                    isinstance(changelog, str) and changelog.strip() != "",
-                    f"{name}: plugin-release.json changelog must be a non-empty string",
-                )
-                if isinstance(changelog, str):
-                    changelog_lines = [
-                        line for line in changelog.splitlines() if line.strip() != ""
-                    ]
-                    check(
-                        1 <= len(changelog_lines) <= 3,
-                        f"{name}: plugin-release.json changelog has "
-                        f"{len(changelog_lines)} non-empty lines, expected 1 to 3",
-                    )
 
-                # The changelog is what a client shows for the new version. A
-                # bump that keeps the previous text describes the wrong release.
-                published = (
-                    read_json_at(BASELINE, release_path)
-                    if BASELINE is not None
-                    else None
+            # The changelog is what a client shows for the new version. A
+            # bump that keeps the previous text describes the wrong release.
+            published = (
+                read_json_at(BASELINE, release_path)
+                if BASELINE is not None
+                else None
+            )
+            if isinstance(published, dict):
+                check(
+                    published.get("version") == release.get("version")
+                    or published.get("changelog") != release.get("changelog"),
+                    f"{name}: version {published.get('version')!r} becomes "
+                    f"{release.get('version')!r} but the changelog is unchanged",
                 )
-                if isinstance(published, dict):
-                    check(
-                        published.get("version") == release.get("version")
-                        or published.get("changelog") != release.get("changelog"),
-                        f"{name}: version {published.get('version')!r} becomes "
-                        f"{release.get('version')!r} but the changelog is unchanged",
-                    )
-                    # The hash is what the server compares. A bump that keeps
-                    # it tells outdated clients they are current.
-                    check(
-                        published.get("version") == release.get("version")
-                        or published.get("version_hash") != release.get("version_hash"),
-                        f"{name}: version {published.get('version')!r} becomes "
-                        f"{release.get('version')!r} but version_hash is unchanged "
-                        "— regenerate it (openssl rand -hex 8)",
-                    )
+                # The hash is what the server compares. A bump that keeps
+                # it tells outdated clients they are current.
+                check(
+                    published.get("version") == release.get("version")
+                    or published.get("version_hash") != release.get("version_hash"),
+                    f"{name}: version {published.get('version')!r} becomes "
+                    f"{release.get('version')!r} but version_hash is unchanged "
+                    "— regenerate it (openssl rand -hex 8)",
+                )
 
+
+    if namesake_skill.is_file():
         skill_text = namesake_skill.read_text(encoding="utf-8")
         if name == "nestor":
             check(
@@ -290,21 +302,6 @@ for plugin in plugin_dirs:
             f"expected {agreed!r}",
         )
 
-        # A skill hard-codes the hash it sends. A stale one would mark every
-        # up-to-date install as outdated.
-        published_hash = (
-            release.get("version_hash") if isinstance(release, dict) else None
-        )
-        for skill in sorted(plugin.rglob("SKILL.md")):
-            text = skill.read_text(encoding="utf-8")
-            if "version_hash" not in text:
-                continue
-            declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
-            where = skill.relative_to(ROOT)
-            check(
-                declared is not None and declared.group(1) == published_hash,
-                f"{where}: version_hash does not match plugin-release.json",
-            )
 
     # A path a manifest declares must resolve, or the ecosystem loads nothing.
     for ecosystem, manifest in manifests.items():
@@ -353,6 +350,46 @@ for plugin in plugin_dirs:
             len(paths) == 1,
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
+
+# --- Every hash a skill hard-codes names a release this repository publishes.
+
+# A skill sends the hash of the plugin that publishes the MCP server it calls,
+# and that is not always the plugin the skill ships in.
+#
+# When a plugin declares its own server, the skills next to it identify that
+# very plugin, so the match must be exact. When it declares none — nestor-beta —
+# its skills call another plugin's server and carry that plugin's hash, and all
+# that can be asserted here is that the value is a hash this repository
+# actually publishes. That weaker rule is still the one that matters: it is
+# what turns a release bump of the server's plugin into a failed commit instead
+# of two skills silently identifying as an outdated client.
+#
+# The exact form returns for those skills once the server can tell the plugins
+# apart, which needs the plugin name on the call and not only its hash.
+for plugin in plugin_dirs:
+    name = plugin.name
+    owns_server = (plugin / ".mcp.json").is_file() or (plugin / "mcp.json").is_file()
+    for skill in sorted(plugin.rglob("SKILL.md")):
+        text = skill.read_text(encoding="utf-8")
+        if "version_hash" not in text:
+            continue
+        declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
+        where = skill.relative_to(ROOT)
+        if declared is None:
+            errors.append(f"{where}: names version_hash but declares no hash value")
+            continue
+        if owns_server:
+            check(
+                declared.group(1) == published_hashes.get(name),
+                f"{where}: version_hash does not match {name}/plugin-release.json",
+            )
+        else:
+            check(
+                declared.group(1) in published_hashes.values(),
+                f"{where}: version_hash {declared.group(1)} is published by no "
+                "plugin-release.json here — the release it names moved on, so this "
+                "skill now identifies as an outdated client",
+            )
 
 # --- Crude secret guard. ----------------------------------------------------
 
