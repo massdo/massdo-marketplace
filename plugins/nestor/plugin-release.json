@@ -1,5 +1,5 @@
 {
-  "version": "0.4.7",
-  "version_hash": "e761f821a63c69cb",
-  "changelog": "Reuse the version and ETag pair a mutation returns for the next change on that item, whatever operation it performs."
+  "version": "0.4.8",
+  "version_hash": "8213c5dab1f5719e",
+  "changelog": "Resolve a project the user names with get_project instead of listing every project first."
 }

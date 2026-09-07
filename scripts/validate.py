@@ -259,6 +259,7 @@ for plugin in plugin_dirs:
             )
             for antipattern in (
                 "search_for_known_identity",
+                "list_projects_for_named_project",
                 "preventive_get_item_before_update",
                 "post_success_get_item",
                 "stale_version_etag_pair",
@@ -272,6 +273,11 @@ for plugin in plugin_dirs:
                 "never call `search_items` or `list_items` to reach an item whose id "
                 "or slug is already known" in skill_text,
                 "nestor: skill does not forbid searching for a known identity",
+            )
+            check(
+                "never call `list_projects` to resolve a project the user names"
+                in skill_text,
+                "nestor: skill does not forbid list_projects for a named project",
             )
             check(
                 "never call `get_item` immediately before `update_item`" in skill_text,
