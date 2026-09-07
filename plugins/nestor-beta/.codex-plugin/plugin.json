@@ -1,6 +1,6 @@
 {
   "name": "nestor-beta",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Nestor skills and commands under test, before they are promoted into the nestor plugin.",
   "author": {
     "name": "Dorian Massoulier",
@@ -27,6 +27,7 @@
     ],
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
+      "Specify this idea into a Nestor task tree.",
       "Build this Nestor task end to end."
     ]
   }
