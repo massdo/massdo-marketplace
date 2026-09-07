@@ -60,6 +60,7 @@ Never block the requested journal operation. Never write on disk. Never invent a
 - When the user gives no timing, accept the server's current default and report the resulting schedule.
 - Prefer an all-day date unless the user gives a time.
 - Add known tags during creation with `tagNames`.
+- `create_item` returns the new item's `item.version` and `etag`. Reuse that pair directly for the next mutation, exactly like the pair a mutation returns. A creation never needs a following `get_item`.
 
 ## Find items and projects
 
@@ -75,17 +76,17 @@ Never block the requested journal operation. Never write on disk. Never invent a
 An `antipattern` is an action the agent must avoid at all costs. The first entry protects deterministic reads; the others protect optimistic mutations:
 
 - `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
-- `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly.
+- `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, so a mutation right after a creation or another mutation needs no `get_item`.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
-- `stale_version_etag_pair`: never reuse a pair after a mutation or conflict. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
-- `mixed_version_etag_reads`: never combine `version` from one read with `etag` from another read. Use both values from the same `get_item` response.
+- `stale_version_etag_pair`: never reuse the pair you already sent to a mutation, and never reuse any pair after a conflict. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
+- `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, or `update_item`.
 
 ## Update items
 
-- Pass `expectedVersion` and `expectedEtag` directly when a matched pair from an earlier `get_item` is still held. Never refresh a held pair immediately before the mutation.
+- Pass `expectedVersion` and `expectedEtag` directly when a matched pair from an earlier `get_item`, `create_item`, or `update_item` is still held. Never refresh a held pair immediately before the mutation.
 - When no valid pair is held, call `update_item` without a precondition.
 - If the server rejects the mutation for a missing, invalid, or stale precondition, call `get_item` once, then repeat the same operation with `item.version` and `etag` from that response.
-- Never combine values from different reads. Discard the pair after every mutation and after every conflict.
+- Never combine values from different responses. After a conflict, discard the pair and read again. After a successful mutation, use the pair that response returns for the next change.
 - Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
 - Use `append_body` to add text to a body. Never read an item only to resend an unchanged body.
 - Use `update_item` only for requested fields and operations.
