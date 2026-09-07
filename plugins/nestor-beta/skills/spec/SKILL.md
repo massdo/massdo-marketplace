@@ -88,11 +88,13 @@ immediately, so it covers:
 - **Error handling** — what fails, what the system does about it, and what the user sees.
 - **Testing plan** — how each requirement above is checked, and at which level.
 
-**A gap is a question, not an assumption.** If a section cannot be written without you
-deciding something the user never confirmed, go back and ask. An assumption written into a
-specification stops looking like an assumption within a day: by the time something
-contradicts it, work has been built on top of it, and the question you avoided asking now
-costs a rewrite instead of a sentence.
+**A gap is a question only when the gap is the user's to fill.** The three cases the
+interview already draws still hold here: what the repository can answer, you read; a
+technical choice the user has shown no interest in owning, you make and you write down in
+the text, where it can be contradicted; what turns on money, risk, priority or taste, you go
+back and ask. Only that third kind is worth an interruption — and it is also the one where
+settling it silently costs the most, because an assumption written into a specification
+stops looking like an assumption within a day, once work has been built on top of it.
 
 ## Stage 3 — Break the specification into a task tree
 
@@ -109,7 +111,9 @@ same grain.
 A step is right-sized when an executor can finish it and verify it without waiting for a
 later step to give it a purpose.
 
-- If a task's "done when" needs more than one independent sentence, it is two tasks.
+- If a task delivers two things that could each stand on their own, it is two tasks. Count
+  deliverables, not sentences: several acceptance criteria describing one deliverable —
+  a route answering 200 here and 503 there — are one task.
 - If a task can only be verified after the next one lands, it is half a task — merge it.
 - Each task builds on the ones before it and **ends by wiring things together**. Nothing
   written in a task may be left unreachable from the rest of the system: orphaned code is
@@ -163,15 +167,22 @@ writes; undoing it is N trash confirmations, each of which the user has to give 
 
 Only once the user has confirmed the tree.
 
-When `project:` was passed with a 22-character id, use it as `projectId` directly. Otherwise
-ask which project the work belongs to, in one line and nothing more.
+**Use the `project:` argument when one was passed.** Never ask again for something the user
+already gave. Send its value as `projectId` and let the server resolve it: a full id and any
+unambiguous prefix of four characters or more both work, so most invocations need no read at
+all.
+
+Ask which project the work belongs to only when no `project:` argument was passed — in one
+line, and nothing more.
 
 **Do not list the projects to accompany that question.** A preventive `list_projects` spends
-tokens on a list the user rarely needs to read — they know where their work goes. Call
-`list_projects` in exactly two cases: the user asks what projects exist, or they answered
-with a name that has to be resolved into an id. In that second case the read is silent —
-resolve and move on; report it only when the name matches several projects or none, and
-then ask.
+tokens on a list the user rarely needs to read — they know where their work goes. Two things
+justify that read, and nothing else: the user asks what projects exist, or a value turns out
+to be a name rather than an id, which the server tells you by rejecting its format or
+answering `NOT_FOUND`. Let the rejection be the test rather than guessing from the shape of
+the string — `2KWd` and `video` are indistinguishable, and a refused creation writes nothing.
+Resolve silently and carry on; speak up only when the name matches several projects or none,
+and then ask.
 
 If the user answers that the work belongs to no project, use `{ "mode": "global" }`.
 
@@ -192,6 +203,9 @@ Titles are short and imperative, in the style of a commit subject.
 slugs, and which one failed. Never restart the tree from the root: that duplicates
 everything already written, and two parallel trees are far more expensive to untangle than
 one half-written one.
+
+A lost response is not a refusal. A timeout may well have created the task, so report that
+node as unknown rather than failed, and check what exists before anyone resumes.
 
 ### Report
 
