@@ -1,0 +1,211 @@
+---
+name: spec
+description: Turn a raw idea into a Nestor task tree, one question at a time. Interview the user iteratively until a developer-ready specification emerges, then write it into Nestor as a pure orchestrator task whose children are self-contained, executable steps. Invoke this skill only after a direct user action such as /nestor-beta:spec with an idea. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. An idea mentioned in conversation is not a spec request.
+disable-model-invocation: true
+user-invocable: false
+---
+
+# Nestor Spec
+
+Turn an idea into work that can be executed. Two movements: an interview that extracts the
+specification the user already holds implicitly, then a compilation that turns it into a
+tree of Nestor tasks.
+
+This skill writes no code and touches no file. Its only output is items in Nestor, and
+that is the point: a specification left as a document is read once, while the same content
+split into tasks gets picked up, tracked and closed. Everything below exists so that
+whoever opens one of those tasks later can carry it out without coming back to ask a
+question.
+
+Conduct the whole session in the language the user writes in. The specification and the
+task bodies are written in that same language.
+
+## Identify the plugin version
+
+Pass `{ "version_hash": "d6253857072898f9" }` on every Nestor MCP call.
+
+## Arguments
+
+```
+/nestor-beta:spec <idea…> [project:<name-or-id>]
+```
+
+Everything that is not the `project:` argument is the idea, however loosely phrased.
+Preserve everything after the first colon in `project:`, including spaces in a project name.
+
+An empty argument string is not an error. There is nothing to guess wrong here: the idea is
+whatever the user is about to say. Ask for it in one line, then start from the answer.
+
+The project is resolved late, at Stage 4, not now. A session that ends early then costs
+nothing, and the user is not interrupted before the work has taken shape.
+
+## Stage 1 — The interview
+
+Ask one question at a time. Only one, and it must be a real one — "and also, by the way"
+smuggles a second question into the first.
+
+Two reasons this matters more than it looks. The answer to question *n* determines what
+question *n+1* should be; asked together, the second question is aimed at a target that
+has not appeared yet. And a person answering six questions at once answers all six
+briefly, which is the opposite of what a specification needs.
+
+**Open where the risk is.** The first question shows you read the idea: aim it at the
+largest unknown, not at a restatement of what the user just wrote.
+
+**Follow the answers, not a checklist.** Over the session the ground to cover is the
+problem and who has it, the expected behaviour and its edge cases, the data — shape,
+source, lifetime —, the architecture and the constraints already in place, what happens
+when things fail, and how anyone would know it works. That is the territory, not an order
+of march. Let each answer point at the next question.
+
+**Never ask what the repository can answer.** When the session runs inside a codebase,
+read it. Asking the user which test runner the project uses spends their attention on
+something a single command settles.
+
+**Prefer a decision to a blank question.** "What date format do you want?" makes the user
+design; "I'll store instants in UTC, ISO 8601 — any constraint against it?" makes them
+confirm in one word. Both are questions; the second respects the fact that their attention,
+not your tokens, is the scarce resource. Keep the open form for what genuinely belongs to
+them: money, risk, priority, taste.
+
+**Recognise the natural end.** The interview is over when two or three consecutive answers
+stop adding constraints, or when every section of Stage 2 can be written without a single
+assumption of your own. Say so and offer to compile — do not compile unannounced. The user
+often has one last thing in mind, and it is cheaper to hear it now than to rewrite a tree.
+
+## Stage 2 — Compile the specification
+
+Write the specification and show it in the conversation. It must let a developer start
+immediately, so it covers:
+
+- **Requirements** — what the thing does, in verifiable statements. "Fast" is not a
+  requirement; "answers under 200 ms for 95% of reads" is.
+- **Architecture** — the components, their responsibilities, and how they talk. Include the
+  choices that were made *and rejected*, with the reason: that is what stops a future
+  reader from re-opening a settled question.
+- **Data handling** — the shapes, where they live, how they migrate, what is kept and for
+  how long.
+- **Error handling** — what fails, what the system does about it, and what the user sees.
+- **Testing plan** — how each requirement above is checked, and at which level.
+
+**A gap is a question, not an assumption.** If a section cannot be written without you
+deciding something the user never confirmed, go back and ask. An assumption written into a
+specification stops looking like an assumption within a day: by the time something
+contradicts it, work has been built on top of it, and the question you avoided asking now
+costs a rewrite instead of a sentence.
+
+## Stage 3 — Break the specification into a task tree
+
+Do this thinking before writing anything into Nestor.
+
+Draft the step-by-step blueprint. Break it into iterative chunks that build on one another.
+Then look at those chunks and break them again. Review the result and check the steps are
+small enough to be implemented safely, large enough to move the project forward. Iterate
+until the sizing is right for *this* project — a migration and a prototype do not have the
+same grain.
+
+### Right-sized
+
+A step is right-sized when an executor can finish it and verify it without waiting for a
+later step to give it a purpose.
+
+- If a task's "done when" needs more than one independent sentence, it is two tasks.
+- If a task can only be verified after the next one lands, it is half a task — merge it.
+- Each task builds on the ones before it and **ends by wiring things together**. Nothing
+  written in a task may be left unreachable from the rest of the system: orphaned code is
+  the failure mode this whole decomposition exists to prevent.
+
+### The shape of the tree
+
+The tree is fractal. Two kinds of task, and a parent may hold either kind.
+
+**A pure orchestrator task** implements nothing. It exists so that progress is visible at
+its level. Its body says what the group delivers, then lists its children in order with the
+milestone each one closes. State plainly in the body that this task is complete only when
+all of its children are — an orchestrator that gets closed on its own hides unfinished work.
+
+The root is always a pure orchestrator, and it carries the full specification from Stage 2
+in its body. That is what makes the tree readable a month later.
+
+Give a section its own intermediate orchestrator when it holds enough actionable steps to
+be followed on its own — roughly three or more. **Never create an orchestrator with a
+single child**: a level that organises one thing organises nothing.
+
+That rule holds at the root too. When the whole idea turns out to fit in one actionable
+task, write that single task and nothing above it. The specification then lives in its
+body, alongside the steps. A tree is a way to make progress visible, not a formality to
+satisfy.
+
+**An actionable task** is the unit someone picks up and finishes. Its body is read by an
+executor who did not attend the interview and may have no way to ask a question — so it
+must stand alone:
+
+- The context it needs: what already exists at that point, what this step adds, and why.
+- The steps, in order.
+- No open decision. Not one. "Choose between X and Y" hands the user's own call to whoever
+  happens to run the task, and that choice then arrives as a surprise inside the result.
+- A runnable verification per section, and an explicit "done when" for the task.
+- The wiring: how what it produces connects to what is already there.
+
+Anchors — file paths, symbols — are worth including when they exist today. They turn the
+executor's first move into a read rather than a search.
+
+A parent and its children are one coherent deliverable, not unrelated work filed under a
+common heading. That is what makes closing the parent mean something.
+
+## Stage 4 — Confirm, then write it into Nestor
+
+**Show the tree before writing it.** Indented titles, one line each, with the kind of every
+node — orchestrator or actionable. Then ask for confirmation. Creating the tree is N
+writes; undoing it is N trash confirmations, each of which the user has to give by hand.
+
+### Resolve the project
+
+Only once the user has confirmed the tree.
+
+When `project:` was passed with a 22-character id, use it as `projectId` directly. Otherwise
+ask which project the work belongs to, in one line and nothing more.
+
+**Do not list the projects to accompany that question.** A preventive `list_projects` spends
+tokens on a list the user rarely needs to read — they know where their work goes. Call
+`list_projects` in exactly two cases: the user asks what projects exist, or they answered
+with a name that has to be resolved into an id. In that second case the read is silent —
+resolve and move on; report it only when the name matches several projects or none, and
+then ask.
+
+If the user answers that the work belongs to no project, use `{ "mode": "global" }`.
+
+### Create the tasks
+
+Every call carries `version_hash` and the resolved `scope`.
+
+1. Create the root with `create_item`, `type: "task"`, no `parentTaskId`, and the full
+   specification as `body`.
+2. Create each remaining task with the id its parent returned. A child needs its parent's
+   id, so the tree is written top-down.
+3. Use `backlog: true` on every task. This is planned work, not work due today, and
+   scheduling twenty tasks onto the current day buries the rest of the journal.
+
+Titles are short and imperative, in the style of a commit subject.
+
+**If a creation fails partway through, stop.** Report exactly which tasks exist, with their
+slugs, and which one failed. Never restart the tree from the root: that duplicates
+everything already written, and two parallel trees are far more expensive to untangle than
+one half-written one.
+
+### Report
+
+Give the root's identifier — its slug when the creation returned one, its id otherwise —
+and the number of tasks created. Nothing more: the tree was shown before the write, so
+repeating it spends the user's attention on something they just approved.
+
+## What this skill never does
+
+- It never asks two questions in one turn. That is the whole method, not a stylistic
+  preference.
+- It never fills a gap in the specification with an assumption of its own.
+- It never writes into Nestor before the user has confirmed the tree.
+- It never leaves an open decision in an actionable task.
+- It never creates an orchestrator with a single child.
+- It never writes code, edits a file, or creates a branch. It specifies; it does not
+  implement.
