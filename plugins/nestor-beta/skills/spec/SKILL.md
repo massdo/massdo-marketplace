@@ -68,10 +68,11 @@ confirm in one word. Both are questions; the second respects the fact that their
 not your tokens, is the scarce resource. Keep the open form for what genuinely belongs to
 them: money, risk, priority, taste.
 
-**Recognise the natural end.** The interview is over when two or three consecutive answers
-stop adding constraints, or when every section of Stage 2 can be written without a single
-assumption of your own. Say so and offer to compile — do not compile unannounced. The user
-often has one last thing in mind, and it is cheaper to hear it now than to rewrite a tree.
+**Recognise the natural end.** The interview is over when no blocking user decision remains
+and the requirements can be stated in verifiable terms. Verified facts and the documented
+technical choices allowed in Stage 2 do not need separate confirmation. Say so and offer to
+compile — do not compile unannounced. The user often has one last thing in mind, and it is
+cheaper to hear it now than to rewrite a tree.
 
 ## Stage 2 — Compile the specification
 
@@ -167,24 +168,27 @@ writes; undoing it is N trash confirmations, each of which the user has to give 
 
 Only once the user has confirmed the tree.
 
-**Use the `project:` argument when one was passed.** Never ask again for something the user
-already gave. Send its value as `projectId` and let the server resolve it: a full id and any
-unambiguous prefix of four characters or more both work, so most invocations need no read at
-all.
+**Reuse the project already provided.** Use the `project:` argument or the project the user
+gave during the interview. Ask which project the work belongs to only when it is missing,
+in one line. If the user explicitly says the work belongs to no project, use
+`{ "mode": "global" }`.
 
-Ask which project the work belongs to only when no `project:` argument was passed — in one
-line, and nothing more.
+Reuse an id already resolved for the chosen project. Otherwise resolve the supplied value
+with `get_project` before creating any task:
 
-**Do not list the projects to accompany that question.** A preventive `list_projects` spends
-tokens on a list the user rarely needs to read — they know where their work goes. Two things
-justify that read, and nothing else: the user asks what projects exist, or a value turns out
-to be a name rather than an id, which the server tells you by rejecting its format or
-answering `NOT_FOUND`. Let the rejection be the test rather than guessing from the shape of
-the string — `2KWd` and `video` are indistinguishable, and a refused creation writes nothing.
-Resolve silently and carry on; speak up only when the name matches several projects or none,
-and then ask.
+- For an explicit name, pass `name`; for an explicit id or prefix, pass `projectId`.
+  Use the returned id when that lookup resolves unambiguously.
+- When `project:<name-or-id>` leaves the interpretation open, make two separate reads,
+  one with `name` and one with `projectId`. An exact name can also be another project's
+  valid id prefix; the first successful lookup does not settle that ambiguity.
+- Proceed with the returned id when both reads identify the same project, or when exactly
+  one resolves and the other returns `NOT_FOUND` or rejects the reference format.
+- If the reads identify different projects, a lookup is ambiguous, or neither resolves,
+  ask one question to identify the intended project before any write. Other errors leave
+  resolution incomplete: report them and stop rather than treating them as no match.
 
-If the user answers that the work belongs to no project, use `{ "mode": "global" }`.
+Resolve silently when the result is unambiguous. Call `list_projects` only when the user
+asks what projects exist; never list them to accompany the project question.
 
 ### Create the tasks
 
@@ -217,7 +221,8 @@ repeating it spends the user's attention on something they just approved.
 
 - It never asks two questions in one turn. That is the whole method, not a stylistic
   preference.
-- It never fills a gap in the specification with an assumption of its own.
+- It never presents an unverified fact as established or silently settles a decision that
+  belongs to the user. Documented technical choices allowed in Stage 2 remain valid.
 - It never writes into Nestor before the user has confirmed the tree.
 - It never leaves an open decision in an actionable task.
 - It never creates an orchestrator with a single child.
