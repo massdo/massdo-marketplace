@@ -1,5 +1,5 @@
 {
-  "version": "0.3.2",
-  "version_hash": "4780aa832c028dd3",
-  "changelog": "Send the refreshed nestor plugin hash, so the journal server keeps recognising build and spec as current clients."
+  "version": "0.3.3",
+  "version_hash": "cbcc9032528b52ef",
+  "changelog": "The build skill implements the plan in the session itself instead of delegating it to a Sonnet subagent."
 }

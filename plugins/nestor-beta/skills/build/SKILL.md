@@ -1,6 +1,6 @@
 ---
 name: build
-description: Build a specified Nestor task end to end into a validated target branch, delegate its implementation, audit every commit, close the task, and optionally ship with prod after explicit confirmation. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
+description: Build a specified Nestor task end to end into a validated target branch, implement its plan section by section, audit every commit, close the task, and optionally ship with prod after explicit confirmation. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
 disable-model-invocation: true
 user-invocable: false
 ---
@@ -11,10 +11,9 @@ Turn a Nestor task into merged code. The task is the specification: this skill n
 invents the plan, it executes the one already written and then checks that the execution
 matches it.
 
-Two models share the work. A cheaper subagent writes the code, because following an
-explicit plan is the part that does not need the strongest model. You — the parent, expert
-model — set the stage, audit the result, and own every irreversible action: merge, tag,
-push.
+You run the whole build yourself: set the stage, write the code, audit what you wrote, and
+own every irreversible action — merge, tag, push. Nothing is delegated, so nothing reaches
+the audit as a second-hand report; the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
@@ -32,8 +31,8 @@ Pass `{ "version_hash": "e761f821a63c69cb" }` on every Nestor MCP call.
 
 Then stop. Do not list tasks, do not search Nestor for a plausible candidate, and do not
 reuse a task mentioned earlier in the conversation. The user always knows the id they mean,
-and a wrong guess here is only discovered after a branch and a subagent run — the most
-expensive way to learn that the target was wrong.
+and a wrong guess here is only discovered after a branch and a full implementation run —
+the most expensive way to learn that the target was wrong.
 
 The first argument is a Nestor item id or a `color_animal` slug. Pass it to `get_item` as
 `id` or as `slug`, never both — the shape tells you which: a slug carries an underscore.
@@ -60,9 +59,9 @@ question: could someone implement this without asking anything?
 Refuse and stop when you find any of these:
 
 - **An open decision.** A sentence like "decide whether X or Y" means the plan is not
-  finished. Executing it would make the subagent choose on the user's behalf.
+  finished. Executing it would make you choose on the user's behalf.
 - **A step with no verification.** A step that cannot be checked cannot be reported as
-  done, and a subagent will report it as done anyway.
+  done — and by Stage 4 you will have no way of telling whether it was.
 - **A dead anchor.** The body cites files, symbols or line numbers. Check that the files
   and symbols still exist — line numbers drift harmlessly, a missing file does not.
 - **An action no agent can perform.** Revoking a production secret, clicking a console,
@@ -110,23 +109,19 @@ Then:
    commit type that fits the work, then the slug — `feat/brown_turtle`,
    `fix/gray_xerinae`.
 
-## Stage 3 — Delegate the implementation
+## Stage 3 — Implement the plan
 
-Spawn one subagent with the `Agent` tool, `model: "sonnet"`, and let it run to completion.
-Sonnet is the deliberate choice here: a multi-file refactor with intermediate commits has
-to hold a plan across many turns, and a model that drifts costs more in audit than it saves
-in tokens.
+Write the code yourself, in this session, working from the task body as it stands. Reread it
+**in full** before the first edit and keep it open: the mental summary you would otherwise
+work from is where the constraints get lost.
 
-Give it the task body **verbatim**. Do not summarize it — the summary is where the
-constraints get lost.
-
-The prompt must carry these instructions:
+Hold yourself to these rules:
 
 - Load the `andrej-karpathy-skills:karpathy-guidelines` skill before writing any code, when
-  it is installed. It is the house style for exactly this situation: an executor working
-  from someone else's plan, where the failure modes are overcomplication, changes that
-  drift past the request, and success claimed without a check. Skip it silently when the
-  skill is not available — it is a quality lever, not a dependency.
+  it is installed. It is the house style for exactly this situation: executing a plan
+  written earlier, where the failure modes are overcomplication, changes that drift past
+  the request, and success claimed without a check. Skip it silently when the skill is not
+  available — it is a quality lever, not a dependency.
 - Work only from the plan. Do not redesign it, do not widen its scope, do not add
   speculative features.
 - Follow the plan's own sections in order. **Commit once per section**, so the history
@@ -139,16 +134,16 @@ The prompt must carry these instructions:
   editing tools.
 - Report, per section: what changed, the verification command run, and its real output.
 
-## Stage 4 — Audit the work yourself
+## Stage 4 — Audit what you wrote
 
-This stage is not optional, and it is not a re-reading of the subagent's report.
+This stage is not optional, and it is not a re-reading of your own Stage 3 report.
 
-An executor subagent reliably reports success on criteria it did not actually verify. Its
-report is a claim, not evidence.
+Having written the code is what makes this hard: you remember what you meant to do, and the
+memory reads like evidence that it is there. It is not evidence. The diff and the real
+output of each verification are.
 
-Load `andrej-karpathy-skills:karpathy-guidelines` here too, when it is installed. The
-subagent was asked to follow it; reading the same guidelines gives you the checklist its
-work should be measured against, rather than a vague sense that the diff looks fine.
+Measure the work against the `andrej-karpathy-skills:karpathy-guidelines` checklist loaded
+at Stage 3, when it is installed, rather than against a sense that the diff looks fine.
 
 Then:
 
@@ -158,7 +153,7 @@ Then:
 2. **Re-run every verification command yourself**, from the plan, not from the report.
 3. **Check the plan's own "done when" criteria** one by one against what you observe.
 
-Fix what is wrong and commit the fixes yourself, one commit per concern. If the audit shows
+Fix what is wrong and commit each fix separately, one commit per concern. If the audit shows
 the plan itself was wrong, stop and say so — do not quietly redesign it.
 
 Report honestly: what passed, what you fixed, what still fails. A failing check reported
@@ -207,4 +202,4 @@ Never force-push, never rewrite a published branch, and never bypass a commit ho
 - It never writes the plan. An incomplete task is refused at Stage 1, not repaired.
 - It never substitutes a missing target branch without the user's confirmation.
 - It never ships without both `prod` and a separate explicit confirmation.
-- It never trusts a subagent's report in place of the diff.
+- It never trusts its own recollection of the work in place of the diff.
