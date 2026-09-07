@@ -1,5 +1,5 @@
 {
-  "version": "0.4.6",
-  "version_hash": "d6253857072898f9",
-  "changelog": "Keep activity, tree, and check-for-updates off the user skill picker; invoke them via slash commands."
+  "version": "0.4.7",
+  "version_hash": "e761f821a63c69cb",
+  "changelog": "Reuse the version and ETag pair a mutation returns for the next change on that item, whatever operation it performs."
 }
