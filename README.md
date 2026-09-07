@@ -111,7 +111,53 @@ Then, in the same commit:
 ## Validate
 
 ```bash
-python3 scripts/validate.py
+git config core.hooksPath .githooks   # once per clone, or the pre-commit hook never runs
+./scripts/check.sh                    # every check this repository has, in one command
 ```
 
+`scripts/check.sh` runs two validators, and they do not overlap:
+
+- `scripts/validate.py` reads every catalog and manifest against each other — a plugin
+  listed in one catalog and missing from another, three manifests disagreeing on a version,
+  `.mcp.json` drifting from `mcp.json`. No ecosystem catches that on its own, since each one
+  only ever reads its own file.
+- `claude plugin validate` reads each Claude Code manifest against Anthropic's published
+  schema — the shape no in-repo script can know, since Anthropic owns it and can change it.
+  It is skipped when the `claude` CLI is absent, which keeps CI and Codex-only clones green.
+
+Passing one proves nothing about the other: a manifest can be individually valid and still
+contradict its catalog entry.
+
+`.githooks/pre-commit` runs `check.sh --baseline HEAD` and refuses the commit when it fails.
+CI alone was not enough: this repository takes direct commits on `main`, so a red run
+arrives after the push. Never bypass the hook with `--no-verify`.
+
+`--baseline <ref>` adds the one rule the plain run cannot check: a plugin whose version
+changed since that commit must also change its changelog, otherwise a client shows the
+previous release's text for the new version. It needs the previous commit, which only the
+hook has — the CI checkout is shallow, so the workflow keeps running `validate.py` alone.
+
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.
+
+## Release tags
+
+A release tag is `<name>--v<version>` — **two dashes** — and `claude plugin tag` is the only
+thing that should create one:
+
+```bash
+claude plugin tag plugins/nestor-beta --dry-run   # show the tag it would create
+claude plugin tag plugins/nestor-beta --push      # create it, then push it
+```
+
+It derives the name and version from `plugin.json`, refuses to run when the enclosing
+marketplace entry disagrees, and gets the separator right.
+
+Never write the tag by hand. This repository carried single-dash tags (`nestor-v0.4.5`)
+until 2026-09-07, and the second one was written by copying the first — a hand-written tag
+reproduces whatever is already in the log, which is precisely what an unwritten convention
+cannot prevent. Both were renamed to the official format on that date.
+
+Tags here are informational: nothing reads them. The journal server resolves the published
+version from `plugin-release.json` on `main`, and each ecosystem reads the `version` in its
+own manifest. A missing tag breaks nothing, so a tag never substitutes for a version bump —
+`nestor` 0.4.6 shipped untagged.
