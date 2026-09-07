@@ -139,6 +139,39 @@ hook has — the CI checkout is shallow, so the workflow keeps running `validate
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.
 
+## Manifest schemas
+
+Each ecosystem owns the shape of the files it reads. None of it is guessed here — these are
+the references, and they are worth re-reading before adding a field:
+
+- **Claude Code** — `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` follow
+  `https://anthropic.com/claude-code/marketplace.schema.json`, the schema Anthropic's own
+  marketplace declares in its `$schema` key. `claude plugin validate` checks a file against it.
+- **Codex plugin** — `.codex-plugin/plugin.json` follows
+  [plugin-json-spec.md](https://github.com/openai/codex/blob/main/codex-rs/skills/src/assets/samples/plugin-creator/references/plugin-json-spec.md)
+  in `openai/codex`. It allows `name`, `version`, `description`, `author`, `homepage`,
+  `repository`, `license`, `keywords`, `skills`, `hooks`, `mcpServers`, `apps` and `interface`
+  — and nothing else, since validation rejects unsupported fields.
+- **Codex skills** — `SKILL.md` frontmatter and `agents/openai.yaml` are specified in
+  [Build skills](https://learn.chatgpt.com/docs/build-skills). The frontmatter documents `name`
+  and `description` only. `agents/openai.yaml` carries `interface` (`display_name`,
+  `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt` — every one a
+  string), `policy` (`allow_implicit_invocation`) and `dependencies.tools`.
+- **Cursor** — no published schema was found. `.cursor-plugin/*.json` follows the shape Cursor's
+  documentation describes, and nothing in this repository validates it.
+
+Two consequences are easy to trip over.
+
+**`argument-hint` is not a skill field.** It belongs to Claude Code commands and to Codex's
+custom prompts — the `/` surface, which also takes `$1`…`$9` and `$ARGUMENTS`. Codex invokes
+*skills* with `$`, has no `commands` key in its manifest, and never reads `commands/`, so it
+shows no argument hint for a skill. `interface.default_prompt` in `agents/openai.yaml` is the
+closest thing, which is why the skills here spell their arguments out in that string.
+
+**Codex does not honour `disable-model-invocation` on its own.** `agents/openai.yaml` with
+`policy.allow_implicit_invocation: false` is what actually holds there, and it still permits the
+explicit `$skill` invocation — which is exactly the intent for a command-backed skill.
+
 ## Release tags
 
 A release tag is `<name>--v<version>` — **two dashes** — and `claude plugin tag` is the only

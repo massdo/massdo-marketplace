@@ -1,2 +1,7 @@
+interface:
+  display_name: "Nestor Build"
+  short_description: "Build a Nestor task end to end into a validated target branch"
+  default_prompt: "Use $nestor-beta:build <id-or-slug> [prod] [target:<branch>] to build a Nestor task end to end."
+
 policy:
   allow_implicit_invocation: false
