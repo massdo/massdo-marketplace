@@ -5,6 +5,12 @@ on:
   push:
     branches:
       - main
+    # A tag push has to run the checks too. Without this, a malformed tag
+    # pushed from a clone whose hooks were never configured waits for the
+    # next commit on main to be caught, which is the one moment it is
+    # already public.
+    tags:
+      - "*"
 
 permissions:
   contents: read
