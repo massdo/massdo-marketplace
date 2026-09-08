@@ -1,0 +1,12 @@
+#!/bin/sh
+# Every check this repository has, run before anything leaves the machine.
+#
+# The pre-commit hook cannot cover a tag: a tag is created after the commit it
+# points at, so nothing exists to check while that commit is being made. The
+# push is the last moment a malformed tag is still local.
+#
+# The plain form is deliberate: --baseline compares a release to the commit
+# before it, which the pre-commit hook already did for every commit being
+# pushed.
+set -e
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh"
