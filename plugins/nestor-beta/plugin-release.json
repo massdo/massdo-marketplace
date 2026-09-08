@@ -1,5 +1,5 @@
 {
-  "version": "0.3.5",
-  "version_hash": "92468fc4fde20827",
-  "changelog": "Spell the build and spec argument syntax out where the Codex skill picker can show it."
+  "version": "0.4.0",
+  "version_hash": "0f55c32d3623e465",
+  "changelog": "Build and spec now pass task references through ref with an explicit scope. Requires the compatible Nestor plugin and server."
 }

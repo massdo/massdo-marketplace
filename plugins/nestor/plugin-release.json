@@ -1,5 +1,5 @@
 {
-  "version": "0.4.9",
-  "version_hash": "9effd96628245e4f",
-  "changelog": "Spell each skill's argument syntax out where the Codex skill picker can show it, and name the skills the way the composer does."
+  "version": "0.5.0",
+  "version_hash": "cce406ae1ed0ef21",
+  "changelog": "Read known items through a single ref field. Requires the compatible get_item server; refresh the MCP catalog and restart existing sessions after the coordinated update."
 }

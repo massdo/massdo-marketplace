@@ -17,7 +17,7 @@ the audit as a second-hand report; the diff in front of you is the only evidence
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "9effd96628245e4f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "cce406ae1ed0ef21" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -34,8 +34,9 @@ reuse a task mentioned earlier in the conversation. The user always knows the id
 and a wrong guess here is only discovered after a branch and a full implementation run —
 the most expensive way to learn that the target was wrong.
 
-The first argument is a Nestor item id or a `color_animal` slug. Pass it to `get_item` as
-`id` or as `slug`, never both — the shape tells you which: a slug carries an underscore.
+The first argument is a Nestor item id or a `color_animal` slug. Pass the received value
+to `get_item` in `ref`, with `scope: { mode: "global" }` and `version_hash`. The server
+resolves the reference; do not select an input field from an underscore or another character.
 
 After the first argument, parse these optional named arguments in any order:
 

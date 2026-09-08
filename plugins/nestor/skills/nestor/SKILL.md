@@ -1,6 +1,6 @@
 ---
 name: nestor
-pluginVersion: 0.4.9
+pluginVersion: 0.5.0
 antipattern:
   - search_for_known_identity
   - list_projects_for_named_project
@@ -15,9 +15,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.4.9, hashed as `9effd96628245e4f`.
+This plugin version is 0.5.0, hashed as `cce406ae1ed0ef21`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "9effd96628245e4f", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "cce406ae1ed0ef21", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -65,7 +65,7 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Find items and projects
 
-- Use `get_item` when id or slug is known, whatever the read is for. A single field, a status check, and a full read all take the same tool.
+- Use `get_item` when id or slug is known, whatever the read is for. Pass the received reference in `ref`, together with `scope` and `version_hash`. Never send `id` or `slug` as input keys to this tool. A single field, a status check, and a full read all take the same tool.
 - Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
