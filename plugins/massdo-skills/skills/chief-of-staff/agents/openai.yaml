@@ -1,2 +1,7 @@
+interface:
+  display_name: "Chief of Staff"
+  short_description: "Answer as a chief of staff — $massdo-skills:chief-of-staff [yolo] [words|reset]"
+  default_prompt: "Use $massdo-skills:chief-of-staff [yolo] [word cap] to take the stance, or $massdo-skills:chief-of-staff reset to drop it."
+
 policy:
   allow_implicit_invocation: false

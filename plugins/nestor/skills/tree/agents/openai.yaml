@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Tree"
-  short_description: "See a Nestor project as an ASCII tree"
-  default_prompt: "Use $tree to show the shape of my project."
+  short_description: "See a Nestor project as an ASCII tree — $nestor:tree [project] [view] [level]"
+  default_prompt: "Use $nestor:tree [project] [view] [level] — or project:x view:y level:n item:id — to show the shape of my project."
 
 dependencies:
   tools:

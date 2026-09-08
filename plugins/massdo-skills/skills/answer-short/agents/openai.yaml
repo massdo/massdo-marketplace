@@ -1,2 +1,7 @@
+interface:
+  display_name: "Answer Short"
+  short_description: "Cap every reply at a word budget — $massdo-skills:answer-short [words|reset]"
+  default_prompt: "Use $massdo-skills:answer-short [word budget, 120 by default] to cap my replies, or $massdo-skills:answer-short reset to lift the cap."
+
 policy:
   allow_implicit_invocation: false
