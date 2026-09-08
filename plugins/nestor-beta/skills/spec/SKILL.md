@@ -22,7 +22,7 @@ task bodies are written in that same language.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "9effd96628245e4f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "cce406ae1ed0ef21" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -47,9 +47,10 @@ an id. Anything else is the idea itself, written as prose. One token is the whol
 a real idea, however short, arrives as a sentence, and a sentence is never mistaken for a
 slug.
 
-For a reference, read the task with `get_item`, passing it as `slug` or as `id` — never
-both; the underscore tells you which. Its title and body become the starting material, in
-place of the prose the user would otherwise have typed.
+For a reference, read the task with `get_item`, passing the received value in `ref`, with
+`scope: { mode: "global" }` and `version_hash`. Do not select a field from its spelling:
+the server resolves IDs, prefixes and exact slugs. Its title and body become the starting
+material, in place of the prose the user would otherwise have typed.
 
 **If an unmistakable reference resolves to nothing, stop and say so.** A `color_animal` slug
 and a full 22-character id can be nothing but references, so a failed read there is a typo

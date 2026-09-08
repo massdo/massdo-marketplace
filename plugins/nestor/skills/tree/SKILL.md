@@ -13,7 +13,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "9effd96628245e4f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "cce406ae1ed0ef21" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -81,7 +81,8 @@ Project names are unique in Nestor, so a name resolves to at most one project.
    not exist.
 3. No `project` and no `item` → `list_projects`, then ask which one to render.
 
-**With `item` and no `project`.** Call `get_item` with the global scope. Global scope
+**With `item` and no `project`.** Call `get_item` with `ref: item`, the global `scope`, and
+`version_hash`. Global scope
 reaches every item that belongs to no project or to a live project, so this works in the
 normal case. It fails only for an archived project: on `NOT_FOUND`, ask for the project
 name and retry in project scope.
@@ -144,4 +145,5 @@ corrected, or a `view` you ignored because `item` was given. Otherwise say nothi
 summarise the tree in prose; the reader just looked at it.
 
 When you rendered without titles and the user then asks what an item is about, call
-`get_item` on that id rather than re-rendering the whole tree with `verbose:true`.
+`get_item` with that id in `ref`, the resolved `scope`, and `version_hash` rather than
+re-rendering the whole tree with `verbose:true`.
