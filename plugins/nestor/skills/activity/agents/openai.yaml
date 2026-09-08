@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Activity"
-  short_description: "Track and report time by activity"
-  default_prompt: "Use $activity to start, stop, repair, or report my activity time."
+  short_description: "Track and report time by activity — $nestor:activity start <name> | stop | report [period]"
+  default_prompt: "Use $nestor:activity start <name> | switch <name> | stop | report [period] | repair to track my activity time."
 
 dependencies:
   tools:

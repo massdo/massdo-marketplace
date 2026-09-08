@@ -1,6 +1,6 @@
 interface:
   display_name: "Nestor Spec"
-  short_description: "Interview one question at a time, then write a Nestor task tree"
+  short_description: "Interview, then write a Nestor task tree — $nestor-beta:spec <idea|id-or-slug> [project:<name-or-id>]"
   default_prompt: "Use $nestor-beta:spec <idea, or the id or color_animal slug of an existing Nestor task> [project:<name-or-id>] to turn it into a Nestor task tree."
 
 policy:

@@ -11,10 +11,10 @@ database, its files, or an export.
 
 ## Identify the plugin version
 
-This skill ships with Nestor 0.4.8, hashed as `8213c5dab1f5719e`.
+This skill ships with Nestor 0.4.9, hashed as `9effd96628245e4f`.
 
 Pass `version_hash` on every tool call, for example
-`{ "version_hash": "8213c5dab1f5719e", ... }`. Never send a different value.
+`{ "version_hash": "9effd96628245e4f", ... }`. Never send a different value.
 
 ## Choose the operation
 
