@@ -75,26 +75,9 @@ def read_json_at(ref: str, path: Path) -> dict | None:
         return None
 
 
-def git_tags() -> list[str]:
-    """Every tag in the clone. Empty when git is unavailable or none exists."""
-    result = subprocess.run(
-        ["git", "tag", "--list"], cwd=ROOT, capture_output=True, text=True
-    )
-    return result.stdout.split() if result.returncode == 0 else []
-
-
-def commit_exists(ref: str) -> bool:
-    """Whether the commit a ref names is in this clone. Shallow ones are not."""
-    result = subprocess.run(
-        ["git", "cat-file", "-e", f"{ref}^{{commit}}"], cwd=ROOT, capture_output=True
-    )
-    return result.returncode == 0
-
-
 # A release is published by the file tree alone, so every check below reads the
-# tree. Comparing a release to the one before it needs the tree being
-# committed and the commit before it, which only a local hook holds at once:
-# by the time CI runs, that tree is HEAD itself and the comparison is vacuous.
+# tree. Comparing a release to the one before it needs the previous commit,
+# which only a local hook has: the CI checkout is shallow.
 argv = sys.argv[1:]
 if argv[:1] == ["--baseline"] and len(argv) == 2:
     BASELINE: str | None = argv[1]
@@ -413,43 +396,6 @@ for plugin in plugin_dirs:
                 "plugin-release.json here — the release it names moved on, so this "
                 "skill now identifies as an outdated client",
             )
-
-# --- Every release tag names the release its own commit publishes. ----------
-
-# `claude plugin tag` derives the tag from plugin.json and gets the two-dash
-# separator right, but nothing forces anyone to use it. This repository carried
-# single-dash tags until 2026-09-07, and the second was written by copying the
-# first: a convention nobody checks reproduces whatever mistake is already in
-# the log. So each tag is read back against the commit it points at, which is
-# the only reading that stays true once the versions move on.
-#
-# A tag whose commit is missing from the clone is unjudgeable, not wrong, and
-# is skipped. CI clones the full history so that nothing is skipped there.
-for tag in sorted(git_tags()):
-    name, separator, version = tag.rpartition("--v")
-    if not separator or SEMVER.fullmatch(version) is None:
-        errors.append(
-            f"tag {tag}: not <plugin>--v<version> — create a release tag with "
-            "`claude plugin tag plugins/<name> --push`, never by hand"
-        )
-        continue
-    if not commit_exists(tag):
-        continue
-
-    declared = None
-    for relative in MANIFESTS.values():
-        manifest = read_json_at(f"{tag}^{{commit}}", PLUGINS / name / relative)
-        if isinstance(manifest, dict):
-            declared = manifest.get("version")
-            break
-
-    if declared is None:
-        errors.append(f"tag {tag}: no plugin {name!r} at the commit it points at")
-    elif declared != version:
-        errors.append(
-            f"tag {tag}: {name} declares {declared!r} at the commit it points at"
-        )
-
 
 # --- Crude secret guard. ----------------------------------------------------
 

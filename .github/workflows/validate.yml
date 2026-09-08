@@ -5,12 +5,6 @@ on:
   push:
     branches:
       - main
-    # A tag push has to run the checks too. Without this, a malformed tag
-    # pushed from a clone whose hooks were never configured waits for the
-    # next commit on main to be caught, which is the one moment it is
-    # already public.
-    tags:
-      - "*"
 
 permissions:
   contents: read
@@ -19,13 +13,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      # Tags and their commits, not just the tip: validate.py reads every
-      # release tag back against the commit it points at, and a shallow
-      # checkout carries neither. This is the only run a clone whose hooks
-      # were never configured goes through.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"

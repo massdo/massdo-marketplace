@@ -117,7 +117,7 @@ Then, in the same commit:
 ## Validate
 
 ```bash
-git config core.hooksPath .githooks   # once per clone, or neither hook below runs
+git config core.hooksPath .githooks   # once per clone, or the pre-commit hook never runs
 ./scripts/check.sh                    # every check this repository has, in one command
 ```
 
@@ -125,9 +125,8 @@ git config core.hooksPath .githooks   # once per clone, or neither hook below ru
 
 - `scripts/validate.py` reads every catalog and manifest against each other — a plugin
   listed in one catalog and missing from another, three manifests disagreeing on a version,
-  `.mcp.json` drifting from `mcp.json`, a release tag naming a version its own commit never
-  declared. No ecosystem catches that on its own, since each one only ever reads its own
-  file.
+  `.mcp.json` drifting from `mcp.json`. No ecosystem catches that on its own, since each one
+  only ever reads its own file.
 - `claude plugin validate` reads each Claude Code manifest against Anthropic's published
   schema — the shape no in-repo script can know, since Anthropic owns it and can change it.
   It is skipped when the `claude` CLI is absent, which keeps CI and Codex-only clones green.
@@ -139,16 +138,10 @@ contradict its catalog entry.
 CI alone was not enough: this repository takes direct commits on `main`, so a red run
 arrives after the push. Never bypass the hook with `--no-verify`.
 
-`.githooks/pre-push` runs the plain `check.sh`. A tag is created after the commit it points
-at, so nothing exists for the pre-commit hook to check while that commit is being made: the
-push is the last moment a malformed tag is still local.
-
 `--baseline <ref>` adds the one rule the plain run cannot check: a plugin whose version
 changed since that commit must also change its changelog, otherwise a client shows the
-previous release's text for the new version. It compares the tree being committed against
-the commit before it, and only the hook holds both at once: by the time CI runs, that tree
-*is* `HEAD`, so `--baseline HEAD` would compare a release to itself. The workflow keeps
-running the plain `validate.py`.
+previous release's text for the new version. It needs the previous commit, which only the
+hook has — the CI checkout is shallow, so the workflow keeps running `validate.py` alone.
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.
 
@@ -203,14 +196,7 @@ until 2026-09-07, and the second one was written by copying the first — a hand
 reproduces whatever is already in the log, which is precisely what an unwritten convention
 cannot prevent. Both were renamed to the official format on that date.
 
-The format is checked now rather than merely agreed. `scripts/validate.py` reads every tag
-in the clone back against the commit it points at, and fails on a name that is not
-`<plugin>--v<version>` or on a version that commit does not declare. `.githooks/pre-push`
-runs the checks before a tag can leave the machine, and CI clones the full history so a
-clone whose hooks were never configured is covered too. `claude plugin validate` cannot
-help here: it reads a manifest against the official schema and knows nothing about tags.
-
-Tags here are informational: no client resolves a version from one. The journal server resolves the published
+Tags here are informational: nothing reads them. The journal server resolves the published
 version from `plugin-release.json` on `main`, and each ecosystem reads the `version` in its
 own manifest. A missing tag breaks nothing, so a tag never substitutes for a version bump —
 `nestor` 0.4.6 shipped untagged.
