@@ -22,7 +22,7 @@ task bodies are written in that same language.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "cce406ae1ed0ef21" }` on every Nestor MCP call.
+Pass `{ "version_hash": "0f55c32d3623e465" }` on every Nestor MCP call.
 
 ## Arguments
 
