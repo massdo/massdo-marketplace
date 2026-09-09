@@ -357,24 +357,13 @@ for plugin in plugin_dirs:
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
 
-# --- Every hash a skill hard-codes names a release this repository publishes.
+# --- Every hash a skill hard-codes identifies its own plugin release. --------
 
-# A skill sends the hash of the plugin that publishes the MCP server it calls,
-# and that is not always the plugin the skill ships in.
-#
-# When a plugin declares its own server, the skills next to it identify that
-# very plugin, so the match must be exact. When it declares none — nestor-beta —
-# its skills call another plugin's server and carry that plugin's hash, and all
-# that can be asserted here is that the value is a hash this repository
-# actually publishes. That weaker rule is still the one that matters: it is
-# what turns a release bump of the server's plugin into a failed commit instead
-# of two skills silently identifying as an outdated client.
-#
-# The exact form returns for those skills once the server can tell the plugins
-# apart, which needs the plugin name on the call and not only its hash.
+# Hashes are unique across the published release set, so the server resolves a
+# plugin from the hash alone. A skill must therefore identify the plugin that
+# ships it, whether or not that plugin declares the MCP server it calls.
 for plugin in plugin_dirs:
     name = plugin.name
-    owns_server = (plugin / ".mcp.json").is_file() or (plugin / "mcp.json").is_file()
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
         if "version_hash" not in text:
@@ -384,18 +373,10 @@ for plugin in plugin_dirs:
         if declared is None:
             errors.append(f"{where}: names version_hash but declares no hash value")
             continue
-        if owns_server:
-            check(
-                declared.group(1) == published_hashes.get(name),
-                f"{where}: version_hash does not match {name}/plugin-release.json",
-            )
-        else:
-            check(
-                declared.group(1) in published_hashes.values(),
-                f"{where}: version_hash {declared.group(1)} is published by no "
-                "plugin-release.json here — the release it names moved on, so this "
-                "skill now identifies as an outdated client",
-            )
+        check(
+            declared.group(1) == published_hashes.get(name),
+            f"{where}: version_hash does not match {name}/plugin-release.json",
+        )
 
 # --- Crude secret guard. ----------------------------------------------------
 
