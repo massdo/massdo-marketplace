@@ -19,3 +19,22 @@ jobs:
           python-version: "3.13"
       - run: python3 scripts/validate.py
 
+  notify-plugin-releases:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    concurrency:
+      group: notify-plugin-releases
+      cancel-in-progress: false
+    steps:
+      # A queued run must publish the main branch as it exists when the job
+      # starts, rather than the older commit that originally triggered it.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python3 scripts/publish_plugin_releases.py
+        env:
+          JOURNAL_MCP_PLUGIN_RELEASE_SECRET: ${{ secrets.JOURNAL_MCP_PLUGIN_RELEASE_SECRET }}
