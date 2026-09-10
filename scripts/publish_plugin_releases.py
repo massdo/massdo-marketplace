@@ -48,6 +48,7 @@ def publish() -> None:
         headers={
             "Authorization": "Bearer " + secret,
             "Content-Type": "application/json",
+            "User-Agent": "massdo-marketplace-release-publisher/1",
         },
     )
     try:
