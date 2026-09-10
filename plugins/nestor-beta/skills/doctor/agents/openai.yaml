@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nestor Doctor"
+  short_description: "Audit delivered tasks and propose closures"
+  default_prompt: "Use $nestor-beta:doctor to select a project, audit merged deliveries and ask me to approve task closures."
+
+policy:
+  allow_implicit_invocation: false

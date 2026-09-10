@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
-  "version_hash": "0f55c32d3623e465",
-  "changelog": "Build and spec now pass task references through ref with an explicit scope. Requires the compatible Nestor plugin and server."
+  "version": "0.5.0",
+  "version_hash": "06d7552690bf0c05",
+  "changelog": "New doctor skill finds open Nestor tasks already implemented in merged code and proposes closures for your approval. Run it without a project to choose one."
 }
