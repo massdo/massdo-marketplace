@@ -23,6 +23,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    environment: prod
     concurrency:
       group: notify-plugin-releases
       cancel-in-progress: false
