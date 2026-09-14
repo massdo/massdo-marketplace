@@ -1,0 +1,7 @@
+interface:
+  display_name: "Articulate"
+  short_description: "Write in articulate full sentences — $massdo-skills:articulate [words|reset]"
+  default_prompt: "Use $massdo-skills:articulate [word cap] to write every reply articulately, or $massdo-skills:articulate reset to drop the style."
+
+policy:
+  allow_implicit_invocation: false

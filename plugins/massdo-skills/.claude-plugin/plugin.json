@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.5.1",
-  "description": "Response-style skills: short ASD-STE100 answers and a chief-of-staff stance.",
+  "version": "0.6.0",
+  "description": "Response-style skills: short ASD-STE100 answers, articulate replies with an optional word cap, and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier"
   },

@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.5.1",
-  "description": "Response-style skills: short ASD-STE100 answers and a chief-of-staff stance.",
+  "version": "0.6.0",
+  "description": "Response-style skills: short ASD-STE100 answers, articulate replies with an optional word cap, and a chief-of-staff stance.",
   "author": {
     "name": "Dorian Massoulier",
     "url": "https://github.com/massdo"
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Massdo Skills",
     "shortDescription": "Outils du marketplace massdo",
-    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, and take a chief-of-staff stance that decides instead of offering menus.",
+    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, and take a chief-of-staff stance that decides instead of offering menus.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [
@@ -27,6 +27,7 @@
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
       "Réponds court à partir de maintenant.",
+      "Réponds de façon articulée, en 100 mots au plus.",
       "Passe en mode chef de cabinet."
     ]
   }
