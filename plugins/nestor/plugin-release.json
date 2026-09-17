@@ -1,5 +1,5 @@
 {
   "version": "0.6.0",
   "version_hash": "d602f3717163cd15",
-  "changelog": "Read up to five known items in one get_item call with refs, preserving each result and its version/ETag pair even when another reference fails. Requires a server supporting grouped reads; refresh the MCP catalog and restart existing sessions after updating."
+  "changelog": "Read one item or up to five known items through the same ref field in get_item. An array always returns ordered results with each version/ETag pair or error, even with one reference. Requires a server accepting arrays in ref; refresh the MCP catalog and restart existing sessions after updating."
 }
