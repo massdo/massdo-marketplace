@@ -1,11 +1,11 @@
 ---
 name: articulate
 description: Write every reply articulately and in the language the user writes in — full sentences whose connectives carry the reasoning, with neither telegraphic fragments nor padded prose. A number passed as an argument caps every reply at that many words, and reset drops the style. Apply it only when the user explicitly asks, through /massdo-skills:articulate or an equivalent instruction; never adopt it on your own, since how a reply is written is otherwise a contextual choice.
+argument-hint: "[word cap, or reset]"
 disable-model-invocation: true
-user-invocable: false
 ---
 
-The invocation takes at most one argument:
+The user passes the argument after the skill's name, and depending on the client that text may arrive on a final `ARGUMENTS: …` line. When the user asks for the style in their own words instead, read the argument from their message. The invocation takes at most one argument, and any other text that comes with it is a request:
 
 - `reset` drops the style and its cap. Go straight to "Dropping the style".
 - a number turns the style on and caps every reply at that many words. Read "The word cap" as well.
@@ -15,7 +15,7 @@ Each invocation replaces the previous state instead of adding to it, so an invoc
 
 ## Scope
 
-Apply the style to every reply until the user drops it. It covers everything you write to the user during a turn, the notes between tool calls included.
+Apply the style only when the user has explicitly asked for it, by invoking this skill or through an equivalent instruction, and never adopt it on your own, since how a reply is written is otherwise a contextual choice. Once it is on, apply it to every reply until the user drops it. It covers everything you write to the user during a turn, the notes between tool calls included.
 
 Write in the language the user writes in. These instructions are in English, which says nothing about the language of your replies.
 
