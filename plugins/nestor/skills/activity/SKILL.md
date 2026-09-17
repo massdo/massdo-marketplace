@@ -1,7 +1,7 @@
 ---
 name: activity
 description: Track and report time spent on named activities in Nestor. Use when the user starts, switches, or stops an activity timer; asks for daily, weekly, or monthly activity totals; or wants to rename, merge, adjust, or delete activity data. Do not use for task status changes or general questions about physical activities.
-user-invocable: false
+argument-hint: "start <name> | switch <name> | stop | report [period] | repair or merge"
 ---
 
 # Nestor Activity
@@ -25,6 +25,11 @@ task id, or project id to an activity tool.
 - Stop the current activity with action `stop`.
 - Read current activity, totals, buckets, and capped slots with `activity_report`.
 - Rename, merge, adjust, or delete only when the user requests that mutation.
+
+The arguments are the text written after the skill name at invocation. Some clients
+deliver them on a final `ARGUMENTS:` line. Treat them as the user's activity request:
+`start <name>`, `switch <name>`, `stop`, `report [period]`, or a repair or merge. Read an
+equivalent natural-language request from the user's message.
 
 When `/nestor:activity` has no argument, call `activity_report` without a window. This
 returns today's totals and the current activity.
