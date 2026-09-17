@@ -1,11 +1,13 @@
 ---
 name: answer-short
-description: Rédiger les réponses en anglais technique simplifié ASD-STE100 transposé au français, sous un plafond de mots, et lever ce verrou sur demande. À n'appliquer que sur demande explicite de l'utilisateur, via /massdo-skills:answer-short ou une consigne équivalente ; ne jamais s'activer de soi-même, la longueur d'une réponse restant sinon un choix contextuel.
+description: Rédiger les réponses en anglais technique simplifié ASD-STE100 transposé au français, sous un plafond de 120 mots ou du nombre passé en argument. Le verrou reste actif jusqu'à l'argument reset, qui lève le style et son plafond. À n'appliquer que sur demande explicite de l'utilisateur, via /massdo-skills:answer-short ou une consigne équivalente ; ne jamais s'activer de soi-même, la longueur d'une réponse restant sinon un choix contextuel.
+argument-hint: "[budget en mots (défaut 120), ou reset]"
 disable-model-invocation: true
-user-invocable: false
 ---
 
-L'argument passé à l'invocation décide du mode :
+N'applique ce skill que sur demande explicite de l'utilisateur, par son invocation ou une consigne équivalente. Ne l'active jamais de toi-même : sans cette demande, la longueur d'une réponse reste un choix contextuel.
+
+L'argument est le texte écrit après le nom du skill à l'invocation ; selon le client, il peut arriver dans une ligne finale `ARGUMENTS: …`. Pour une consigne équivalente en langage naturel, lis-le dans le message de l'utilisateur. Il décide du mode :
 
 - `reset` lève le verrou. Va directement à la section « Lever le verrou ».
 - un nombre fixe le plafond en mots.
