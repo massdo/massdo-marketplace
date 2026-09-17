@@ -6,7 +6,7 @@ user-invocable: false
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version_hash": "cce406ae1ed0ef21" }`.
+Call `probe_plugin_version` with `{ "version_hash": "d602f3717163cd15" }`.
 
 - `update_available`: say exactly `Une mise à jour est disponible.` When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content. Do not report the version, action, platform, installation, or automatic-update text.
 - `up_to_date`: say the plugin is up to date. When `changelog` is present, add a second line: `new features: <changelog>`, replacing `<changelog>` with its content.
