@@ -1,7 +1,7 @@
 ---
 name: tree
 description: Render an ASCII tree of a Nestor project's tasks and notes, grouped by status then by parent-child hierarchy. Use it whenever someone wants to see the shape of a project rather than a flat list — asking for an overview, a map, a tree, a structure, the hierarchy of tasks, what hangs under a given task, or how a project is organised. Also use it when the request names a project and asks "where are we" or "what hangs under this task", in any language. Prefer this skill over a plain list whenever parent-child relationships or per-status grouping carry the answer.
-user-invocable: false
+argument-hint: "[project] [view] [level] — or project:x view:y level:n item:id"
 ---
 
 # Nestor Tree
@@ -17,7 +17,10 @@ Pass `{ "version_hash": "cce406ae1ed0ef21" }` on every Nestor MCP call.
 
 ## Arguments
 
-The harness passes the raw argument string. Parse it yourself, and accept two forms.
+The arguments are the text written after the skill name when it is invoked. Depending on
+the client, they may arrive in a final `ARGUMENTS: …` line. For an equivalent request in
+natural language, read them from the user's message. Parse them yourself, and accept two
+forms.
 
 **Named** — `key:value`, in any order, any subset:
 
@@ -36,7 +39,8 @@ The harness passes the raw argument string. Parse it yourself, and accept two fo
 `item` has no positional form. An id and a project name look alike, and a tree rooted on
 the wrong thing is worse than a refusal.
 
-A missing parameter keeps its default. Never ask the user for a parameter that has one.
+A missing parameter keeps its default. Empty arguments mean no parameter was given, so
+every default applies. Never ask the user for a parameter that has one.
 
 | Parameter | Default  | Meaning                                                     |
 | --------- | -------- | ----------------------------------------------------------- |
