@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
-  "version_hash": "cce406ae1ed0ef21",
-  "changelog": "Read known items through a single ref field. Requires the compatible get_item server; refresh the MCP catalog and restart existing sessions after the coordinated update."
+  "version": "0.6.0",
+  "version_hash": "d602f3717163cd15",
+  "changelog": "Read up to five known items in one get_item call with refs, preserving each result and its version/ETag pair even when another reference fails. Requires a server supporting grouped reads; refresh the MCP catalog and restart existing sessions after updating."
 }

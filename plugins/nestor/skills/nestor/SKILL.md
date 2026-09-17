@@ -1,9 +1,10 @@
 ---
 name: nestor
-pluginVersion: 0.5.0
+pluginVersion: 0.6.0
 antipattern:
   - search_for_known_identity
   - list_projects_for_named_project
+  - get_item_burst
   - preventive_get_item_before_update
   - post_success_get_item
   - stale_version_etag_pair
@@ -15,9 +16,9 @@ description: Use the Nestor MCP server as the canonical source whenever the user
 
 ## Identify the plugin version
 
-This plugin version is 0.5.0, hashed as `cce406ae1ed0ef21`.
+This plugin version is 0.6.0, hashed as `d602f3717163cd15`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "cce406ae1ed0ef21", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "d602f3717163cd15", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -65,7 +66,8 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Find items and projects
 
-- Use `get_item` when id or slug is known, whatever the read is for. Pass the received reference in `ref`, together with `scope` and `version_hash`. Never send `id` or `slug` as input keys to this tool. A single field, a status check, and a full read all take the same tool.
+- Use `get_item` when id or slug is known, whatever the read is for. For a single item, pass the received reference in `ref`, together with `scope` and `version_hash`. Never send `id` or `slug` as input keys to this tool. A single field, a status check, and a full read all take the same tool.
+- When several known items need a full read, pass up to 5 references in `refs` in one `get_item` call, together with `scope` and `version_hash`. Use `refs` instead of `ref`; never send both. Match `results[i]` with `refs[i]` and check the echoed `ref`. Preserve repeated entries. An entry with `error` concerns that position only. Leave out any item whose content and matched pair are already held.
 - Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
@@ -74,14 +76,15 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## antipattern
 
-An `antipattern` is an action the agent must avoid at all costs. The first two entries protect deterministic reads; the others protect optimistic mutations:
+An `antipattern` is an action the agent must avoid at all costs. The first three entries govern reads; the others protect optimistic mutations:
 
 - `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
 - `list_projects_for_named_project`: never call `list_projects` to resolve a project the user names. `get_project` reads a project by exact `name`, so a named project is a deterministic read, exactly like an item whose slug is known. `list_projects` returns every project with its context to keep a single one, and pages once the journal holds more projects than a page. Call it only when the user wants to see all the projects, or when the name matches none and the candidates have to be proposed.
+- `get_item_burst`: never issue avoidable separate `get_item` calls for known references that one call with `refs` can read. Use at most 5 references per call. Smaller groups are allowed for known large content, client output limits, different scopes, or reads that depend on earlier results.
 - `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, so a mutation right after a creation or another mutation needs no `get_item`.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
 - `stale_version_etag_pair`: never reuse the pair you already sent to a mutation, and never reuse any pair after a conflict. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. A pair belongs to the item, not to the operation that returned it: the pair handed back by a status `patch` is the one the next `add_link`, `add_tags`, `remove_tags`, `append_body` or `move` on that same item must send. Treating a different operation as a fresh start is how a held pair gets dropped and a `get_item` gets paid for nothing. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
-- `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, or `update_item`.
+- `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, or `update_item`. After a read with `refs`, take both values from the same `results` entry. After mutating an item, reuse the mutation's returned pair. Another previously read entry for that item cannot replace it.
 
 ## Update items
 
