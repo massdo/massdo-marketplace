@@ -12,12 +12,35 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      DISABLE_AUTOUPDATER: "1"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python3 scripts/validate.py
+      - run: python3 -m pip install -r scripts/requirements-validation.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install the pinned Claude validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.275
+      - name: Report validator versions
+        run: |
+          python3 --version
+          python3 -m pip show PyYAML
+          claude --version
+      - name: Test validation and Git hooks
+        run: python3 -m unittest discover -s tests -v
+      - name: Validate the checkout against its event baseline
+        run: ./scripts/check-ci.sh
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PUSH_CREATED: ${{ github.event.created }}
 
   notify-plugin-releases:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
