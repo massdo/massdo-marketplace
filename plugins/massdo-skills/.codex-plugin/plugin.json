@@ -26,9 +26,9 @@
     ],
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
-      "Réponds court à partir de maintenant.",
-      "Réponds de façon articulée, en 100 mots au plus.",
-      "Passe en mode chef de cabinet."
+      "Utilise $massdo-skills:answer-short pour plafonner mes réponses.",
+      "Use $massdo-skills:articulate 100 to write articulately under a word cap.",
+      "Use $massdo-skills:chief-of-staff to take the stance."
     ]
   }
 }

@@ -27,8 +27,8 @@
     ],
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
-      "Specify this idea into a Nestor task tree.",
-      "Build this Nestor task end to end."
+      "Use $nestor-beta:spec to turn this idea into a Nestor task tree.",
+      "Use $nestor-beta:build to build this Nestor task end to end."
     ]
   }
 }

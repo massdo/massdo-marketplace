@@ -195,8 +195,8 @@ shipping.
    point of Stage 3.
 4. Wait for CI to go green **on `targetBranch` after the merge**, not only on the PR. Two
    branches passing separately does not prove their merge passes.
-5. Derive the release version from the merged commits: a breaking change (`!` or
-   `BREAKING CHANGE`) bumps major, any `feat` bumps minor, otherwise patch. Read the latest
+5. Derive the release version from the merged commits: a breaking change (a trailing exclamation
+   mark on the type, or `BREAKING CHANGE`) bumps major, any `feat` bumps minor, otherwise patch. Read the latest
    existing tag for the current number.
 6. **Announce the computed version and tag it** — `vX.Y.Z` — then push the tag.
 
