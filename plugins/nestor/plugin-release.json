@@ -1,5 +1,5 @@
 {
-  "version": "0.7.0",
-  "version_hash": "1c2270b35564e17a",
-  "changelog": "Nestor, activity, tree and check-for-updates are now plain skills: ask in your own words, or type /nestor:<name>. The duplicate slash commands are gone, so each one appears once instead of twice."
+  "version": "0.7.1",
+  "version_hash": "cd8031be30448999",
+  "changelog": "A rejected journal update now uses the current item in the conflict when the server sends it, instead of always rereading the item. Older servers that still return an empty conflict keep the previous get_item retry."
 }

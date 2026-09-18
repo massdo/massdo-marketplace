@@ -225,6 +225,21 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("omits antipattern 'get_item_burst'", result.stderr)
 
+    def test_nestor_conflict_current_item_protection_is_required_in_body(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        path = "plugins/nestor/skills/nestor/SKILL.md"
+        original = (self.root / path).read_text()
+        self.write(path, original.replace(
+            "Take that current item from `details.current` when the conflict includes it.",
+            "Take that current item from the conflict payload.",
+        ).replace(
+            "Call `get_item` once only when the rejection has no `details.current`",
+            "Call `get_item` once after every rejected precondition",
+        ))
+        result = self.check(ok=False)
+        self.assertIn("does not take the current item from a precondition conflict", result.stderr)
+        self.assertIn("drops the empty-conflict get_item fallback", result.stderr)
+
     def test_missing_baseline_is_an_error(self):
         result = self.check("--baseline", "missing-ref", ok=False)
         self.assertIn("not an available commit", result.stderr)
