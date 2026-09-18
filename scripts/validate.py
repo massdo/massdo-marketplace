@@ -60,24 +60,33 @@ def read_json(path: Path) -> dict:
 
 
 def read_json_at(ref: str, path: Path) -> dict | None:
-    """Read a tracked file as of ref. None when the ref or the file is absent."""
+    """Read a release from an already resolved commit; allow new plugins."""
+    relative = path.relative_to(ROOT).as_posix()
+    listed = subprocess.run(
+        ["git", "ls-tree", "--name-only", ref, "--", relative],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    )
+    if not listed.stdout.strip():
+        return None
     result = subprocess.run(
-        ["git", "show", f"{ref}:{path.relative_to(ROOT).as_posix()}"],
+        ["git", "show", f"{ref}:{relative}"],
         cwd=ROOT,
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        return None
+        raise SystemExit(f"FAIL cannot read baseline release {ref}:{relative}")
     try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return None
+        document = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"FAIL invalid baseline release {ref}:{relative}: {error}")
+    if not isinstance(document, dict):
+        raise SystemExit(f"FAIL baseline release {ref}:{relative} must be an object")
+    return document
 
 
 # A release is published by the file tree alone, so every check below reads the
-# tree. Comparing a release to the one before it needs the previous commit,
-# which only a local hook has: the CI checkout is shallow.
+# tree. Resolve the baseline once so a missing commit never disables checks.
 argv = sys.argv[1:]
 if argv[:1] == ["--baseline"] and len(argv) == 2:
     BASELINE: str | None = argv[1]
@@ -85,6 +94,15 @@ elif not argv:
     BASELINE = None
 else:
     raise SystemExit("usage: validate.py [--baseline <git-ref>]")
+
+if BASELINE is not None:
+    resolved = subprocess.run(
+        ["git", "rev-parse", "--verify", "--end-of-options", f"{BASELINE}^{{commit}}"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    if resolved.returncode != 0:
+        raise SystemExit(f"FAIL baseline {BASELINE!r} is not an available commit")
+    BASELINE = resolved.stdout.strip()
 
 
 plugin_dirs = sorted(p for p in PLUGINS.iterdir() if p.is_dir())
