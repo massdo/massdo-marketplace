@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.1"
+  pluginVersion: "0.7.2"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.1, hashed as `cd8031be30448999`.
+This plugin version is 0.7.2, hashed as `69f65d3687e6891d`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "cd8031be30448999", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "69f65d3687e6891d", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -106,3 +106,11 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Mutate only the requested records and fields.
 - Obtain explicit user confirmation before trashing an item or confirming deletion of a tag or project.
 - After each mutation, report the confirmed result, affected identifier, and any warning.
+
+## Cite items
+
+- Name every item a response cites as `slug (description)`, for example `green_earwig (commande manuelle de signalement des appels MCP)`.
+- Apply that form to each item of a list, a search result, or a mutation report.
+- Keep the description to a few words naming the item's business subject, in the language of the conversation. Never copy the whole title.
+- Write the description from data already held, and leave it out when none is. Never call a tool only to write it.
+- The form only names the item. It never replaces the details the user asked for, such as its status or body.
