@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
-  "version_hash": "cce406ae1ed0ef21",
-  "changelog": "Read known items through a single ref field. Requires the compatible get_item server; refresh the MCP catalog and restart existing sessions after the coordinated update."
+  "version": "0.7.0",
+  "version_hash": "1c2270b35564e17a",
+  "changelog": "Nestor, activity, tree and check-for-updates are now plain skills: ask in your own words, or type /nestor:<name>. The duplicate slash commands are gone, so each one appears once instead of twice."
 }

@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
-  "version_hash": "06d7552690bf0c05",
-  "changelog": "New doctor skill finds open Nestor tasks already implemented in merged code and proposes closures for your approval. Run it without a project to choose one."
+  "version": "0.6.0",
+  "version_hash": "83bfe517bb6928c9",
+  "changelog": "Build, spec and doctor are now plain skills, invoked by /nestor-beta:<name> or by asking. The duplicate slash commands are gone, so each one appears once instead of twice."
 }
