@@ -352,6 +352,24 @@ for plugin in plugin_dirs:
                     f"{name}: {ecosystem} manifest declares {key}={declared}, missing",
                 )
 
+    # A skill is reached one way: by its own name. A command wrapper that
+    # inlines a skill gives the same instructions a second entry point, which
+    # Claude Code then counts twice in the menu and in `plugin details`, while
+    # Codex never sees it at all. The directory is checked too: Cursor and
+    # Claude Code find commands by convention, so dropping the declaration
+    # without dropping the files would quietly restore the duplicate.
+    for ecosystem, manifest in manifests.items():
+        check(
+            manifest.get("commands") is None,
+            f"{name}: {ecosystem} manifest declares commands — a skill is "
+            "invoked by its own name, so the wrapper surface is gone",
+        )
+    check(
+        not (plugin / "commands").exists(),
+        f"{name}: ships a commands/ directory — a wrapper duplicates the skill "
+        "it inlines instead of adding a surface",
+    )
+
     # Cursor reads mcp.json, Claude Code and Codex read .mcp.json. Two files,
     # one server: a drift here sends one ecosystem at a dead endpoint.
     dotted, plain = plugin / ".mcp.json", plugin / "mcp.json"
@@ -379,8 +397,26 @@ for plugin in plugin_dirs:
             re.search(r"^description: .+", metadata, re.MULTILINE) is not None,
             f"{where}: frontmatter declares no description",
         )
+        # Agent Skills requires the declared name to be the directory name,
+        # and every client resolves an invocation through the directory. A
+        # mismatch makes `/<plugin>:<name>` reach nothing while the skill
+        # still looks present.
         if declared is not None:
             by_name.setdefault(declared.group("name"), []).append(str(where))
+            check(
+                declared.group("name") == skill.parent.name,
+                f"{where}: declares name={declared.group('name')!r} inside "
+                f"{skill.parent.name}/ — the two must be the same",
+            )
+
+        # user-invocable: false hides a skill from the menu, and together with
+        # disable-model-invocation nothing can reach it any more. Neither is a
+        # portable field, and this repository uses the second one alone.
+        check(
+            re.search(r"^user-invocable:", metadata, re.MULTILINE) is None,
+            f"{where}: declares user-invocable — with disable-model-invocation "
+            "it leaves the skill unreachable, so the repository never sets it",
+        )
 
     for skill_name, paths in by_name.items():
         check(
