@@ -253,9 +253,17 @@ for plugin in plugin_dirs:
     if namesake_skill.is_file():
         skill_text = namesake_skill.read_text(encoding="utf-8")
         if name == "nestor":
+            # The antipatterns are declared once, as the bullets of the body's
+            # `## antipattern` section: the body is what a client injects, and
+            # the frontmatter keeps the portable Agent Skills fields only.
+            section = re.search(
+                r"^## antipattern\n(?P<entries>.*?)(?=^## |\Z)",
+                skill_text,
+                re.MULTILINE | re.DOTALL,
+            )
             check(
-                re.search(r"^antipattern:", skill_text, re.MULTILINE) is not None,
-                "nestor: namesake skill declares no antipattern field",
+                section is not None,
+                "nestor: namesake skill has no `## antipattern` section",
             )
             for antipattern in (
                 "search_for_known_identity",
@@ -266,7 +274,13 @@ for plugin in plugin_dirs:
                 "mixed_version_etag_reads",
             ):
                 check(
-                    antipattern in skill_text,
+                    section is not None
+                    and re.search(
+                        rf"^- `{antipattern}`: \S",
+                        section.group("entries"),
+                        re.MULTILINE,
+                    )
+                    is not None,
                     f"nestor: namesake skill omits antipattern {antipattern!r}",
                 )
             check(
@@ -292,20 +306,37 @@ for plugin in plugin_dirs:
                 in skill_text,
                 "nestor: skill does not permit a direct mutation without a held pair",
             )
+        # pluginVersion belongs to this repository, not to Agent Skills, so it
+        # lives in the metadata map, whose values are strings.
         frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)
         plugin_version = None
         if frontmatter is not None:
-            match = re.search(
-                r"^pluginVersion: *(\d+\.\d+\.\d+)$",
+            check(
+                re.search(
+                    r"^(?:pluginVersion|antipattern):",
+                    frontmatter.group("body"),
+                    re.MULTILINE,
+                )
+                is None,
+                f"{name}: namesake skill declares a repository field outside metadata",
+            )
+            metadata = re.search(
+                r"^metadata:[ \t]*\n(?P<entries>(?:[ \t]+\S.*(?:\n|\Z))+)",
                 frontmatter.group("body"),
                 re.MULTILINE,
             )
-            if match is not None:
-                plugin_version = match.group(1)
+            if metadata is not None:
+                match = re.search(
+                    r'^[ \t]+pluginVersion: *"(\d+\.\d+\.\d+)"[ \t]*$',
+                    metadata.group("entries"),
+                    re.MULTILINE,
+                )
+                if match is not None:
+                    plugin_version = match.group(1)
         check(
             plugin_version == agreed,
-            f"{name}: namesake skill pluginVersion={plugin_version!r}, "
-            f"expected {agreed!r}",
+            f"{name}: namesake skill metadata.pluginVersion={plugin_version!r}, "
+            f'expected "{agreed}" as a quoted string',
         )
 
 

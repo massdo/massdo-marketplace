@@ -1,14 +1,8 @@
 ---
 name: nestor
-pluginVersion: 0.5.0
-antipattern:
-  - search_for_known_identity
-  - list_projects_for_named_project
-  - preventive_get_item_before_update
-  - post_success_get_item
-  - stale_version_etag_pair
-  - mixed_version_etag_reads
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
+metadata:
+  pluginVersion: "0.5.0"
 ---
 
 # Nestor Journal
