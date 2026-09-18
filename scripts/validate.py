@@ -325,6 +325,16 @@ for plugin in plugin_dirs:
                 in skill_text,
                 "nestor: skill does not permit a direct mutation without a held pair",
             )
+            check(
+                "Take that current item from `details.current` when the conflict includes it."
+                in skill_text,
+                "nestor: skill does not take the current item from a precondition conflict",
+            )
+            check(
+                "Call `get_item` once only when the rejection has no `details.current`"
+                in skill_text,
+                "nestor: skill drops the empty-conflict get_item fallback",
+            )
         # pluginVersion belongs to this repository, not to Agent Skills, so it
         # lives in the metadata map, whose values are strings.
         frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)

@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.0"
+  pluginVersion: "0.8.0"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.0, hashed as `1c2270b35564e17a`.
+This plugin version is 0.8.0, hashed as `a981c8e4623a8a50`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1c2270b35564e17a", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "a981c8e4623a8a50", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -74,17 +74,18 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
 - `list_projects_for_named_project`: never call `list_projects` to resolve a project the user names. `get_project` reads a project by exact `name`, so a named project is a deterministic read, exactly like an item whose slug is known. `list_projects` returns every project with its context to keep a single one, and pages once the journal holds more projects than a page. Call it only when the user wants to see all the projects, or when the name matches none and the candidates have to be proposed.
 - `get_item_burst`: never issue avoidable separate `get_item` calls for known references that one call with an array in `ref` can read. Use at most 5 references per call. Smaller groups are allowed for known large content, client output limits, different scopes, or reads that depend on earlier results.
-- `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, so a mutation right after a creation or another mutation needs no `get_item`.
+- `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, as does a conflict's `details.current`, so a mutation right after a creation, another mutation, or a conflict with that field needs no `get_item`.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
-- `stale_version_etag_pair`: never reuse the pair you already sent to a mutation, and never reuse any pair after a conflict. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. A pair belongs to the item, not to the operation that returned it: the pair handed back by a status `patch` is the one the next `add_link`, `add_tags`, `remove_tags`, `append_body` or `move` on that same item must send. Treating a different operation as a fresh start is how a held pair gets dropped and a `get_item` gets paid for nothing. If the server rejects a missing, invalid, or stale precondition, call `get_item` once and retry the same operation once.
-- `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, or `update_item`. After a read with an array in `ref`, take both values from the same `results` entry. After mutating an item, reuse the mutation's returned pair. Another previously read entry for that item cannot replace it.
+- `stale_version_etag_pair`: never reuse the pair you already sent to a mutation. After a conflict, discard the rejected pair; the next held pair is `item.version` and `etag` from `details.current` when that field is present, or from one fallback `get_item` when it is not. A successful `create_item` or `update_item` returns a fresh pair; use that one for the next change. A pair belongs to the item, not to the operation that returned it: the pair handed back by a status `patch` is the one the next `add_link`, `add_tags`, `remove_tags`, `append_body` or `move` on that same item must send. Treating a different operation as a fresh start is how a held pair gets dropped and a `get_item` gets paid for nothing. If the server rejects a missing, invalid, or stale precondition, examine the current state, adapt the change, and retry the same operation once with the new pair. Never replay the rejected patch unchanged.
+- `mixed_version_etag_reads`: never combine `version` from one response with `etag` from another. Use both values from the same response, whether it comes from `get_item`, `create_item`, `update_item`, or a conflict's `details.current`. After a read with an array in `ref`, take both values from the same `results` entry. After mutating an item, reuse the mutation's returned pair. Another previously read entry for that item cannot replace it.
 
 ## Update items
 
-- Pass `expectedVersion` and `expectedEtag` directly when a matched pair from an earlier `get_item`, `create_item`, or `update_item` is still held. Never refresh a held pair immediately before the mutation.
+- Pass `expectedVersion` and `expectedEtag` directly when a matched pair from an earlier `get_item`, `create_item`, `update_item`, or a conflict's `details.current` is still held. Never refresh a held pair immediately before the mutation.
 - When no valid pair is held, call `update_item` without a precondition.
-- If the server rejects the mutation for a missing, invalid, or stale precondition, call `get_item` once, then repeat the same operation with `item.version` and `etag` from that response.
-- Never combine values from different responses. After a conflict, discard the pair and read again. After a successful mutation, use the pair that response returns for the next change on that item, whatever operation that change performs.
+- If the server rejects the mutation for a missing, invalid, or stale precondition, examine the current item, adapt the change to that state, and retry the same operation once with that item's pair. Never replay the rejected patch unchanged onto the new pair.
+- Take that current item from `details.current` when the conflict includes it. That object has the same shape as a `get_item` response: `item.version` and `etag` come from there, so no extra `get_item` is needed. Call `get_item` once only when the rejection has no `details.current`, including a missing precondition and older servers that still return an empty conflict.
+- Never combine values from different responses. After a conflict, discard the pair that was just rejected. After a successful mutation, use the pair that response returns for the next change on that item, whatever operation that change performs.
 - Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
 - Use `append_body` to add text to a body. Never read an item only to resend an unchanged body.
 - Use `update_item` only for requested fields and operations.
