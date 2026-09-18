@@ -112,6 +112,5 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Name every item a response cites as `slug (description)`, for example `green_earwig (commande manuelle de signalement des appels MCP)`.
 - Apply that form to each item of a list, a search result, or a mutation report.
 - Keep the description to a few words naming the item's business subject, in the language of the conversation. Never copy the whole title.
-- Use the item's id in place of the slug only when the response carries no slug.
 - Write the description from data already held, and leave it out when none is. Never call a tool only to write it.
 - The form only names the item. It never replaces the details the user asked for, such as its status or body.
