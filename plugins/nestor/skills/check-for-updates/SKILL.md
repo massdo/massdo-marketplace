@@ -1,7 +1,6 @@
 ---
 name: check-for-updates
 description: Check whether the Nestor plugin is up to date. Use when the user asks if Nestor is current, wants the latest changelog, or types /nestor:check-for-updates or /check-for-updates.
-user-invocable: false
 ---
 
 # Check for Nestor updates
