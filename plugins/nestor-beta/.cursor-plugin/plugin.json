@@ -20,6 +20,5 @@
     "beta",
     "staging"
   ],
-  "skills": "./skills/",
-  "commands": "./commands/"
+  "skills": "./skills/"
 }

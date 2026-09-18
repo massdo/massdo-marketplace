@@ -20,6 +20,5 @@
     "marketplace",
     "style"
   ],
-  "skills": "./skills/",
-  "commands": "./commands/"
+  "skills": "./skills/"
 }
