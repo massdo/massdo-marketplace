@@ -53,16 +53,18 @@ class RepositoryValidation(unittest.TestCase):
         ):
             source = {"source": "local", "path": "./plugins/demo"} if ecosystem == "codex" else "./plugins/demo"
             self.json(catalog, {"name": "fixture", "plugins": [{"name": "demo", "source": source}]})
-            self.json(f"plugins/demo/.{ecosystem}-plugin/plugin.json", {
+            manifest = {
                 "name": "demo", "version": "1.0.0", "skills": "./skills/",
-                "commands": "./commands/",
-            })
+            }
+            if ecosystem == "cursor":
+                manifest["rules"] = "./rules/"
+            self.json(f"plugins/demo/.{ecosystem}-plugin/plugin.json", manifest)
         self.release = "plugins/demo/plugin-release.json"
         self.json(self.release, {"version": "1.0.0", "version_hash": "0123456789abcdef", "changelog": "Initial release"})
         self.skill = "plugins/demo/skills/example/SKILL.md"
         self.write(self.skill, "---\nname: example\ndescription: Fixture skill.\n---\nBody.\n")
-        self.write("plugins/demo/commands/a.md", "a\n")
-        self.write("plugins/demo/commands/b.md", "b\n")
+        self.write("plugins/demo/rules/a.md", "a\n")
+        self.write("plugins/demo/rules/b.md", "b\n")
         self.git("init", "-q", "-b", "main")
         self.git("config", "user.name", "Validation fixture")
         self.git("config", "user.email", "fixture@example.invalid")
@@ -119,11 +121,11 @@ class RepositoryValidation(unittest.TestCase):
 
     def test_merge_of_individually_valid_branches_is_rejected(self):
         self.git("switch", "-qc", "left")
-        self.git("rm", "plugins/demo/commands/a.md")
+        self.git("rm", "plugins/demo/rules/a.md")
         self.commit("drop a")
         left = self.git("rev-parse", "HEAD").stdout.strip()
         self.git("switch", "-qc", "right", self.base)
-        self.git("rm", "plugins/demo/commands/b.md")
+        self.git("rm", "plugins/demo/rules/b.md")
         self.commit("drop b")
         self.git("switch", "-q", "left")
         failed = self.git("merge", "--no-ff", "--no-edit", "right", ok=False)
@@ -189,10 +191,39 @@ class RepositoryValidation(unittest.TestCase):
         self.assertEqual(json.loads(self.git("show", f":{path}").stdout)["name"], 123)
 
     def test_untracked_file_cannot_satisfy_declared_directory(self):
-        self.git("rm", "plugins/demo/commands/a.md", "plugins/demo/commands/b.md")
-        self.write("plugins/demo/commands/untracked.md", "not part of commit\n")
-        self.git("commit", "-qm", "missing commands", ok=False)
-        self.assertTrue((self.root / "plugins/demo/commands/untracked.md").exists())
+        self.git("rm", "plugins/demo/rules/a.md", "plugins/demo/rules/b.md")
+        self.write("plugins/demo/rules/untracked.md", "not part of commit\n")
+        self.git("commit", "-qm", "missing rules", ok=False)
+        self.assertTrue((self.root / "plugins/demo/rules/untracked.md").exists())
+
+    def test_command_wrapper_directory_is_rejected_without_manifest_declaration(self):
+        self.write("plugins/demo/commands/example.md", "duplicate skill entry point\n")
+        result = self.check(ok=False)
+        self.assertIn("ships a commands/ directory", result.stderr)
+
+    def test_command_declaration_is_rejected_in_each_manifest(self):
+        for ecosystem in ("codex", "claude", "cursor"):
+            with self.subTest(ecosystem=ecosystem):
+                path = f"plugins/demo/.{ecosystem}-plugin/plugin.json"
+                original = (self.root / path).read_text()
+                manifest = json.loads(original)
+                manifest["commands"] = "./skills/"
+                self.json(path, manifest)
+                result = self.check(ok=False)
+                self.assertIn(f"{ecosystem} manifest declares commands", result.stderr)
+                self.write(path, original)
+
+    def test_nestor_grouped_read_protection_is_required_in_body(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        self.check()
+        path = "plugins/nestor/skills/nestor/SKILL.md"
+        original = (self.root / path).read_text()
+        self.write(path, "\n".join(
+            line for line in original.splitlines()
+            if not line.startswith("- `get_item_burst`:")
+        ) + "\n")
+        result = self.check(ok=False)
+        self.assertIn("omits antipattern 'get_item_burst'", result.stderr)
 
     def test_missing_baseline_is_an_error(self):
         result = self.check("--baseline", "missing-ref", ok=False)

@@ -1,8 +1,8 @@
 ---
 name: build
 description: Build a specified Nestor task end to end into a validated target branch, implement its plan section by section, audit every commit, close the task, and optionally ship with prod after explicit confirmation. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
+argument-hint: "<id-or-slug> [prod] [target:<branch>]"
 disable-model-invocation: true
-user-invocable: false
 ---
 
 # Nestor Build
@@ -17,13 +17,19 @@ the audit as a second-hand report; the diff in front of you is the only evidence
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "06d7552690bf0c05" }` on every Nestor MCP call.
+Pass `{ "version_hash": "83bfe517bb6928c9" }` on every Nestor MCP call.
 
 ## Arguments
 
 ```
 /nestor-beta:build <id-or-slug> [prod] [target:<branch>]
 ```
+
+Run only when the user invokes this skill directly: an agent, subagent, plan, memory, Nestor
+task or other skill never invokes it on the user's behalf. The arguments are the text written
+after the skill name in that invocation; depending on the client, they may arrive in a final
+`ARGUMENTS: …` line. When the invocation is phrased in prose instead, read the same arguments
+from the user's message.
 
 **An empty argument string ends the turn immediately.** Reply exactly:
 
@@ -189,8 +195,8 @@ shipping.
    point of Stage 3.
 4. Wait for CI to go green **on `targetBranch` after the merge**, not only on the PR. Two
    branches passing separately does not prove their merge passes.
-5. Derive the release version from the merged commits: a breaking change (`!` or
-   `BREAKING CHANGE`) bumps major, any `feat` bumps minor, otherwise patch. Read the latest
+5. Derive the release version from the merged commits: a breaking change (a trailing exclamation
+   mark on the type, or `BREAKING CHANGE`) bumps major, any `feat` bumps minor, otherwise patch. Read the latest
    existing tag for the current number.
 6. **Announce the computed version and tag it** — `vX.Y.Z` — then push the tag.
 

@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Check for Updates"
+  short_description: "Check whether the Nestor plugin is up to date"
+  default_prompt: "Use $nestor:check-for-updates to check whether my Nestor plugin is up to date."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: true

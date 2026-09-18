@@ -1,8 +1,8 @@
 ---
 name: spec
 description: Turn a raw idea, or an existing Nestor task given by id or slug, into a Nestor task tree, one question at a time. Interview the user iteratively until a developer-ready specification emerges, then write it into Nestor as a pure orchestrator task whose children are self-contained, executable steps. Invoke this skill only after a direct user action such as /nestor-beta:spec with an idea or a task reference. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. An idea mentioned in conversation is not a spec request.
+argument-hint: "<idea… | id-or-slug> [project:<name-or-id>]"
 disable-model-invocation: true
-user-invocable: false
 ---
 
 # Nestor Spec
@@ -17,12 +17,17 @@ split into tasks gets picked up, tracked and closed. Everything below exists so 
 whoever opens one of those tasks later can carry it out without coming back to ask a
 question.
 
+Start only on the user's explicit request: they invoked this skill, or asked for this spec
+process in so many words. An idea mentioned in conversation is not a spec request, and an
+agent, subagent, plan, memory, Nestor task or other skill cannot make one on the user's
+behalf. Without that request, do not start.
+
 Conduct the whole session in the language the user writes in. The specification and the
 task bodies are written in that same language.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "06d7552690bf0c05" }` on every Nestor MCP call.
+Pass `{ "version_hash": "83bfe517bb6928c9" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -30,8 +35,11 @@ Pass `{ "version_hash": "06d7552690bf0c05" }` on every Nestor MCP call.
 /nestor-beta:spec <idea… | id-or-slug> [project:<name-or-id>]
 ```
 
-Everything that is not the `project:` argument is the starting point. Preserve everything
-after the first colon in `project:`, including spaces in a project name.
+The arguments are the text written after the skill name when it is invoked; depending on the
+client, they may arrive in a final `ARGUMENTS: …` line. When the user asked in plain language
+instead, read them from that message. Everything that is not the `project:` argument is the
+starting point. Preserve everything after the first colon in `project:`, including spaces in
+a project name.
 
 An empty argument string is not an error. There is nothing to guess wrong here: the idea is
 whatever the user is about to say. Ask for it in one line, then start from the answer.

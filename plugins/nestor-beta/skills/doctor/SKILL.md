@@ -1,8 +1,8 @@
 ---
 name: doctor
 description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; an omitted project opens project selection.
+argument-hint: "[project-ref]"
 disable-model-invocation: true
-user-invocable: false
 ---
 
 # Nestor Doctor
@@ -10,11 +10,19 @@ user-invocable: false
 Find tasks whose implementation has been merged into the repository but which remain open
 in Nestor. Propose closing them and wait for the user's approval.
 
+Run this workflow only on the user's explicit doctor request. Never start it on your own
+initiative.
+
 Use the Nestor skill for journal operations and the MCP catalogue for tool contracts.
 
 ## 1. Select the project and tasks
 
 `/nestor-beta:doctor [project-ref]`
+
+The arguments are the text written after the skill name at invocation; depending on the
+client, they may arrive in a final `ARGUMENTS: …` line. For an equivalent request in natural
+language, read them from the user's message. The whole argument string is one Nestor project
+reference, a name or an id: never split it, and keep its spaces as part of the name.
 
 If no project is supplied, show the active projects and wait for the user to select one.
 Confirm that the selected project corresponds to the repository being audited.
