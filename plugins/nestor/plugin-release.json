@@ -1,5 +1,5 @@
 {
-  "version": "0.7.1",
-  "version_hash": "cd8031be30448999",
-  "changelog": "A rejected journal update now uses the current item in the conflict when the server sends it, instead of always rereading the item. Older servers that still return an empty conflict keep the previous get_item retry."
+  "version": "0.8.0",
+  "version_hash": "8ee85f8a15c4b23f",
+  "changelog": "The assistant now names each journal item by its slug followed by a few words describing it, instead of its full title or id."
 }
