@@ -5,10 +5,9 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 ## Layout
 
 - `plugins/nestor/skills/nestor/`: shared journal skill for Codex, Claude Code, and Cursor.
-- `plugins/nestor/skills/activity/`: activity timer and time-report skill, exposed as `/nestor:activity` where commands are supported.
-- `plugins/nestor/skills/tree/`: shared tree-rendering skill, also exposed as a Claude Code and Cursor command.
-- `plugins/nestor/skills/check-for-updates/`: explicit plugin version check, also exposed as `/nestor:check-for-updates`.
-- `plugins/nestor/commands/`: Claude Code and Cursor commands.
+- `plugins/nestor/skills/activity/`: activity timer and time-report skill.
+- `plugins/nestor/skills/tree/`: shared tree-rendering skill.
+- `plugins/nestor/skills/check-for-updates/`: explicit plugin version check.
 - `plugins/nestor/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor/.claude-plugin/`: Claude Code plugin manifest.
 - `plugins/nestor/.cursor-plugin/`: Cursor plugin manifest.
@@ -53,6 +52,42 @@ Teams and Enterprise can import this repository as a team marketplace from **Das
 
 The public Cursor Marketplace listing is submitted separately at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
+## Invoke a skill
+
+Every skill here is reached by its own name, and by nothing else. There is no command
+wrapper: one `SKILL.md` is the whole surface, so a skill appears once in a menu instead of
+twice, and Codex sees the same entry point as Claude Code.
+
+| Ecosystem | Explicit invocation | Arguments |
+|---|---|---|
+| Claude Code | `/<plugin>:<skill> <arguments>` | passed through; see below |
+| Cursor | `/` then the skill name | not documented by Cursor |
+| Codex | `$<plugin>:<skill>` | free text after the name |
+
+A skill is also reached without naming it, by asking in plain language, unless its
+frontmatter turns that off — see the policy table below.
+
+**Arguments.** The arguments are the text written after the skill name. Claude Code
+substitutes `$ARGUMENTS`, `$1`…`$9` and named placeholders when the body contains them, and
+otherwise appends a final `ARGUMENTS: <input>` line to the injected content. No `SKILL.md`
+here writes a placeholder: each one describes its arguments in portable prose instead, so
+the same text works in a client that passes the input some other way, or that passes none
+and leaves the request in the user's own message.
+
+**Invocation policy.** Two frontmatter keys decide who may start a skill, and the two
+ecosystems do not read the same one:
+
+| Skill | Model may invoke | Held by |
+|---|---|---|
+| `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
+| the three `massdo-skills`, `build`, `spec`, `doctor` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
+
+Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
+and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
+`disable-model-invocation` and reads it. `user-invocable: false` is never set here: combined
+with `disable-model-invocation` it leaves a skill that nothing can reach, and `validate.py`
+refuses it.
+
 ## Plugin release document
 
 `plugin-release.json` is a plugin's public version-and-changelog document. The journal server reads it without authentication. Two plugins publish one: `nestor` and `nestor-beta`.
@@ -62,19 +97,31 @@ The public Cursor Marketplace listing is submitted separately at [cursor.com/mar
 - Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
 - Maximum size: 4096 bytes. A larger document is treated as unreadable.
 
-### Two documents, one server that reads a single one
+### Two documents, one release set
 
-The server still compares every `version_hash` it receives against `nestor`'s document alone, because a call carries a hash and no plugin name — the contract `yellow_jackal` settled. `nestor-beta` therefore publishes a release its skills do not yet send: `build` and `spec` keep sending `nestor`'s hash, since sending their own would be rejected as an outdated client on the very next call.
+The server reads the documents as a **set**, not one of them. `validatePluginReleaseSet`
+refuses a set whose names or hashes repeat, and `resolvePluginRelease` then finds the entry
+whose hash matches the one the call carries — so the hash alone identifies the plugin, and a
+call needs to name none. `probe_plugin_version` and the update warning both resolve that way.
 
-That is deliberate, and it is the state to leave in place until the server is refactored to read the document of the plugin that identifies itself on the call. Until then, `scripts/validate.py` holds the weaker rule that fits both worlds: a hash a skill hard-codes must be published by *some* `plugin-release.json` here. A plugin that ships its own `.mcp.json` is held to the exact match instead, since its skills identify that very plugin.
+Two consequences:
+
+- A skill hard-codes the hash of the plugin that **ships** it, whatever plugin declares the
+  MCP server it calls. `nestor-beta` declares no server and still publishes its own release;
+  `build` and `spec` send `nestor-beta`'s hash. `scripts/validate.py` holds exactly that
+  rule, for every plugin.
+- A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
+  value must collide with no other published release. Reusing a hash makes the server
+  resolve the wrong plugin; keeping the old one makes it report an outdated client as
+  current. `--baseline` refuses a bump that changes neither the hash nor the changelog.
 
 ## Beta staging plugin
 
-`plugins/nestor-beta/` holds skills and commands being written or reworked, so `nestor`
+`plugins/nestor-beta/` holds skills being written or reworked, so `nestor`
 only ever ships what has been tried. It reaches the same three ecosystems and is listed in
 the same three catalogs, under its own name.
 
-It declares **no MCP server at all**, in any ecosystem. It adds skills and commands, nothing
+It declares **no MCP server at all**, in any ecosystem. It adds skills, nothing
 else; the journal server comes from `nestor`, which must be installed alongside it.
 
 That is deliberate. Declaring the same server in both plugins would register it twice, and
@@ -102,17 +149,20 @@ rule the whole repository is built on.
 
 ```bash
 git mv plugins/nestor-beta/skills/<name> plugins/nestor/skills/<name>
-git mv plugins/nestor-beta/commands/<name>.md plugins/nestor/commands/<name>.md
 ```
 
 Then, in the same commit:
 
 - Rewrite the `/nestor-beta:<name>` invocations inside the skill to `/nestor:<name>`.
 - Bump the shared version in the three `nestor` manifests, in `plugin-release.json`, and in
-  the `pluginVersion` of `skills/nestor/SKILL.md`.
+  `metadata.pluginVersion` of `skills/nestor/SKILL.md` — a quoted string, since `metadata`
+  maps string keys to string values.
 - Regenerate `version_hash` with `openssl rand -hex 8` and write the changelog line for
-  that release. A skill that hard-codes a `version_hash` must carry the new value, or the
-  server reports every up-to-date install as outdated.
+  that release. The skill hard-codes the hash of the plugin that now ships it, so moving it
+  between plugins changes which hash it carries; a stale value makes the server report every
+  up-to-date install as outdated.
+- Bump `nestor-beta` too, and regenerate its own hash: it just lost a skill, which is a
+  change its release document has to describe.
 
 ## Validate
 
@@ -168,15 +218,23 @@ the references, and they are worth re-reading before adding a field:
 
 Two consequences are easy to trip over.
 
-**`argument-hint` is not a skill field.** It belongs to Claude Code commands and to Codex's
-custom prompts — the `/` surface, which also takes `$1`…`$9` and `$ARGUMENTS`. Codex invokes
-*skills* with `$`, has no `commands` key in its manifest, and never reads `commands/`, so it
-shows no argument hint for a skill. `interface.default_prompt` in `agents/openai.yaml` is the
-closest thing, which is why the skills here spell their arguments out in that string.
+**`argument-hint` is a Claude Code extension, not a standard field.** Claude Code documents
+it in skill frontmatter and `claude plugin validate --strict` accepts it there, so the skills
+that take arguments carry it. The Agent Skills specification does not list it: Codex reads
+`name` and `description` only and shows no argument hint for a skill, and Cursor does not
+document the field. `interface.short_description` and `interface.default_prompt` in
+`agents/openai.yaml` are what a Codex user sees instead, which is why they spell the
+arguments out. The body of each skill describes its arguments in prose for the same reason —
+that is the only place all three ecosystems read.
+
+The same line separates the rest of the frontmatter. Standard: `name`, `description`,
+`license`, `compatibility`, `metadata`, `allowed-tools`. Claude Code extensions used here:
+`argument-hint`, `disable-model-invocation`. Repository-specific data goes in `metadata`,
+whose values are strings — that is where `pluginVersion` lives, and Claude Code ignores it.
 
 **Codex does not honour `disable-model-invocation` on its own.** `agents/openai.yaml` with
 `policy.allow_implicit_invocation: false` is what actually holds there, and it still permits the
-explicit `$skill` invocation — which is exactly the intent for a command-backed skill.
+explicit `$<plugin>:<skill>` invocation — which is the intent for a user-driven skill.
 
 ## Release tags
 
