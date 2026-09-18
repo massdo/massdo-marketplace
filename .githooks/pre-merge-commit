@@ -1,4 +1,4 @@
 #!/bin/sh
-# Validate the index, including partially staged commits.
+# Automatic merge commits do not invoke pre-commit.
 set -e
 exec "$(git rev-parse --show-toplevel)/scripts/check-commit.sh"

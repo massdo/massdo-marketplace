@@ -117,31 +117,62 @@ Then, in the same commit:
 ## Validate
 
 ```bash
-git config core.hooksPath .githooks   # once per clone, or the pre-commit hook never runs
-./scripts/check.sh                    # every check this repository has, in one command
+python3 -m venv .venv
+.venv/bin/python3 -m pip install -r scripts/requirements-validation.txt
+git config core.hooksPath .githooks   # relative path also works in linked worktrees
+./scripts/check.sh                    # all marketplace validators
+.venv/bin/python3 -m unittest discover -s tests -v
 ```
 
-`scripts/check.sh` runs two validators, and they do not overlap:
+Python 3.11+ is required. `check.sh` uses `.venv/bin/python3` when present, otherwise
+`python3`; `VALIDATION_PYTHON` can select another interpreter with the pinned dependencies
+installed. Create the environment in each worktree that needs one. A missing PyYAML
+dependency fails explicitly. Install the optional local Claude validator with Node 22+:
+
+```bash
+npm install --global @anthropic-ai/claude-code@2.1.275
+```
+
+`scripts/check.sh` runs complementary validators:
 
 - `scripts/validate.py` reads every catalog and manifest against each other — a plugin
   listed in one catalog and missing from another, three manifests disagreeing on a version,
   `.mcp.json` drifting from `mcp.json`. No ecosystem catches that on its own, since each one
   only ever reads its own file.
-- `claude plugin validate` reads each Claude Code manifest against Anthropic's published
+- `scripts/validate_skills.py` parses every skill's YAML, rejects duplicate keys, and checks
+  names, descriptions, directory names, metadata strings and the types of invocation
+  options. It accepts the intentional Claude extensions and the existing repository fields.
+  It is not a complete Agent Skills, Codex or Cursor runtime certification.
+- `claude plugin validate --strict` reads each Claude Code manifest against Anthropic's published
   schema — the shape no in-repo script can know, since Anthropic owns it and can change it.
-  It is skipped when the `claude` CLI is absent, which keeps CI and Codex-only clones green.
+  A missing CLI is visibly skipped locally and is an error in CI. A green manifest check
+  does not establish that the CLI parsed the skill bodies or that a client loaded them.
 
-Passing one proves nothing about the other: a manifest can be individually valid and still
+Passing one proves nothing about the others: a manifest can be individually valid and still
 contradict its catalog entry.
 
-`.githooks/pre-commit` runs `check.sh --baseline HEAD` and refuses the commit when it fails.
-CI alone was not enough: this repository takes direct commits on `main`, so a red run
-arrives after the push. Never bypass the hook with `--no-verify`.
+Both `.githooks/pre-commit` and `.githooks/pre-merge-commit` run `scripts/check-commit.sh`.
+It exports the index to a temporary directory and runs `check.sh` there against the current
+HEAD. This checks exactly the proposed commit, including partial commits, without stashing,
+changing unstaged edits or allowing untracked files to mask missing committed files. The
+temporary tree is removed on exit. An initial commit has no baseline.
 
-`--baseline <ref>` adds the one rule the plain run cannot check: a plugin whose version
-changed since that commit must also change its changelog, otherwise a client shows the
-previous release's text for the new version. It needs the previous commit, which only the
-hook has — the CI checkout is shallow, so the workflow keeps running `validate.py` alone.
+An invalid automatic merge is left pending, with HEAD unchanged: fix and commit it or use
+`git merge --abort`. Conflict resolutions and `merge --no-commit` finish through pre-commit.
+Fast-forwards create no commit and invoke neither hook. Hooks must be activated in each
+clone, are not server enforcement, and do not run for a merge made on GitHub. Direct pushes
+to `main` are checked by CI after the push. Never bypass hooks with `--no-verify`.
+
+`--baseline <ref>` requires a plugin whose version changed to also change its changelog and
+version hash. An unavailable baseline is an error; a new plugin absent from a valid baseline
+is allowed. CI fetches history and calls `check-ci.sh`: a PR's merge tree is compared against
+its base SHA, and a push against the SHA before the entire push, not just the last commit.
+Only a first push with no predecessor explicitly omits that comparison.
+
+CI installs pinned PyYAML and Claude versions, runs the Git/validator regression tests and
+all validators, and records tool versions and installation duration in the job log. The
+release notification job still depends on successful validation. The tests exercise actual
+Git hooks with a stub at the Claude CLI boundary; the final CI validation uses the real CLI.
 
 Never commit MCP tokens, OAuth secrets, reviewer credentials, or local journal data.
 

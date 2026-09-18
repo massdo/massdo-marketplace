@@ -1,12 +1,14 @@
 #!/bin/sh
 
-# Every check this repository has, in one command.
+# Every marketplace validator, in one command.
 #
-# Two validators run here, and they do not overlap:
+# Complementary validators run here:
 #
 #   scripts/validate.py     reads every catalog and manifest against each other.
 #                           That is the failure no ecosystem can catch on its
 #                           own, since each one only ever reads its own file.
+#
+#   validate_skills.py      parses shared skill frontmatter as YAML.
 #
 #   claude plugin validate  reads one Claude Code manifest against the official
 #                           schema. That is the shape no in-repo script can
@@ -20,14 +22,20 @@
 set -e
 
 ROOT="$(git rev-parse --show-toplevel)"
+PYTHON="${VALIDATION_PYTHON:-python3}"
+if [ -z "${VALIDATION_PYTHON:-}" ] && [ -x "$ROOT/.venv/bin/python3" ]; then
+    PYTHON="$ROOT/.venv/bin/python3"
+fi
 
-python3 "$ROOT/scripts/validate.py" "$@"
+"$PYTHON" "$ROOT/scripts/validate.py" "$@"
+"$PYTHON" "$ROOT/scripts/validate_skills.py"
 
-# The official validator ships with Claude Code, so it is missing from CI and
-# from a clone made to work on Codex or Cursor. Skipping keeps those green
-# rather than red for a tool they were never expected to install: the manifests
-# stay covered by validate.py, which needs nothing but Python.
+# Optional for local Codex/Cursor clones; mandatory on the CI runner.
 if ! command -v claude >/dev/null 2>&1; then
+    if [ "${CI:-false}" = true ]; then
+        echo "claude CLI is required in CI." >&2
+        exit 1
+    fi
     echo "claude CLI not found — skipped the official manifest check."
     exit 0
 fi
@@ -41,13 +49,13 @@ failed=0
 
 for plugin in "$ROOT"/plugins/*/; do
     [ -f "$plugin.claude-plugin/plugin.json" ] || continue
-    if ! output=$(claude plugin validate "$plugin" 2>&1); then
+    if ! output=$(claude plugin validate "$plugin" --strict 2>&1); then
         printf '%s\n' "$output"
         failed=1
     fi
 done
 
-if ! output=$(claude plugin validate "$ROOT/.claude-plugin/marketplace.json" 2>&1); then
+if ! output=$(claude plugin validate "$ROOT/.claude-plugin/marketplace.json" --strict 2>&1); then
     printf '%s\n' "$output"
     failed=1
 fi
