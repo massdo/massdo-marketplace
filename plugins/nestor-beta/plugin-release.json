@@ -1,5 +1,5 @@
 {
-  "version": "0.7.0",
-  "version_hash": "09562b125cffa9cd",
-  "changelog": "Clean a task body with clean-task: remove proven obsolete information, merge duplicates and preserve useful specifications. Explicit invocation only, with guarded updates and no writes when the body is already clean."
+  "version": "0.7.1",
+  "version_hash": "1e08038ba0ef1521",
+  "changelog": "clean-task now defers shared Nestor tool procedures to the nestor skill. Concurrent body changes are reassessed while preserving the new information."
 }

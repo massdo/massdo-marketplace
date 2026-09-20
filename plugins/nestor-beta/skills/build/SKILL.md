@@ -17,7 +17,7 @@ the audit as a second-hand report; the diff in front of you is the only evidence
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "09562b125cffa9cd" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1e08038ba0ef1521" }` on every Nestor MCP call.
 
 ## Arguments
 
