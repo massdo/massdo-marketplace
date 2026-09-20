@@ -17,7 +17,7 @@ the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2d6cf645fc368d44" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2d6a13986427d8f9" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -134,12 +134,10 @@ Hold yourself to these rules:
 - Follow the plan's own sections in order. **Commit once per section**, so the history
   matches the plan and a reviewer can read them side by side. Use the repository's commit
   convention.
-- When the work delivers a self-contained child — executable on its own, not a pure
-  orchestrator — each commit that implements that child includes its short Nestor id
-  in the subject. Use the short id, never the slug. Children that are only steps of a
-  single deliverable are not cited in commits.
-- A standalone task (no children) has no separate commit-citation rule: the short id
-  in the PR title is enough.
+- Each commit cites, in its subject, the short Nestor id of the task whose plan section it
+  implements — unless that task is the one that owns the branch, which the PR title
+  already cites. Use the short id, never the slug. A standalone task therefore carries no
+  id in its commits, and a parent's subtasks each carry their own.
 - Run that section's own verification **before** committing it. A section whose
   verification fails is not committed; report the failure instead of working around it.
 - Never edit French prose with `sed`, `python` or any other string-rewriting shell tool.
@@ -186,12 +184,12 @@ Enter this stage once `targetBranch` is resolved: that happens when the argument
 repository's own Git workflow.
 
 1. Push the branch and open the PR with `gh`, explicitly passing `targetBranch` as its base.
-   The title contains the short Nestor id of the task that owns the PR: the built task
-   when it is alone, the orchestrator (the root of the tree / the parent that owns the
-   branch) when several tasks share the work. Use the short id (for example `DsoA`),
-   never the slug. The body describes what the task asked for and what the audit found;
-   it may repeat this id, but the title is the required citation. Verify the PR's
-   reported base branch and stop if it differs from `targetBranch`.
+   The title contains the short Nestor id of the task that owns the branch — the one
+   Stage 2 settled on, which is the built task itself when it has no parent. Use the
+   short id (for example `DsoA`), never the slug. The body describes what the task asked
+   for and what the audit found; it may repeat this id, but the title is the required
+   citation. Verify the PR's reported base branch and stop if it differs from
+   `targetBranch`.
 2. Report the PR URL and stop. Do not merge, do not wait for checks, do not tag.
 
 Never force-push, never rewrite a published branch, and never bypass a commit hook with
