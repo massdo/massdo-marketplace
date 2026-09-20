@@ -80,7 +80,7 @@ ecosystems do not read the same one:
 | Skill | Model may invoke | Held by |
 |---|---|---|
 | `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
-| the three `massdo-skills`, `build`, `spec`, `doctor` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
+| the three `massdo-skills`, `build`, `spec`, `doctor`, `clean-task` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
 and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
@@ -141,6 +141,20 @@ claude --plugin-dir /absolute/path/to/massdo-marketplace/plugins/nestor-beta
 
 A local plugin directory takes precedence over an installed plugin of the same name for
 that session, so this needs no uninstall and no version bump.
+
+### Clean a task body
+
+Invoke `/nestor-beta:clean-task <ref>` in Claude Code or `$nestor-beta:clean-task <ref>`
+in Codex. In Cursor, select `clean-task` and supply the reference. Pass one task id,
+server-supported id prefix or exact slug. The explicit invocation authorizes a direct
+rewrite of that task's body; the skill never starts implicitly.
+
+It removes information only when obsolescence is established, merges true duplicates and
+condenses prose while preserving the useful specification and exact commands, links and
+markers. Unresolved decisions and contradictions remain and are reported. Other fields
+and items are unchanged; an empty or already clean body needs no write. A concurrent
+change triggers a fresh cleanup and at most one retry. Restoration is a separate request
+using history, and may restore more than the body.
 
 ### Promote a skill into nestor
 

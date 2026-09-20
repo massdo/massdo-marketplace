@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nestor Clean Task"
+  short_description: "Clean one task — $nestor-beta:clean-task <ref>"
+  default_prompt: "Use $nestor-beta:clean-task <id, id prefix or exact slug> to remove proven obsolete information and condense the task body while preserving its useful specification."
+
+policy:
+  allow_implicit_invocation: false
