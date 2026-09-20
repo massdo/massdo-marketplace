@@ -1,5 +1,5 @@
 {
-  "version": "0.7.2",
-  "version_hash": "dbd65949c456294d",
-  "changelog": "Build stops after opening the pull request against the requested target. It no longer merges, waits for CI, or tags."
+  "version": "0.7.3",
+  "version_hash": "2d6cf645fc368d44",
+  "changelog": "Build cites the short Nestor id in the pull-request title, and in commit subjects for self-contained child tasks."
 }
