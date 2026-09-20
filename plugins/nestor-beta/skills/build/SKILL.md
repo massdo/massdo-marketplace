@@ -1,23 +1,23 @@
 ---
 name: build
-description: Build a specified Nestor task end to end into a validated target branch, implement its plan section by section, audit every commit, close the task, and optionally ship with prod after explicit confirmation. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
+description: Build a specified Nestor task end to end into an open pull request against a validated target branch, implement its plan section by section, audit every commit, and close the task. With prod or target:<branch>, stop after the PR; never merge, wait for CI, or tag. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
 argument-hint: "<id-or-slug> [prod] [target:<branch>]"
 disable-model-invocation: true
 ---
 
 # Nestor Build
 
-Turn a Nestor task into merged code. The task is the specification: this skill never
-invents the plan, it executes the one already written and then checks that the execution
-matches it.
+Turn a Nestor task into an open pull request. The task is the specification: this skill
+never invents the plan, it executes the one already written and then checks that the
+execution matches it.
 
 You run the whole build yourself: set the stage, write the code, audit what you wrote, and
-own every irreversible action — merge, tag, push. Nothing is delegated, so nothing reaches
-the audit as a second-hand report; the diff in front of you is the only evidence it needs.
+open the PR. Nothing is delegated, so nothing reaches the audit as a second-hand report;
+the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1e08038ba0ef1521" }` on every Nestor MCP call.
+Pass `{ "version_hash": "dbd65949c456294d" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -46,17 +46,17 @@ resolves the reference; do not select an input field from an underscore or anoth
 
 After the first argument, parse these optional named arguments in any order:
 
-- The literal flag `prod` requests the shipping stage. It does not authorize that stage by
-  itself; Stage 6 still requires a separate explicit confirmation from the user.
-- One `target:<branch>` argument selects the remote branch into which the PR will merge.
+- The literal flag `prod` selects `main` as the target when `target:` is absent.
+- One `target:<branch>` argument selects the remote branch the PR will target.
   Preserve everything after the first colon, including `/` in branch names. An absent
   argument or an empty `target:` leaves the target unspecified until Stage 2.
 
 Reject more than one `target:` argument or any unknown argument. Name the invalid argument
 and stop rather than guessing.
 
-Without `prod`, the skill stops on a branch with commits and a closed task. That is the
-common case and the safe default: shipping stays an explicit request.
+Without `prod` and without `target:<branch>`, Stage 2 asks for the target and waits. With
+either one, the skill stops after the branch, the commits, and the open pull request.
+Merging, waiting for CI, and tagging are not part of this skill.
 
 ## Stage 1 — Load the task and decide whether it can be built at all
 
@@ -173,32 +173,16 @@ Set the task's status with `update_item` and pass them as `expectedVersion` and 
 Use `completed` when every criterion passed. Use `need_review` when the work stands but
 something still needs a human eye, and say what.
 
-## Stage 6 — Ship — only with `prod` and explicit confirmation
+## Stage 6 — Open the pull request, then stop
 
-Everything in this stage is irreversible or public. Enter it only when the arguments
-contain the exact `prod` flag, and follow the repository's own Git workflow.
-
-Before any push, PR creation, merge, or tag, ask the user to confirm the shipping stage.
-Name the work branch, `targetBranch`, and the planned push, PR, merge, CI wait, and release
-tag. Then stop and wait. The `prod` flag in the original invocation is a request for this
-confirmation, not the confirmation itself. Continue only after an unambiguous affirmative
-reply; a refusal or ambiguous reply leaves the audited branch and commits in place without
-shipping.
+Enter this stage once `targetBranch` is resolved: that happens when the arguments contain
+`prod` or `target:<branch>`, or when the user answered Stage 2 with a target. Follow the
+repository's own Git workflow.
 
 1. Push the branch and open the PR with `gh`, explicitly passing `targetBranch` as its base.
    The body describes what the task asked for and what the audit found. Verify the PR's
    reported base branch and stop if it differs from `targetBranch`.
-2. **Wait for the PR checks before merging** — `gh pr checks <number> --watch`. Merging into
-   a protected branch on a red check is the one mistake this whole flow cannot undo. If the
-   user prefers merging first, this is the line to remove.
-3. Merge. Prefer a merge that preserves the per-section commits, since that history is the
-   point of Stage 3.
-4. Wait for CI to go green **on `targetBranch` after the merge**, not only on the PR. Two
-   branches passing separately does not prove their merge passes.
-5. Derive the release version from the merged commits: a breaking change (a trailing exclamation
-   mark on the type, or `BREAKING CHANGE`) bumps major, any `feat` bumps minor, otherwise patch. Read the latest
-   existing tag for the current number.
-6. **Announce the computed version and tag it** — `vX.Y.Z` — then push the tag.
+2. Report the PR URL and stop. Do not merge, do not wait for checks, do not tag.
 
 Never force-push, never rewrite a published branch, and never bypass a commit hook with
 `--no-verify`. If a hook refuses the commit, its diagnostic is the work to do.
@@ -208,5 +192,5 @@ Never force-push, never rewrite a published branch, and never bypass a commit ho
 - It never runs without a target. No argument means one line back to the user, nothing else.
 - It never writes the plan. An incomplete task is refused at Stage 1, not repaired.
 - It never substitutes a missing target branch without the user's confirmation.
-- It never ships without both `prod` and a separate explicit confirmation.
+- It never merges, waits for CI on `targetBranch`, or tags a release. The open PR is the end.
 - It never trusts its own recollection of the work in place of the diff.
