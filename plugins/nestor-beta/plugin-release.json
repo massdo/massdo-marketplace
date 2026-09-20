@@ -1,5 +1,5 @@
 {
-  "version": "0.7.1",
-  "version_hash": "1e08038ba0ef1521",
-  "changelog": "clean-task now defers shared Nestor tool procedures to the nestor skill. Concurrent body changes are reassessed while preserving the new information."
+  "version": "0.7.2",
+  "version_hash": "dbd65949c456294d",
+  "changelog": "Build stops after opening the pull request against the requested target. It no longer merges, waits for CI, or tags."
 }
