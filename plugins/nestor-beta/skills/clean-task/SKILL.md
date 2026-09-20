@@ -24,7 +24,7 @@ an exact slug. With no reference or multiple references, ask only for the single
 target and stop without mutation. Never infer a target from an earlier task or a plan.
 
 Use the Nestor MCP server supplied by the `nestor` plugin installed alongside
-`nestor-beta`. Pass `{ "version_hash": "83bfe517bb6928c9" }` on every Nestor MCP call.
+`nestor-beta`. Pass `{ "version_hash": "09562b125cffa9cd" }` on every Nestor MCP call.
 After every response, inspect `structuredContent.pluginUpdate`; when its status is
 `update_available`, announce exactly: « Une mise à jour est disponible. »
 
