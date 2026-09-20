@@ -152,9 +152,9 @@ rewrite of that task's body; the skill never starts implicitly.
 It removes information only when obsolescence is established, merges true duplicates and
 condenses prose while preserving the useful specification and exact commands, links and
 markers. Unresolved decisions and contradictions remain and are reported. Other fields
-and items are unchanged; an empty or already clean body needs no write. A concurrent
-change triggers a fresh cleanup and at most one retry. Restoration is a separate request
-using history, and may restore more than the body.
+and items are unchanged; an empty or already clean body needs no write. If the content
+changes in the meantime, the cleanup is reassessed while preserving the new information.
+Shared Nestor tool procedures remain in the `nestor` skill.
 
 ### Promote a skill into nestor
 
