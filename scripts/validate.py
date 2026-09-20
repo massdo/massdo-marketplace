@@ -21,14 +21,17 @@ PLUGINS = ROOT / "plugins"
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 VERSION_HASH = re.compile(r"[0-9a-f]{16}")
 
-# Root catalog -> how that ecosystem spells a plugin's source path.
+# Root catalog -> how that ecosystem spells a plugin's entry name and source
+# path. Kimi Code names its entries `id` where the others use `name`.
 CATALOGS = {
     "codex": (ROOT / ".agents" / "plugins" / "marketplace.json",
-              lambda entry: entry["source"]["path"]),
+              lambda entry: entry["name"], lambda entry: entry["source"]["path"]),
     "claude": (ROOT / ".claude-plugin" / "marketplace.json",
-               lambda entry: entry["source"]),
+               lambda entry: entry["name"], lambda entry: entry["source"]),
     "cursor": (ROOT / ".cursor-plugin" / "marketplace.json",
-               lambda entry: entry["source"]),
+               lambda entry: entry["name"], lambda entry: entry["source"]),
+    "kimi": (ROOT / ".kimi-plugin" / "marketplace.json",
+             lambda entry: entry["id"], lambda entry: entry["source"]),
 }
 
 # Ecosystem -> the manifest a plugin must ship to appear in that catalog.
@@ -36,6 +39,7 @@ MANIFESTS = {
     "codex": ".codex-plugin/plugin.json",
     "claude": ".claude-plugin/plugin.json",
     "cursor": ".cursor-plugin/plugin.json",
+    "kimi": ".kimi-plugin/plugin.json",
 }
 
 # Codex parses its catalog into a Rust enum: an unknown variant rejects the
@@ -110,13 +114,13 @@ check(plugin_dirs, "plugins/ holds no plugin")
 
 # --- Every catalog entry points at a plugin that exists and can serve it. ----
 
-for ecosystem, (catalog_path, source_of) in CATALOGS.items():
+for ecosystem, (catalog_path, name_of, source_of) in CATALOGS.items():
     catalog = read_json(catalog_path)
     rel = catalog_path.relative_to(ROOT)
     seen: set[str] = set()
 
     for entry in catalog["plugins"]:
-        name = entry["name"]
+        name = name_of(entry)
         check(name not in seen, f"{rel}: {name} listed twice")
         seen.add(name)
 
@@ -162,8 +166,9 @@ for plugin in plugin_dirs:
     check(manifests, f"{name}: no ecosystem manifest, the plugin is unreachable")
 
     # Claude Code falls back to the Git commit SHA when a manifest pins no
-    # version, so a missing version there would drift from Codex and Cursor,
-    # which pin. One shared number releases the three ecosystems at once.
+    # version, so a missing version there would drift from Codex, Cursor and
+    # Kimi Code, which pin. One shared number releases the four ecosystems
+    # at once.
     versions: dict[str, object] = {}
     for ecosystem, manifest in manifests.items():
         check(
@@ -373,6 +378,10 @@ for plugin in plugin_dirs:
     for ecosystem, manifest in manifests.items():
         for key in ("skills", "commands", "mcpServers", "hooks", "agents", "rules"):
             value = manifest.get(key)
+            # Kimi Code declares mcpServers as an inline server map, not as
+            # a path to a file the way Codex and Cursor do.
+            if isinstance(value, dict):
+                continue
             for declared in [value] if isinstance(value, str) else (value or []):
                 if not isinstance(declared, str):
                     continue
@@ -407,6 +416,19 @@ for plugin in plugin_dirs:
             read_json(dotted) == read_json(plain),
             f"{name}: .mcp.json and mcp.json have diverged",
         )
+
+    # Kimi Code declares its MCP servers inline in its manifest instead of
+    # pointing at a file. Same server, same URL, same drift to catch.
+    kimi_manifest = manifests.get("kimi")
+    if kimi_manifest is not None and plain.is_file():
+        declared = kimi_manifest.get("mcpServers") or {}
+        for server, config in (read_json(plain).get("mcpServers") or {}).items():
+            check(
+                declared.get(server, {}).get("url") == config.get("url"),
+                f"{name}: kimi manifest mcpServers.{server} declares "
+                f"url={declared.get(server, {}).get('url')!r}, "
+                f"mcp.json has {config.get('url')!r}",
+            )
 
     # Skills are shared by reference across ecosystems, never copied. Two
     # SKILL.md claiming one name inside a plugin means a stale duplicate.

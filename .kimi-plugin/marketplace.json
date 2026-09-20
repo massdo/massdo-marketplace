@@ -1,0 +1,20 @@
+{
+  "version": "2",
+  "plugins": [
+    {
+      "id": "nestor",
+      "displayName": "Nestor",
+      "source": "./plugins/nestor"
+    },
+    {
+      "id": "nestor-beta",
+      "displayName": "Nestor Beta",
+      "source": "./plugins/nestor-beta"
+    },
+    {
+      "id": "massdo-skills",
+      "displayName": "Massdo Skills",
+      "source": "./plugins/massdo-skills"
+    }
+  ]
+}

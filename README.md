@@ -1,6 +1,6 @@
 # Massdo marketplace
 
-This repository is the canonical source for the Nestor journal skill and its Codex, Claude Code, and Cursor plugins.
+This repository is the canonical source for the Nestor journal skill and its Codex, Claude Code, Cursor, and Kimi Code plugins.
 
 ## Layout
 
@@ -11,12 +11,14 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor/.claude-plugin/`: Claude Code plugin manifest.
 - `plugins/nestor/.cursor-plugin/`: Cursor plugin manifest.
+- `plugins/nestor/.kimi-plugin/`: Kimi Code plugin manifest, with the MCP server inline.
 - `plugins/nestor/.mcp.json`: Claude Code and Codex public MCP connection.
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
+- `.kimi-plugin/marketplace.json`: Kimi Code marketplace catalog.
 
 ## Install the Claude Code plugin
 
@@ -52,6 +54,21 @@ Teams and Enterprise can import this repository as a team marketplace from **Das
 
 The public Cursor Marketplace listing is submitted separately at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
+## Install the Kimi Code plugin
+
+Kimi Code reads its own manifest and installs from a local clone, in the TUI:
+
+```
+/plugins install /absolute/path/to/massdo-marketplace/plugins/nestor
+/reload
+```
+
+Install `nestor-beta` and `massdo-skills` the same way, or browse all three through the
+catalog with `/plugins marketplace /absolute/path/to/massdo-marketplace/.kimi-plugin/marketplace.json`.
+Plugins are installed per-user and apply to every project; a session picks up a change after
+`/reload` or in a new session. `nestor-beta` declares no MCP server here either — the journal
+server comes from `nestor`, which must be installed alongside it.
+
 ## Invoke a skill
 
 Every skill here is reached by its own name, and by nothing else. There is no command
@@ -63,6 +80,7 @@ twice, and Codex sees the same entry point as Claude Code.
 | Claude Code | `/<plugin>:<skill> <arguments>` | passed through; see below |
 | Cursor | `/` then the skill name | not documented by Cursor |
 | Codex | `$<plugin>:<skill>` | free text after the name |
+| Kimi Code | `/skill:<skill> <arguments>` | appended as an `ARGUMENTS:` line |
 
 A skill is also reached without naming it, by asking in plain language, unless its
 frontmatter turns that off — see the policy table below.
@@ -84,7 +102,8 @@ ecosystems do not read the same one:
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
 and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
-`disable-model-invocation` and reads it. `user-invocable: false` is never set here: combined
+`disable-model-invocation` and reads it. Kimi Code reads it too, in the same kebab-case
+spelling. `user-invocable: false` is never set here: combined
 with `disable-model-invocation` it leaves a skill that nothing can reach, and `validate.py`
 refuses it.
 
@@ -131,7 +150,8 @@ naming one tool. Since a skill can call any server registered for the session, t
 declaration buys nothing.
 
 Claude Code installs `nestor` on its own, from `"dependencies": ["nestor"]` in the Claude
-Code manifest. Codex and Cursor have no equivalent field, so install both plugins there.
+Code manifest. Codex, Cursor and Kimi Code have no equivalent field, so install both plugins
+there.
 
 Iterate without publishing anything, reloading with `/reload-plugins` after each edit:
 
@@ -200,8 +220,9 @@ npm install --global @anthropic-ai/claude-code@2.1.275
 `scripts/check.sh` runs complementary validators:
 
 - `scripts/validate.py` reads every catalog and manifest against each other — a plugin
-  listed in one catalog and missing from another, three manifests disagreeing on a version,
-  `.mcp.json` drifting from `mcp.json`. No ecosystem catches that on its own, since each one
+  listed in one catalog and missing from another, the manifests disagreeing on a version,
+  `.mcp.json` drifting from `mcp.json`, the Kimi Code manifest declaring an MCP URL that
+  `mcp.json` does not have. No ecosystem catches that on its own, since each one
   only ever reads its own file.
 - `scripts/validate_skills.py` parses every skill's YAML, rejects duplicate keys, and checks
   names, descriptions, directory names, metadata strings and the types of invocation
@@ -258,6 +279,11 @@ the references, and they are worth re-reading before adding a field:
   and `description` only. `agents/openai.yaml` carries `interface` (`display_name`,
   `short_description`, `icon_small`, `icon_large`, `brand_color`, `default_prompt` — every one a
   string), `policy` (`allow_implicit_invocation`) and `dependencies.tools`.
+- **Kimi Code** — `.kimi-plugin/plugin.json` and `.kimi-plugin/marketplace.json` follow
+  [Plugins](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/plugins.html) in the
+  Kimi Code documentation. Two shape differences from the other ecosystems: the manifest
+  declares `mcpServers` inline as a server map rather than as a path to a file, and the
+  catalog names its entries `id` instead of `name`.
 - **Cursor** — no published schema was found. `.cursor-plugin/*.json` follows the shape Cursor's
   documentation describes, and nothing in this repository validates it.
 

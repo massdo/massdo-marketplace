@@ -50,9 +50,17 @@ class RepositoryValidation(unittest.TestCase):
             ("codex", ".agents/plugins/marketplace.json"),
             ("claude", ".claude-plugin/marketplace.json"),
             ("cursor", ".cursor-plugin/marketplace.json"),
+            ("kimi", ".kimi-plugin/marketplace.json"),
         ):
-            source = {"source": "local", "path": "./plugins/demo"} if ecosystem == "codex" else "./plugins/demo"
-            self.json(catalog, {"name": "fixture", "plugins": [{"name": "demo", "source": source}]})
+            if ecosystem == "codex":
+                source = {"source": "local", "path": "./plugins/demo"}
+                entry, root = {"name": "demo", "source": source}, {"name": "fixture"}
+            elif ecosystem == "kimi":
+                # Kimi Code names its entries `id` and versions the catalog root.
+                entry, root = {"id": "demo", "source": "./plugins/demo"}, {"version": "2"}
+            else:
+                entry, root = {"name": "demo", "source": "./plugins/demo"}, {"name": "fixture"}
+            self.json(catalog, root | {"plugins": [entry]})
             manifest = {
                 "name": "demo", "version": "1.0.0", "skills": "./skills/",
             }
@@ -101,7 +109,7 @@ class RepositoryValidation(unittest.TestCase):
         return self.run_command("./scripts/check.sh", *args, **kwargs)
 
     def bump(self, *, changelog="Changed", version_hash="fedcba9876543210"):
-        for ecosystem in ("codex", "claude", "cursor"):
+        for ecosystem in ("codex", "claude", "cursor", "kimi"):
             path = f"plugins/demo/.{ecosystem}-plugin/plugin.json"
             data = json.loads((self.root / path).read_text())
             data["version"] = "1.1.0"
@@ -202,7 +210,7 @@ class RepositoryValidation(unittest.TestCase):
         self.assertIn("ships a commands/ directory", result.stderr)
 
     def test_command_declaration_is_rejected_in_each_manifest(self):
-        for ecosystem in ("codex", "claude", "cursor"):
+        for ecosystem in ("codex", "claude", "cursor", "kimi"):
             with self.subTest(ecosystem=ecosystem):
                 path = f"plugins/demo/.{ecosystem}-plugin/plugin.json"
                 original = (self.root / path).read_text()
@@ -212,6 +220,18 @@ class RepositoryValidation(unittest.TestCase):
                 result = self.check(ok=False)
                 self.assertIn(f"{ecosystem} manifest declares commands", result.stderr)
                 self.write(path, original)
+
+    def test_kimi_mcp_url_must_match_mcp_json(self):
+        self.json("plugins/demo/mcp.json", {"mcpServers": {"journal": {"type": "http", "url": "https://a.example/mcp"}}})
+        path = "plugins/demo/.kimi-plugin/plugin.json"
+        manifest = json.loads((self.root / path).read_text())
+        manifest["mcpServers"] = {"journal": {"url": "https://a.example/mcp"}}
+        self.json(path, manifest)
+        self.check()
+        manifest["mcpServers"] = {"journal": {"url": "https://b.example/mcp"}}
+        self.json(path, manifest)
+        result = self.check(ok=False)
+        self.assertIn("mcpServers.journal", result.stderr)
 
     def test_nestor_grouped_read_protection_is_required_in_body(self):
         shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
