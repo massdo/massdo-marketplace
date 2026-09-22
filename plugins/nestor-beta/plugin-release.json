@@ -1,5 +1,5 @@
 {
-  "version": "0.8.2",
-  "version_hash": "c290c05e5d489128",
-  "changelog": "The task skill is now named next-tasks: invoke it with /nestor-beta:next-tasks [project] or $nestor-beta:next-tasks [project]. What it reads is unchanged."
+  "version": "0.9.0",
+  "version_hash": "a18faeeeca56e4d4",
+  "changelog": "Doctor now finds the project by itself: invoked without an argument, it reads the name from the workspace's Git repository instead of asking you to pick one. An explicit name still wins and is never checked against the repository."
 }
