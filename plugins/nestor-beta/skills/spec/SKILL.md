@@ -241,8 +241,9 @@ with `get_project` before creating any task:
   ask one question to identify the intended project before any write. Other errors leave
   resolution incomplete: report them and stop rather than treating them as no match.
 
-Resolve silently when the result is unambiguous. Call `search_project` only when the user
-asks what projects exist; never list them to accompany the project question.
+Resolve silently when the result is unambiguous. Call `search_project`, with no `query` so
+that no project is hidden, only when the user asks what projects exist; never list them to
+accompany the project question.
 
 ### Write the tree
 
