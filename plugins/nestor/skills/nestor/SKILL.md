@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.2"
+  pluginVersion: "0.7.3"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.2, hashed as `69f65d3687e6891d`.
+This plugin version is 0.7.3, hashed as `ad3a12df4031d2d7`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "69f65d3687e6891d", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "ad3a12df4031d2d7", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
@@ -64,7 +64,7 @@ Never block the requested journal operation. Never write on disk. Never invent a
 - Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
-- Use `get_project` to resolve a project the user names: it reads by exact `name` as well as by id. Keep `list_projects` for browsing every project, or for proposing candidates when the given name matches none. Never guess a project identifier.
+- Use `get_project` to resolve a project the user names: it reads by exact `name` as well as by id. Keep `search_project` for browsing every project, called without a `query`, or for proposing candidates when the given name matches none, called with that name as `query`. Never guess a project identifier.
 - Report incomplete results whenever a response has `hasMore: true`.
 
 ## antipattern
@@ -72,7 +72,7 @@ Never block the requested journal operation. Never write on disk. Never invent a
 An `antipattern` is an action the agent must avoid at all costs. The first three entries govern reads; the others protect optimistic mutations:
 
 - `search_for_known_identity`: never call `search_items` or `list_items` to reach an item whose id or slug is already known, not even to read a single field or to avoid a long body. `get_item` is the only deterministic access to a known item. Search matches the title and body, which the user rewrites at any time, so a renamed item stops matching a query that worked yesterday. The entries below forbid several `get_item` calls; none of them makes a search the substitute.
-- `list_projects_for_named_project`: never call `list_projects` to resolve a project the user names. `get_project` reads a project by exact `name`, so a named project is a deterministic read, exactly like an item whose slug is known. `list_projects` returns every project with its context to keep a single one, and pages once the journal holds more projects than a page. Call it only when the user wants to see all the projects, or when the name matches none and the candidates have to be proposed.
+- `search_project_for_named_project`: never call `search_project` to resolve a project the user names. `get_project` reads a project by exact `name`, so a named project is a deterministic read, exactly like an item whose slug is known. `search_project` matches names loosely and returns candidates, so a close name comes back for a project the user never meant, and it pages once the journal holds more projects than a page. Call it only when the user wants to see all the projects, without a `query`, or when the exact read finds nothing and the candidates have to be proposed, with the failed name as `query`. A fuzzy result never authorizes a write on its own: the user confirms the project first.
 - `get_item_burst`: never issue avoidable separate `get_item` calls for known references that one call with an array in `ref` can read. Use at most 5 references per call. Smaller groups are allowed for known large content, client output limits, different scopes, or reads that depend on earlier results.
 - `preventive_get_item_before_update`: never call `get_item` immediately before `update_item` when a matched `version` and `etag` pair is already held. Send that pair directly. A `create_item` or `update_item` response already holds that pair, as does a conflict's `details.current`, so a mutation right after a creation, another mutation, or a conflict with that field needs no `get_item`.
 - `post_success_get_item`: never call `get_item` after a successful `update_item` only to verify the change. Trust the confirmed mutation result. A transport HTTP 502 is not a confirmed success; report the uncertain outcome instead of using a verification read to infer it.
@@ -96,7 +96,7 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Use `get_item_version` for a freshness check only. It never prepares a mutation, because it returns no ETag.
 - Use `item_history`, `list_events`, or `project_history` for history.
 - Use `list_tags` and `manage_tag` for tags.
-- Use `get_project`, `list_projects`, `manage_project`, and `project_history` for projects.
+- Use `get_project`, `search_project`, `manage_project`, and `project_history` for projects.
 - Use `configure_journal` only for journal configuration. Read the current configuration before changing it.
 - Treat `@@tags` as a tag consultation and `@@config` as a configuration request. Do not create items from them.
 

@@ -13,7 +13,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "69f65d3687e6891d" }` on every Nestor MCP call.
+Pass `{ "version_hash": "ad3a12df4031d2d7" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -80,10 +80,11 @@ two calls; a tree that never needed them costs one.
 Project names are unique in Nestor, so a name resolves to at most one project.
 
 1. `project` given → `get_project { name }`. Use the returned id as the scope.
-2. Unknown name → `list_projects`, page through `hasMore`, then show the close matches
-   and ask which one. Call it with `archived: true` too before concluding a name does
-   not exist.
-3. No `project` and no `item` → `list_projects`, then ask which one to render.
+2. Unknown name → `search_project { query: name }`, page through `hasMore`, then show the
+   close matches and ask which one, a lone match included. Call it with `archived: true`
+   too before concluding a name does not exist.
+3. No `project` and no `item` → `search_project` with no `query`, then ask which one to
+   render.
 
 **With `item` and no `project`.** Call `get_item` with `ref: item`, the global `scope`, and
 `version_hash`. Global scope
