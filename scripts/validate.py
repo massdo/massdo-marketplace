@@ -290,7 +290,7 @@ for plugin in plugin_dirs:
             )
             for antipattern in (
                 "search_for_known_identity",
-                "list_projects_for_named_project",
+                "search_project_for_named_project",
                 "get_item_burst",
                 "preventive_get_item_before_update",
                 "post_success_get_item",
@@ -313,9 +313,9 @@ for plugin in plugin_dirs:
                 "nestor: skill does not forbid searching for a known identity",
             )
             check(
-                "never call `list_projects` to resolve a project the user names"
+                "never call `search_project` to resolve a project the user names"
                 in skill_text,
-                "nestor: skill does not forbid list_projects for a named project",
+                "nestor: skill does not forbid search_project for a named project",
             )
             check(
                 "never call `get_item` immediately before `update_item`" in skill_text,

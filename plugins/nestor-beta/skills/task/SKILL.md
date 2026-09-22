@@ -15,7 +15,7 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "0281c95726278767" }` on every Nestor MCP call.
+Pass `{ "version_hash": "5438cf23e2a2a90c" }` on every Nestor MCP call.
 
 ## Invocation
 
@@ -56,19 +56,14 @@ absent, so report that and stop instead.
 After an exact failure, the rule is the same for an explicit argument and for a name
 inferred from Git:
 
-- With `search_project` available, call it with the failed name and select a project
-  automatically only when the search returns a single result **in total**. A partial page
-  never establishes that uniqueness. Call it without a `query` to browse the projects.
+- Call `search_project` with the failed name as `query` and select a project automatically
+  only when the search returns a single result **in total**. A partial page never
+  establishes that uniqueness. Call it without a `query` to browse the projects.
 - With several results, ask the user to choose. Never take the first result for the only
   relevant one — two projects can carry similar names.
 - With no result, ask for another name or offer the available projects.
-- While `search_project` is absent from the server, page through `list_projects` to offer
-  the available names, and ask the user to confirm any close match drawn from that list,
-  even one that looks unique.
 
-The server owns fuzzy matching: define no distance and no threshold here. Never call a tool
-the accessible catalogue does not expose — as of 22 September 2026 it holds `get_project`
-and `list_projects`, and no `search_project`.
+The server owns fuzzy matching: define no distance and no threshold here.
 
 Name the project actually retained whenever it is not the exact name that was asked for,
 and announce an archived project before reading it.

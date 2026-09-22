@@ -187,9 +187,9 @@ is no remote.
 
 It reads the project's `active` view through `list_items`: the `todo`, `in_progress` and
 `need_review` tasks, subtasks included, with no time bound and no local re-sorting or
-volume cap. An exact `get_project` read comes first, and any close match — from
-`search_project` where the server exposes it, from `list_projects` otherwise — is
-confirmed by the user before it is used. Nothing is created or modified, and items are
+volume cap. An exact `get_project` read comes first, and a close match from
+`search_project` stands on its own only when the search returns a single result in total;
+anything else is confirmed by the user. Nothing is created or modified, and items are
 cited the way the `nestor` skill prescribes.
 
 ### Promote a skill into nestor

@@ -27,7 +27,7 @@ task bodies are written in that same language.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "0281c95726278767" }` on every Nestor MCP call.
+Pass `{ "version_hash": "5438cf23e2a2a90c" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -241,7 +241,7 @@ with `get_project` before creating any task:
   ask one question to identify the intended project before any write. Other errors leave
   resolution incomplete: report them and stop rather than treating them as no match.
 
-Resolve silently when the result is unambiguous. Call `list_projects` only when the user
+Resolve silently when the result is unambiguous. Call `search_project` only when the user
 asks what projects exist; never list them to accompany the project question.
 
 ### Write the tree

@@ -1,5 +1,5 @@
 {
-  "version": "0.8.0",
-  "version_hash": "0281c95726278767",
-  "changelog": "New task skill: list a project's active tasks — todo, in progress and awaiting review — from the project name you give it, or from the Git remote of the repository you are in."
+  "version": "0.8.1",
+  "version_hash": "5438cf23e2a2a90c",
+  "changelog": "The task and spec skills now reach projects with search_project, which browses them the way list_projects did and also proposes close names when the exact name finds nothing."
 }
