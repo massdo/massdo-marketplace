@@ -1,7 +1,7 @@
 ---
 name: doctor
-description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; an omitted project opens project selection.
-argument-hint: "[project-ref]"
+description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; the project is named as an argument or inferred from the workspace's Git repository.
+argument-hint: "[project]"
 disable-model-invocation: true
 ---
 
@@ -17,15 +17,55 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## 1. Select the project and tasks
 
-`/nestor-beta:doctor [project-ref]`
+`/nestor-beta:doctor [project]` — Codex: `$nestor-beta:doctor [project]`; Cursor: select
+the skill, then supply the project name.
 
 The arguments are the text written after the skill name at invocation; depending on the
 client, they may arrive in a final `ARGUMENTS: …` line. For an equivalent request in natural
-language, read them from the user's message. The whole argument string is one Nestor project
-reference, a name or an id: never split it, and keep its spaces as part of the name.
+language, read them from the user's message. The whole argument string is one project name:
+never split it, and keep its internal spaces as part of the name. An empty or blank string
+is no argument at all.
 
-If no project is supplied, show the active projects and wait for the user to select one.
-Confirm that the selected project corresponds to the repository being audited.
+**An explicit name is authoritative.** Do not read Git to confirm it or to replace it, and
+do not require it to match the repository being audited: doctor consults a project's tasks,
+and the argument is how the user reaches a project from anywhere. Even a name that looks
+like an id is read with `name`. The Git reads below serve the audit of deliveries after the
+selection; the argument never names another repository path.
+
+Without an argument, infer the name from the workspace's Git repository:
+
+1. Work from the repository root, not from the current directory — a subdirectory and a
+   linked worktree must give the same answer as the root of the reference repository.
+2. Read the `origin` remote and keep the last segment of its URL, without a `.git` suffix.
+   Recognize the usual HTTPS, SSH and SCP forms, with or without the suffix.
+3. With no `origin`, use the name of the repository root directory — never the arbitrary
+   directory name of a linked worktree standing in for another project.
+
+When none of this yields a reliable name, ask the user which project to audit and stop.
+Never silently reuse a project named in an earlier conversation.
+
+### Resolve the project
+
+Try the exact read first: `get_project` by `name`. Only a failure to match justifies
+looking for close names — a transport or authentication error does not mean the project is
+absent, so report that and stop instead of searching.
+
+After an exact failure, the rule is the same for an explicit argument and for a name
+inferred from Git:
+
+- Call `search_project` with the failed name as `query` and select a project automatically
+  only when the search returns a single result **in total**. A partial page never
+  establishes that uniqueness. Call it without a `query` to browse the projects.
+- With several results, ask the user to choose. Never take the first result for the only
+  relevant one — two projects can carry similar names.
+- With no result, ask for another name or offer the available projects.
+
+The server owns fuzzy matching: define no distance and no threshold here. This selection
+creates no project.
+
+Name the project actually retained whenever it is not the exact name that was asked for,
+and announce an archived project before reading its tasks. Use the id Nestor returns for
+the project scope of every later call.
 
 Read all project tasks in `todo`, `in_progress` and `need_review`, including their full
 descriptions and completion criteria. Exclude backlog, archived and already-closed tasks.

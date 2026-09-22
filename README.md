@@ -192,6 +192,21 @@ volume cap. An exact `get_project` read comes first, and a close match from
 anything else is confirmed by the user. Nothing is created or modified, and items are
 cited the way the `nestor` skill prescribes.
 
+### Audit a project's delivered tasks
+
+Invoke `/nestor-beta:doctor [project]` in Claude Code or `$nestor-beta:doctor [project]`
+in Codex. In Cursor, select `doctor` and supply the project name. The whole argument is one
+project name, spaces included; it is authoritative and is never checked against the
+repository. Without an argument, the project name is inferred from the workspace's Git
+repository — the last segment of the `origin` URL, or the root directory name when there is
+no `origin` — so a subdirectory or a linked worktree resolves to the same project as the root.
+
+An exact `get_project` read comes first, and a close match from `search_project` stands on
+its own only when the search returns a single result in total; several results, none, or no
+reliable inferred name all go back to the user for a choice, and nothing is created. The
+audit itself is unchanged: open tasks are checked against merged history, closures are
+proposed with evidence, and nothing is closed without approval.
+
 ### Promote a skill into nestor
 
 A skill leaving this plugin is moved, never copied — one `SKILL.md` per skill name is the
