@@ -98,7 +98,7 @@ ecosystems do not read the same one:
 | Skill | Model may invoke | Held by |
 |---|---|---|
 | `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
-| the three `massdo-skills`, `build`, `spec`, `doctor`, `clean-task` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
+| the three `massdo-skills`, `build`, `spec`, `doctor`, `clean-task`, `task` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
 and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
@@ -175,6 +175,22 @@ markers. Unresolved decisions and contradictions remain and are reported. Other 
 and items are unchanged; an empty or already clean body needs no write. If the content
 changes in the meantime, the cleanup is reassessed while preserving the new information.
 Shared Nestor tool procedures remain in the `nestor` skill.
+
+### List a project's active tasks
+
+Invoke `/nestor-beta:task [project]` in Claude Code or `$nestor-beta:task [project]` in
+Codex. In Cursor, select `task` and supply the project name. The whole argument is one
+project name, spaces included; it is authoritative and is never checked against the
+repository. Without an argument, the project name is inferred from the workspace's Git
+repository — the last segment of the `origin` URL, or the root directory name when there
+is no remote.
+
+It reads the project's `active` view through `list_items`: the `todo`, `in_progress` and
+`need_review` tasks, subtasks included, with no time bound and no local re-sorting or
+volume cap. An exact `get_project` read comes first, and any close match — from
+`search_project` where the server exposes it, from `list_projects` otherwise — is
+confirmed by the user before it is used. Nothing is created or modified, and items are
+cited the way the `nestor` skill prescribes.
 
 ### Promote a skill into nestor
 
