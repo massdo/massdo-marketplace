@@ -1,7 +1,7 @@
 ---
 name: doctor
-description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; an omitted project opens project selection.
-argument-hint: "[project-ref]"
+description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; the project is named as an argument or inferred from the workspace's Git repository.
+argument-hint: "[project]"
 disable-model-invocation: true
 ---
 
@@ -17,7 +17,8 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## 1. Select the project and tasks
 
-`/nestor-beta:doctor [project-ref]`
+`/nestor-beta:doctor [project]` — Codex: `$nestor-beta:doctor [project]`; Cursor: select
+the skill, then supply the project name.
 
 The arguments are the text written after the skill name at invocation; depending on the
 client, they may arrive in a final `ARGUMENTS: …` line. For an equivalent request in natural
