@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Doctor"
-  short_description: "Audit delivered tasks and propose closures — $nestor-beta:doctor [project-ref]"
-  default_prompt: "Use $nestor-beta:doctor [project-ref] to audit merged deliveries and ask me to approve task closures; without a project ref, let me select one."
+  short_description: "Audit task closures — $nestor-beta:doctor [project]"
+  default_prompt: "Use $nestor-beta:doctor [project] to audit merged deliveries and ask me to approve task closures; without a project name, the project is inferred from the workspace's Git repository."
 
 policy:
   allow_implicit_invocation: false
