@@ -199,7 +199,7 @@ in Codex. In Cursor, select `doctor` and supply the project name. The whole argu
 project name, spaces included; it is authoritative and is never checked against the
 repository. Without an argument, the project name is inferred from the workspace's Git
 repository — the last segment of the `origin` URL, or the root directory name when there is
-no remote — so a subdirectory or a linked worktree resolves to the same project as the root.
+no `origin` — so a subdirectory or a linked worktree resolves to the same project as the root.
 
 An exact `get_project` read comes first, and a close match from `search_project` stands on
 its own only when the search returns a single result in total; several results, none, or no
