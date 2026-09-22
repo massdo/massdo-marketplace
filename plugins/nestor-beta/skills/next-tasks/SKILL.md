@@ -1,11 +1,11 @@
 ---
-name: task
-description: List the active tasks of one Nestor project — todo, in progress and awaiting review — for a project named as an argument or inferred from the workspace's Git repository. Use only when the user explicitly invokes task; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
+name: next-tasks
+description: List the active tasks of one Nestor project — todo, in progress and awaiting review — for a project named as an argument or inferred from the workspace's Git repository. Use only when the user explicitly invokes next-tasks; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
 argument-hint: "[project]"
 disable-model-invocation: true
 ---
 
-# Nestor Task
+# Nestor Next Tasks
 
 Show what is moving in one Nestor project: the tasks of its `active` view.
 
@@ -15,12 +15,12 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "5438cf23e2a2a90c" }` on every Nestor MCP call.
+Pass `{ "version_hash": "c290c05e5d489128" }` on every Nestor MCP call.
 
 ## Invocation
 
-- Claude Code: `/nestor-beta:task [project]`.
-- Codex: `$nestor-beta:task [project]`.
+- Claude Code: `/nestor-beta:next-tasks [project]`.
+- Codex: `$nestor-beta:next-tasks [project]`.
 - Cursor: select the skill, then supply the project name.
 
 Run only when the user invokes this skill directly. The arguments are the text written

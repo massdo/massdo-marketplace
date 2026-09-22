@@ -1,7 +1,0 @@
-interface:
-  display_name: "Nestor Task"
-  short_description: "List a project's active tasks — $nestor-beta:task [project]"
-  default_prompt: "Use $nestor-beta:task [project] to list that project's active tasks; without a project name, infer it from this repository's Git remote."
-
-policy:
-  allow_implicit_invocation: false
