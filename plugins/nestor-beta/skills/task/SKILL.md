@@ -89,3 +89,7 @@ modification, with the server breaking ties. Never re-sort the pages here.
 `hasMore`, say that results remain; a partial page is never presented as the whole view.
 
 When the view is empty, say so and name the project that was read.
+
+Cite the items exactly as the `nestor` skill prescribes. Invent no layout, no grouping and
+no table of your own: one citation form across every skill is what makes an item reference
+recognizable from one answer to the next.
