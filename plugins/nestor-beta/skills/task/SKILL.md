@@ -1,0 +1,91 @@
+---
+name: task
+description: List the active tasks of one Nestor project — todo, in progress and awaiting review — for a project named as an argument or inferred from the workspace's Git repository. Use only when the user explicitly invokes task; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
+argument-hint: "[project]"
+disable-model-invocation: true
+---
+
+# Nestor Task
+
+Show what is moving in one Nestor project: the tasks of its `active` view.
+
+This is a consultation. It creates no project, changes no item and writes nothing. The
+`nestor` skill holds the shared journal procedures and the way items are cited; this skill
+only decides which project to read and which tasks to show.
+
+## Identify the plugin version
+
+Pass `{ "version_hash": "2d6a13986427d8f9" }` on every Nestor MCP call.
+
+## Invocation
+
+- Claude Code: `/nestor-beta:task [project]`.
+- Codex: `$nestor-beta:task [project]`.
+- Cursor: select the skill, then supply the project name.
+
+Run only when the user invokes this skill directly. The arguments are the text written
+after the skill name; depending on the client, they may arrive in a final `ARGUMENTS: …`
+line. When the request is phrased in prose instead, read them from the user's message.
+
+**The whole argument string is one project name.** Keep its internal spaces and never split
+it into several arguments. An empty or blank string is no argument at all.
+
+## Resolve the project
+
+**An explicit argument is authoritative.** Do not read Git to confirm it or to replace it.
+This skill consults tasks; it has no reason to check that the named project matches the
+current repository, and the argument is how the user reaches a project from anywhere.
+
+Without an argument, infer the name from the workspace's Git repository:
+
+1. Work from the repository root, not from the current directory — a subdirectory and a
+   linked worktree must give the same answer as the root.
+2. Read the `origin` remote and keep the last segment of its URL, without a `.git` suffix.
+   Recognize the usual HTTPS, SSH and SCP forms.
+3. With no `origin`, use the name of the repository root directory.
+
+When none of this yields a reliable name, ask the user which project to read and stop.
+Never silently reuse a project named in an earlier conversation.
+
+### Read the project
+
+Try the exact read first: `get_project` by `name`. Only a failure to match justifies
+looking for close names — a transport or authentication error does not mean the project is
+absent, so report that and stop instead.
+
+After an exact failure, the rule is the same for an explicit argument and for a name
+inferred from Git:
+
+- With `search_project` available, call it with the failed name and select a project
+  automatically only when the search returns a single result **in total**. A partial page
+  never establishes that uniqueness. Call it without a `query` to browse the projects.
+- With several results, ask the user to choose. Never take the first result for the only
+  relevant one — two projects can carry similar names.
+- With no result, ask for another name or offer the available projects.
+- While `search_project` is absent from the server, page through `list_projects` to offer
+  the available names, and ask the user to confirm any close match drawn from that list,
+  even one that looks unique.
+
+The server owns fuzzy matching: define no distance and no threshold here. Never call a tool
+the accessible catalogue does not expose — as of 22 September 2026 it holds `get_project`
+and `list_projects`, and no `search_project`.
+
+Name the project actually retained whenever it is not the exact name that was asked for,
+and announce an archived project before reading it.
+
+## Read the active tasks
+
+Call `list_items` with `view: "active"` in the resolved project's scope.
+
+That view holds the `todo`, `in_progress` and `need_review` tasks, scheduled or not, with
+no time bound. It already leaves out the backlog, completed and cancelled tasks, archives,
+the trash and every note. Add no further filter — in particular, do not restrict the read
+to root tasks, since a subtask is active work like any other.
+
+**Keep the server's order**: descending priority, then ascending schedule, then descending
+modification, with the server breaking ties. Never re-sort the pages here.
+
+**Keep the server's pagination.** Add no volume limit of your own. When a response carries
+`hasMore`, say that results remain; a partial page is never presented as the whole view.
+
+When the view is empty, say so and name the project that was read.
