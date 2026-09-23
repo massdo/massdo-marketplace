@@ -12,6 +12,10 @@ An explicit user invocation authorizes the rewrite directly; do not routinely as
 approval of a draft. This workflow does not implement the task, clean its children or
 modify other items.
 
+## Identify the plugin version
+
+Pass `{ "version_hash": "33e5788bba8455c5" }` on every Nestor MCP call.
+
 ## Invocation
 
 - Claude Code: `/nestor-beta:clean-task <ref>`.

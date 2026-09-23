@@ -125,10 +125,11 @@ call needs to name none. `probe_plugin_version` and the update warning both reso
 
 Two consequences:
 
-- A skill hard-codes the hash of the plugin that **ships** it, whatever plugin declares the
-  MCP server it calls. `nestor-beta` declares no server and still publishes its own release;
-  `build` and `spec` send `nestor-beta`'s hash. `scripts/validate.py` holds exactly that
-  rule, for every plugin.
+- Every skill of a released plugin hard-codes the hash of the plugin that **ships** it,
+  whatever plugin declares the MCP server it calls — a skill that sends none leaves the
+  server unable to tell an outdated install that it is outdated. `nestor-beta` declares no
+  server and still publishes its own release, so each of its skills sends `nestor-beta`'s
+  hash. `scripts/validate.py` holds exactly that rule, for every plugin.
 - A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
   value must collide with no other published release. Reusing a hash makes the server
   resolve the wrong plugin; keeping the old one makes it report an outdated client as

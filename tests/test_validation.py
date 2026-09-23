@@ -70,7 +70,7 @@ class RepositoryValidation(unittest.TestCase):
         self.release = "plugins/demo/plugin-release.json"
         self.json(self.release, {"version": "1.0.0", "version_hash": "0123456789abcdef", "changelog": "Initial release"})
         self.skill = "plugins/demo/skills/example/SKILL.md"
-        self.write(self.skill, "---\nname: example\ndescription: Fixture skill.\n---\nBody.\n")
+        self.write_skill()
         self.write("plugins/demo/rules/a.md", "a\n")
         self.write("plugins/demo/rules/b.md", "b\n")
         self.git("init", "-q", "-b", "main")
@@ -88,6 +88,11 @@ class RepositoryValidation(unittest.TestCase):
 
     def json(self, path, data):
         self.write(path, json.dumps(data) + "\n")
+
+    def write_skill(self, version_hash="0123456789abcdef", description="Fixture skill."):
+        # A released plugin's skill declares its release's hash; None declares none.
+        body = f'Pass `{{ "version_hash": "{version_hash}" }}`.\n' if version_hash else "Body.\n"
+        self.write(self.skill, f"---\nname: example\ndescription: {description}\n---\n{body}")
 
     def run_command(self, *args, ok=True, env=None):
         result = subprocess.run(args, cwd=self.root, env=self.env | (env or {}),
@@ -115,6 +120,7 @@ class RepositoryValidation(unittest.TestCase):
             data["version"] = "1.1.0"
             self.json(path, data)
         self.json(self.release, {"version": "1.1.0", "version_hash": version_hash, "changelog": changelog})
+        self.write_skill(version_hash)
 
     def divergent_branches(self, conflict=False):
         self.git("switch", "-qc", "left")
@@ -266,6 +272,7 @@ class RepositoryValidation(unittest.TestCase):
 
     def test_release_absent_from_valid_base_is_allowed(self):
         self.git("rm", self.release)
+        self.write_skill(None)
         self.commit("no release")
         base = self.git("rev-parse", "HEAD").stdout.strip()
         self.bump()
@@ -277,6 +284,13 @@ class RepositoryValidation(unittest.TestCase):
                 self.bump(**{field: value})
                 result = self.check("--baseline", self.base, ok=False)
                 self.assertIn(f"{field} is unchanged", result.stderr)
+
+    def test_released_plugin_skill_must_declare_version_hash(self):
+        self.write_skill(None)
+        result = self.check(ok=False)
+        self.assertIn("declares no version_hash", result.stderr)
+        (self.root / self.release).unlink()
+        self.check()
 
     def test_ci_compares_multi_commit_push_to_before_sha(self):
         self.bump(changelog="Initial release")
@@ -315,7 +329,7 @@ class RepositoryValidation(unittest.TestCase):
         self.check(ok=False, env={"TEST_CLAUDE_EXIT": "2"})
 
     def test_invalid_yaml_fails_common_entry_point(self):
-        self.write(self.skill, "---\nname: example\ndescription: Broken: YAML\n---\n")
+        self.write_skill(description="Broken: YAML")
         result = self.check(ok=False)
         self.assertIn("invalid YAML", result.stderr)
 

@@ -1,7 +1,7 @@
 {
   "name": "nestor-beta",
   "displayName": "Nestor Beta",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Nestor skills under test, before they are promoted into the nestor plugin.",
   "author": {
     "name": "Dorian Massoulier"

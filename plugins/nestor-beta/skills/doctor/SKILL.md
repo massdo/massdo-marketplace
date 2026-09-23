@@ -15,6 +15,10 @@ initiative.
 
 Use the Nestor skill for journal operations and the MCP catalogue for tool contracts.
 
+## Identify the plugin version
+
+Pass `{ "version_hash": "33e5788bba8455c5" }` on every Nestor MCP call.
+
 ## 1. Select the project and tasks
 
 `/nestor-beta:doctor [project]` — Codex: `$nestor-beta:doctor [project]`; Cursor: select
@@ -110,6 +114,33 @@ Present three groups:
 - **Proposed closures:** task reference, title and supporting commits, PRs and code evidence.
 - **Needs user review:** evidence found and the missing or uncertain criteria.
 - **No evidence:** count of tasks for which no reference or implementation evidence was found.
+
+Give every audited task a delivery confidence score from 0 to 100: the probability that it
+is delivered in the pinned integration history and meets all its completion criteria. One
+scale serves the three groups. The score does not measure how certain the grouping is, and
+it never changes a task's group, what an approval covers, or which tasks close. A
+`need_review` task stays in **Needs user review** even when its evidence is complete and it
+scores 95%.
+
+Calibrate the score on two indicative anchors rather than a rigid formula:
+
+- 90% or more: a merged commit or PR references the task, and the pinned tree satisfies all
+  its completion criteria.
+- 5% at most: no reference and no implementation evidence was found.
+
+Between them, set the score by judgment.
+
+Write the score right after each task's citation in **Proposed closures** and **Needs user
+review**, as a slash followed by an integer percentage. **No evidence** stays a count and
+adds the highest score among its tasks:
+
+```
+Needs user review
+- coffee_wildfowl (project search) / 95%
+- copper_manatee (OpenAI publication) / 20%
+
+No evidence (18) / 5% at most
+```
 
 Ask the user to approve the proposed closures or select individual tasks. Wait for their
 answer before making changes. A general approval applies only to the proposed-closure

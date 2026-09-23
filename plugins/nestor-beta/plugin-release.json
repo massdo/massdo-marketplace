@@ -1,5 +1,5 @@
 {
-  "version": "0.9.1",
-  "version_hash": "ccfd4427861104bb",
-  "changelog": "When next-tasks finds no active task, it now tells you how many tasks wait in the backlog and offers to list them. It reads the backlog only if you accept, and asks nothing when the backlog is empty too."
+  "version": "0.9.2",
+  "version_hash": "33e5788bba8455c5",
+  "changelog": "Doctor now follows each task it cites with a delivery confidence score from 0 to 100%: how likely the task is delivered and meets all its completion criteria. The no-evidence group stays a count and shows its highest score. The score only informs; grouping, approval and closure rules are unchanged. Doctor and clean-task now identify the plugin version on every Nestor call, so they can tell you when an update is available."
 }
