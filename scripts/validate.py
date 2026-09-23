@@ -475,19 +475,26 @@ for plugin in plugin_dirs:
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
 
-# --- Every hash a skill hard-codes identifies its own plugin release. --------
+# --- Every skill of a released plugin hard-codes that plugin's hash. ---------
 
 # Hashes are unique across the published release set, so the server resolves a
 # plugin from the hash alone. A skill must therefore identify the plugin that
-# ships it, whether or not that plugin declares the MCP server it calls.
+# ships it, whether or not that plugin declares the MCP server it calls. Every
+# skill of a released plugin declares it: a skill that sends none leaves the
+# server unable to tell an outdated install that it is outdated.
 for plugin in plugin_dirs:
     name = plugin.name
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
+        where = skill.relative_to(ROOT)
         if "version_hash" not in text:
+            check(
+                name not in published_hashes,
+                f"{where}: declares no version_hash, yet {name} publishes "
+                "plugin-release.json",
+            )
             continue
         declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
-        where = skill.relative_to(ROOT)
         if declared is None:
             errors.append(f"{where}: names version_hash but declares no hash value")
             continue
