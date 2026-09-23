@@ -7,7 +7,8 @@ disable-model-invocation: true
 
 # Nestor Next Tasks
 
-Show what is moving in one Nestor project: the tasks of its `active` view.
+Show what is moving in one Nestor project: the tasks of its `active` view. When nothing
+is, offer its backlog.
 
 This is a consultation. It creates no project, changes no item and writes nothing. The
 `nestor` skill holds the shared journal procedures and the way items are cited; this skill
@@ -83,8 +84,28 @@ modification, with the server breaking ties. Never re-sort the pages here.
 **Keep the server's pagination.** Add no volume limit of your own. When a response carries
 `hasMore`, say that results remain; a partial page is never presented as the whole view.
 
-When the view is empty, say so and name the project that was read.
+When the view is empty, say so, name the project that was read, then offer the backlog as
+described below.
 
 Cite the items exactly as the `nestor` skill prescribes. Invent no layout, no grouping and
 no table of your own: one citation form across every skill is what makes an item reference
 recognizable from one answer to the next.
+
+## Offer the backlog
+
+Only an empty `active` view leads here. A view with tasks, even a partial page of them,
+ends with those tasks.
+
+The backlog holds work set aside for later, not work that is moving, so it is never read
+unasked. The `active` response already counts it, within the same scope, in
+`taskViewCounts.backlog`: decide from that count, without another call.
+
+- Above zero, give the count and ask whether to show the backlog too, then stop and wait
+  for the answer.
+- At zero, say the backlog is empty as well and ask nothing: the answer to that question
+  is already known.
+- Absent, ask the same question without a count rather than read the backlog to find one.
+
+On a yes, call `list_items` with `view: "backlog"` in the same project scope and show it
+under the rules of the active view: no further filter, the server's order and pagination,
+`hasMore` reported, the same citation form.
