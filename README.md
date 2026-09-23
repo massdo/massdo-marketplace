@@ -187,7 +187,9 @@ project name is inferred from the workspace's Git repository — the last segmen
 
 It reads the project's `active` view through `list_items`: the `todo`, `in_progress` and
 `need_review` tasks, subtasks included, with no time bound and no local re-sorting or
-volume cap. An exact `get_project` read comes first, and a close match from
+volume cap. When that view is empty, it gives the backlog's task count from the same
+response and lists the backlog only if the user accepts; an empty backlog is stated
+without a question. An exact `get_project` read comes first, and a close match from
 `search_project` stands on its own only when the search returns a single result in total;
 anything else is confirmed by the user. Nothing is created or modified, and items are
 cited the way the `nestor` skill prescribes.

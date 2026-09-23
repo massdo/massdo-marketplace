@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
-  "version_hash": "a18faeeeca56e4d4",
-  "changelog": "Doctor now finds the project by itself: invoked without an argument, it reads the name from the workspace's Git repository instead of asking you to pick one. An explicit name still wins and is never checked against the repository."
+  "version": "0.9.1",
+  "version_hash": "ccfd4427861104bb",
+  "changelog": "When next-tasks finds no active task, it now tells you how many tasks wait in the backlog and offers to list them. It reads the backlog only if you accept, and asks nothing when the backlog is empty too."
 }
