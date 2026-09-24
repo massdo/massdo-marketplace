@@ -270,11 +270,16 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check("--baseline", "missing-ref", ok=False)
         self.assertIn("not an available commit", result.stderr)
 
-    def test_release_absent_from_valid_base_is_allowed(self):
+    def test_release_absent_from_base_is_allowed(self):
+        # A base from before the plugin published a release. The hook now refuses
+        # that state, so the commit is built the way a clone without hooks would.
         self.git("rm", self.release)
         self.write_skill(None)
-        self.commit("no release")
-        base = self.git("rev-parse", "HEAD").stdout.strip()
+        self.git("add", ".")
+        tree = self.git("write-tree").stdout.strip()
+        base = subprocess.run(["git", "commit-tree", tree, "-p", self.base],
+                              cwd=self.root, env=self.env, input="no release\n",
+                              capture_output=True, text=True, check=True).stdout.strip()
         self.bump()
         self.check("--baseline", base)
 
@@ -285,12 +290,16 @@ class RepositoryValidation(unittest.TestCase):
                 result = self.check("--baseline", self.base, ok=False)
                 self.assertIn(f"{field} is unchanged", result.stderr)
 
-    def test_released_plugin_skill_must_declare_version_hash(self):
+    def test_every_skill_must_declare_version_hash(self):
         self.write_skill(None)
         result = self.check(ok=False)
         self.assertIn("declares no version_hash", result.stderr)
         (self.root / self.release).unlink()
-        self.check()
+        result = self.check(ok=False)
+        self.assertIn("declares no version_hash", result.stderr)
+        self.write_skill()
+        result = self.check(ok=False)
+        self.assertIn("publishes no plugin-release.json", result.stderr)
 
     def test_ci_compares_multi_commit_push_to_before_sha(self):
         self.bump(changelog="Initial release")

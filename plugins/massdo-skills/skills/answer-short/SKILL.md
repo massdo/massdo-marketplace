@@ -13,6 +13,10 @@ L'argument est le texte écrit après le nom du skill à l'invocation ; selon le
 - un nombre fixe le plafond en mots.
 - rien du tout vaut 120 mots.
 
+## Identifier la version du plugin
+
+Passe `{ "version_hash": "630c7198fec779b4" }` à chaque appel MCP Nestor.
+
 ## Portée du verrou
 
 Applique la contrainte à toutes tes réponses suivantes, jusqu'à ce que l'utilisateur la lève. S'il demande de développer un point, développe-le, puis reprends le format court.

@@ -16,6 +16,10 @@ The arguments are the text the user writes after the skill name when invoking it
 
 So `yolo 80` and `80 yolo` are the same invocation: no escalation, eighty words. Each invocation redefines the whole state rather than adding to the previous one, and it reads only the arguments passed with it, so a bare `/massdo-skills:chief-of-staff` after `yolo 80` restores escalation and lifts the cap.
 
+## Identify the plugin version
+
+Pass `{ "version_hash": "630c7198fec779b4" }` on every Nestor MCP call.
+
 ## The scarce resource
 
 The scarce resource is not your compute time, nor the number of words you write. It is **the attention and the decision budget** of the person in front of you. Everything below follows from that.
