@@ -475,31 +475,34 @@ for plugin in plugin_dirs:
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
 
-# --- Every skill of a released plugin hard-codes that plugin's hash. ---------
+# --- Every skill hard-codes the hash of the plugin that ships it. -----------
 
 # Hashes are unique across the published release set, so the server resolves a
 # plugin from the hash alone. A skill must therefore identify the plugin that
-# ships it, whether or not that plugin declares the MCP server it calls. Every
-# skill of a released plugin declares it: a skill that sends none leaves the
-# server unable to tell an outdated install that it is outdated.
+# ships it, whether or not that plugin declares the MCP server it calls. No
+# skill is accepted without one, so every plugin that ships a skill publishes a
+# plugin-release.json: a skill that sends no hash leaves the server unable to
+# tell an outdated install that it is outdated.
 for plugin in plugin_dirs:
     name = plugin.name
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
         where = skill.relative_to(ROOT)
-        if "version_hash" not in text:
-            check(
-                name not in published_hashes,
-                f"{where}: declares no version_hash, yet {name} publishes "
-                "plugin-release.json",
-            )
-            continue
         declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
         if declared is None:
-            errors.append(f"{where}: names version_hash but declares no hash value")
+            errors.append(
+                f"{where}: declares no version_hash — no skill is accepted "
+                f"without the hash of {name}/plugin-release.json"
+            )
+            continue
+        if name not in published_hashes:
+            errors.append(
+                f"{where}: {name} publishes no plugin-release.json, so its "
+                "version_hash matches no release"
+            )
             continue
         check(
-            declared.group(1) == published_hashes.get(name),
+            declared.group(1) == published_hashes[name],
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
 

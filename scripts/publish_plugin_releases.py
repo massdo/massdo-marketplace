@@ -12,7 +12,11 @@ from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parent.parent
-RELEASE_NAMES = ("nestor", "nestor-beta")
+# Every plugin that ships a skill publishes a release document, and the server has
+# to know each hash a skill sends, so the set is read from the tree, not listed.
+RELEASE_NAMES = tuple(
+    sorted(path.parent.name for path in (ROOT / "plugins").glob("*/plugin-release.json"))
+)
 SECRET_NAME = "JOURNAL_MCP_PLUGIN_RELEASE_SECRET"
 
 

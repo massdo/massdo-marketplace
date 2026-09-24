@@ -1,0 +1,5 @@
+{
+  "version": "0.7.1",
+  "version_hash": "630c7198fec779b4",
+  "changelog": "Every skill now declares the plugin's version hash, like every other skill of this marketplace, so an outdated install can be recognized."
+}

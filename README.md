@@ -109,14 +109,14 @@ refuses it.
 
 ## Plugin release document
 
-`plugin-release.json` is a plugin's public version-and-changelog document. The journal server reads it without authentication. Two plugins publish one: `nestor` and `nestor-beta`.
+`plugin-release.json` is a plugin's public version-and-changelog document. The journal server reads it without authentication. Every plugin that ships a skill publishes one — today `massdo-skills`, `nestor` and `nestor-beta` — and `scripts/publish_plugin_releases.py` sends every document it finds.
 
 - Format: `{ "version": "X.Y.Z", "version_hash": "16 hex", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
 - Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/<name>/plugin-release.json`
 - Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
 - Maximum size: 4096 bytes. A larger document is treated as unreadable.
 
-### Two documents, one release set
+### Several documents, one release set
 
 The server reads the documents as a **set**, not one of them. `validatePluginReleaseSet`
 refuses a set whose names or hashes repeat, and `resolvePluginRelease` then finds the entry
@@ -125,11 +125,11 @@ call needs to name none. `probe_plugin_version` and the update warning both reso
 
 Two consequences:
 
-- Every skill of a released plugin hard-codes the hash of the plugin that **ships** it,
+- Every skill of every plugin hard-codes the hash of the plugin that **ships** it,
   whatever plugin declares the MCP server it calls — a skill that sends none leaves the
   server unable to tell an outdated install that it is outdated. `nestor-beta` declares no
   server and still publishes its own release, so each of its skills sends `nestor-beta`'s
-  hash. `scripts/validate.py` holds exactly that rule, for every plugin.
+  hash. `scripts/validate.py` refuses any skill without a hash, in every plugin.
 - A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
   value must collide with no other published release. Reusing a hash makes the server
   resolve the wrong plugin; keeping the old one makes it report an outdated client as
