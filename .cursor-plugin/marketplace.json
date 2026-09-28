@@ -34,7 +34,7 @@
     {
       "name": "massdo-skills",
       "source": "./plugins/massdo-skills",
-      "description": "Response-style skills: short ASD-STE100 answers, articulate replies with an optional word cap, and a chief-of-staff stance.",
+      "description": "Skills for response style and extracting information from messy text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
       "category": "productivity",
       "tags": [
         "skills",
