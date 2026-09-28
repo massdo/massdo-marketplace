@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
   "version": "0.8.0",
-  "description": "Skills for response style and extracting information from messy text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
+  "description": "Skills for response style and extracting information from raw text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
   "author": {
     "name": "Dorian Massoulier",
     "url": "https://github.com/massdo"
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Massdo Skills",
     "shortDescription": "Outils du marketplace massdo",
-    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, and extract the information in messy text while preserving meaning and uncertainty.",
+    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, and extract the information in raw text while preserving meaning and uncertainty.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [

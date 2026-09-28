@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: Extract and organize the information in messy text while preserving the author's meaning, details, and uncertainty. Use when the user asks to clarify a dictation transcript, untangle rough notes or a written brainstorm, or extract the information from disjointed text. Works on supplied text; transcribing an audio file is outside its scope.
+description: Extract and organize the information in raw text while preserving the author's meaning, details, and uncertainty. Use when the user asks to clarify a dictation transcript, untangle rough notes or a written brainstorm, or extract the information from disjointed text. Works on supplied text; transcribing an audio file is outside its scope.
 ---
 
 # Extract signal
