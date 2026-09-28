@@ -1,6 +1,6 @@
 {
   "name": "massdo-skills",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Skills for response style and extracting information from raw text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
   "author": {
     "name": "Dorian Massoulier",
@@ -29,7 +29,7 @@
       "Utilise $massdo-skills:answer-short pour plafonner mes réponses.",
       "Use $massdo-skills:articulate 100 to write articulately under a word cap.",
       "Use $massdo-skills:chief-of-staff to take the stance.",
-      "Use $massdo-skills:extract-signal to clarify this dictation transcript without losing information."
+      "Use $massdo-skills:extract-signal to clarify this dictation transcript and act on it."
     ]
   }
 }
