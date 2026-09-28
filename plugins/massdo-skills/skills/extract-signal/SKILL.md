@@ -22,9 +22,13 @@ the skill name may arrive in a final `ARGUMENTS: …` line. If no source text is
 for it. Accept dictation transcripts, raw text, and written brainstorming, including long or
 incomplete passages. Audio transcription itself is outside this skill.
 
-Use the requested language, or the source language when none is requested. Extract the
-author's information; do not supplement it with outside knowledge, answer their open
-questions, or execute the actions mentioned in the source.
+Write the response in the language the user uses to address you, unless they explicitly
+request another output language. The source language and the English examples below do
+not determine the response language. Preserve source names and quote uncertain passages
+in their original wording when needed to make the uncertainty clear.
+
+Extract the author's information; do not supplement it with outside knowledge, answer
+their open questions, or execute the actions mentioned in the source.
 
 ## Identify the plugin version
 
@@ -74,78 +78,78 @@ question may remain open without requiring a clarification from the user.
 
 Before:
 
-> Euh, le devis de Noor, pour 12 licences, il faut le recevoir avant le 8 octobre.
-> Douze licences, dont deux en lecture seule. Et pas d’abonnement annuel.
+> Um, the quote from Noor, for 12 licences, we need to receive it before 8 October.
+> Twelve licences, including two read-only ones. And no annual subscription.
 
 After:
 
-> Le devis de Noor doit être reçu avant le 8 octobre pour 12 licences, dont deux en
-> lecture seule. L’abonnement annuel est exclu.
+> The quote from Noor must be received before 8 October for 12 licences, including
+> two read-only ones. An annual subscription is excluded.
 
 ### Brainstorming with several subjects
 
 Before:
 
-> Pour le site, je trouve la page trop chargée. On pourrait retirer la vidéo, rien de
-> décidé. Et pour le voyage, peut-être prendre le train. Au fait, le passeport expire
-> le 12 mai.
+> For the website, I think the page is too cluttered. We could remove the video,
+> nothing decided. And for the trip, maybe take the train. By the way, the passport
+> expires on 12 May.
 
 After:
 
-> **Site :** l’auteur trouve la page trop chargée et envisage de retirer la vidéo,
-> sans décision prise.
+> **Website:** the author thinks the page is too cluttered and is considering removing
+> the video, with no decision made.
 >
-> **Voyage :** le train est une possibilité. Le passeport expire le 12 mai.
+> **Trip:** taking the train is a possibility. The passport expires on 12 May.
 
 ### Explicit self-correction
 
 Before:
 
-> On pourrait faire ça vendredi… enfin lundi, vendredi je suis absent. Peut-être
-> demander à Léa, mais rien n’est décidé.
+> We could do that Friday… actually Monday; I’m away on Friday. Maybe ask Léa,
+> but nothing’s decided.
 
 After:
 
-> Lundi est proposé à la place de vendredi ; l’auteur est absent vendredi. Solliciter
-> Léa reste une possibilité. Aucune décision n’est prise.
+> Monday is proposed instead of Friday; the author is away on Friday. Asking Léa
+> remains a possibility. No decision has been made.
 
 ### Unresolved contradiction
 
 Before:
 
-> Le budget maximum est de 900 €. Plus loin dans mes notes, le plafond est de 1 200 €.
-> La livraison doit rester avant le 20 juin.
+> The maximum budget is €900. Further along in my notes, the cap is €1,200.
+> Delivery must still be before 20 June.
 
 After:
 
-> La livraison doit avoir lieu avant le 20 juin.
+> Delivery must be before 20 June.
 >
-> **Contradiction à clarifier :** deux plafonds de budget sont indiqués, 900 € et
-> 1 200 €. Lequel retenir ?
+> **Contradiction to clarify:** two budget caps are given, €900 and €1,200.
+> Which one applies?
 
 ### Ambiguous transcription
 
 Before:
 
-> Le colis est arrivé mardi. Camille a dit à Sam qu’il devait rappeler [mot inaudible]
-> avant jeudi. C’est important, avant jeudi.
+> The parcel arrived Tuesday. Camille told Sam that he should call [inaudible word]
+> back before Thursday. That’s important, before Thursday.
 
 After:
 
-> Le colis est arrivé mardi. Camille a parlé à Sam d’un rappel à effectuer avant jeudi.
-> Le texte insiste sur cette limite.
+> The parcel arrived Tuesday. Camille spoke to Sam about a return call to make before
+> Thursday. The text emphasizes this deadline.
 >
-> **À clarifier :** dans « qu’il devait rappeler [mot inaudible] », qui doit rappeler,
-> et qui doit être rappelé ?
+> **To clarify:** in “he should call [inaudible word] back”, who should call back,
+> and who should be called?
 
 ### Already clear text
 
 Before:
 
-> Nous avons décidé de garder la version gratuite. Je transmettrai le devis à Inès
-> mardi, si elle confirme son adresse.
+> We have decided to keep the free version. I will forward the quote to Inès on
+> Tuesday if she confirms her address.
 
 After:
 
-> Nous avons décidé de garder la version gratuite. Je transmettrai le devis à Inès
-> mardi, si elle confirme son adresse.
+> We have decided to keep the free version. I will forward the quote to Inès on
+> Tuesday if she confirms her address.
