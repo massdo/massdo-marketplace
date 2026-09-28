@@ -1,9 +1,15 @@
 ---
 name: extract-signal
-description: Extract and organize the information in raw text while preserving the author's meaning, details, and uncertainty. Use when the user asks to clarify a dictation transcript, untangle rough notes or a written brainstorm, or extract the information from disjointed text. Works on supplied text; transcribing an audio file is outside its scope.
+description: Extract and organize the information in raw text while preserving the author's meaning, details, and uncertainty. Accept dictation transcripts, notes, and written brainstorming. Run only after a direct user invocation, such as /massdo-skills:extract-signal or $massdo-skills:extract-signal; never invoke it autonomously. Audio transcription is outside its scope.
+disable-model-invocation: true
 ---
 
 # Extract signal
+
+Run only after the user explicitly invokes this skill, for example
+`/massdo-skills:extract-signal` or `$massdo-skills:extract-signal`. An agent, subagent,
+plan, or another skill must not invoke it on the user's behalf. A text to clarify
+is not by itself a request to run this skill.
 
 Turn the supplied text into a clear account of what its author communicates. The signal is
 the distinct ideas, information, intentions, constraints, questions, and supported relations

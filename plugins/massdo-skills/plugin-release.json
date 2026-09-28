@@ -1,5 +1,5 @@
 {
   "version": "0.8.0",
   "version_hash": "b6d239a8399f92bd",
-  "changelog": "Add extract-signal to clarify dictation transcripts, rough notes, and brainstorming while preserving distinct ideas, concrete details, and uncertainty."
+  "changelog": "Add extract-signal, available only on explicit user invocation, to clarify dictation transcripts, notes, and brainstorming while preserving distinct ideas, concrete details, and uncertainty."
 }

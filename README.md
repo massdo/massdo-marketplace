@@ -98,8 +98,8 @@ ecosystems do not read the same one:
 
 | Skill | Model may invoke | Held by |
 |---|---|---|
-| `nestor`, `activity`, `tree`, `check-for-updates`, `extract-signal` | yes | nothing to set |
-| `answer-short`, `articulate`, `chief-of-staff`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
+| `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
+| `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
 and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
