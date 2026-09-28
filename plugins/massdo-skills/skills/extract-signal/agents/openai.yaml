@@ -1,0 +1,7 @@
+interface:
+  display_name: "Extract Signal"
+  short_description: "Clarify raw text without losing meaning"
+  default_prompt: "Use $massdo-skills:extract-signal to extract and organize the information in this text while preserving its details and uncertainty."
+
+policy:
+  allow_implicit_invocation: false
