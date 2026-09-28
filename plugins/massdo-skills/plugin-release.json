@@ -1,5 +1,5 @@
 {
-  "version": "0.8.0",
-  "version_hash": "b6d239a8399f92bd",
-  "changelog": "Add extract-signal, available only on explicit user invocation, to clarify dictation transcripts, notes, and brainstorming while preserving distinct ideas, concrete details, and uncertainty."
+  "version": "0.9.0",
+  "version_hash": "7e41c9d20f85a3b6",
+  "changelog": "extract-signal now acts on the extracted signal as your message, once it has shown it. Pass raw to get the signal alone, as before."
 }

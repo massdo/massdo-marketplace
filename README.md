@@ -15,7 +15,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/.mcp.json`: Claude Code and Codex public MCP connection.
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
-- `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty.
+- `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
