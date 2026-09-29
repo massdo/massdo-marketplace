@@ -477,18 +477,15 @@ for plugin in plugin_dirs:
 
 # --- Every skill hard-codes the hash of the plugin that ships it. -----------
 
-# Hashes are unique across the published release set, so the server resolves a
-# plugin from the hash alone. A skill must therefore identify the plugin that
-# ships it, whether or not that plugin declares the MCP server it calls. No
-# skill is accepted without one, so every plugin that ships a skill publishes a
-# plugin-release.json: a skill that sends no hash leaves the server unable to
-# tell an outdated install that it is outdated.
+# The prefix preserves plugin identity after the published hash changes.
+# Other plugins keep their existing unprefixed contract.
+plugin_hash_prefixes = {"nestor": "1", "nestor-beta": "2"}
 for plugin in plugin_dirs:
     name = plugin.name
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
         where = skill.relative_to(ROOT)
-        declared = re.search(r'"version_hash": *"([0-9a-f]{16})"', text)
+        declared = re.search(r'"version_hash": *"([12]?[0-9a-f]{16})"', text)
         if declared is None:
             errors.append(
                 f"{where}: declares no version_hash — no skill is accepted "
@@ -502,7 +499,7 @@ for plugin in plugin_dirs:
             )
             continue
         check(
-            declared.group(1) == published_hashes[name],
+            declared.group(1) == plugin_hash_prefixes.get(name, "") + published_hashes[name],
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
 

@@ -2,19 +2,19 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.3"
+  pluginVersion: "0.7.4"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.3, hashed as `ad3a12df4031d2d7`.
+This plugin version is 0.7.4, hashed as `bd431e0f0d759d04`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "ad3a12df4031d2d7", ... }`. The server compares this hash to the published release. It cannot be guessed or incremented, so never send another value than the one written here.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1bd431e0f0d759d04", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
-- If `pluginUpdate.status` is `update_available`, say exactly `Une mise à jour est disponible.`
+- If `pluginUpdate.status` is `update_available`, say `Une mise à jour du plugin Nestor est disponible.` for `pluginName: nestor`, or `Une mise à jour du plugin Nestor Beta est disponible.` for `pluginName: nestor-beta`. Without `pluginName`, say `Une mise à jour est disponible.`
 - Do not relay `publishedVersion`, `action`, platform, installation, or automatic-update text.
 - If the server rejects `version_hash` as unknown, say the plugin is too old and must be updated.
 

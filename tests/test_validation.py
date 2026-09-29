@@ -301,6 +301,31 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("publishes no plugin-release.json", result.stderr)
 
+    def test_nestor_skills_require_their_own_prefix_and_release_hash(self):
+        previous = "demo"
+        for name, prefix in (("nestor", "1"), ("nestor-beta", "2")):
+            (self.root / "plugins" / previous).rename(self.root / "plugins" / name)
+            for path in self.root.rglob("*.json"):
+                data = json.loads(path.read_text())
+                if data.get("name") == previous:
+                    data["name"] = name
+                for entry in data.get("plugins", []):
+                    key = "id" if "id" in entry else "name"
+                    entry[key] = name
+                    if isinstance(entry["source"], dict):
+                        entry["source"]["path"] = f"./plugins/{name}"
+                    else:
+                        entry["source"] = f"./plugins/{name}"
+                self.json(path, data)
+            self.skill = f"plugins/{name}/skills/example/SKILL.md"
+            self.write_skill(prefix + "0123456789abcdef")
+            self.check()
+            for invalid in ("0123456789abcdef", ("2" if prefix == "1" else "1") + "0123456789abcdef", prefix + "ffffffffffffffff"):
+                self.write_skill(invalid)
+                result = self.check(ok=False)
+                self.assertIn("version_hash does not match", result.stderr)
+            previous = name
+
     def test_ci_compares_multi_commit_push_to_before_sha(self):
         self.bump(changelog="Initial release")
         # Simulate commits from a clone without hooks; no bypass of active hooks.
