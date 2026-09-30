@@ -124,3 +124,50 @@ Do not stash, discard, force-push, resolve a conflict, or bring local commits in
 request without a separate authorization. When a check needs a checkout, use a clean,
 temporary worktree at the head commit under examination, outside the user's working tree, and
 remove it afterwards.
+
+## 3. Recognize the release procedure — before any merge
+
+Do this before proposing a merge, because a merge may itself start a release, and the user has
+to hear that before agreeing.
+
+**Where to look.** The repository's agent and contributor files (`AGENTS.md`, `CLAUDE.md`,
+`CONTRIBUTING.md`), `README.md`, the scripts in `package.json` and `Makefile`, and any
+publishing configuration. Then `.github/workflows/*.yml` and `*.yaml`, read where they will
+act: on the remote `main` (`git show origin/main:<path>`), and, for every workflow or release
+file a selected pull request adds, edits or deletes, in that pull request
+(`git fetch origin pull/N/head`, then `git show <headRefOid>:<path>`) — once it merges, that
+is what `main` runs. A workflow file can exist and be disabled:
+`gh workflow list --repo OWNER/REPO --all` says which ones are active.
+
+**How to read them.** Follow the chain: trigger → conditions → steps (`run`, `uses`) → the
+scripts, actions and reusable workflows those call → real effect. Note branch, tag and path
+filters, `if`, `needs`, inputs, environments and the authorization they require — the names
+of secrets and approvals, never their values. Then say which of these it is: a tag, a GitHub
+Release, a package publication, a version notification, a deployment. A name with `release`
+or `publish` in it is a hint, not a finding: a script called `publish_…` that only sends
+version documents to a catalog service is a notification, and a workflow that reacts to
+`release: published` does not create the release it reacts to.
+
+**How to conclude.** Cite the file and line behind each conclusion
+(`git show <ref>:<path> | nl -ba` shows the numbers). A procedure you cannot establish stays
+uncertain. Never run a publishing command to find out what it does.
+
+Then act on the procedure you found:
+
+- **It publishes automatically after a merge into `main`.** Announce the effect in the merge
+  proposal, before the user agrees; after the merge, follow the workflow and check what it
+  did. Read its conditions: a release workflow on `main` does not mean every merge publishes —
+  filters, `if` conditions and version guards decide.
+- **It publishes when a tag is pushed.** After the merges and their validation, prepare the
+  version, the exact tag, the notes and the documented command. Ask before creating or
+  pushing the tag, unless an agreement already covers it.
+- **It is a manual workflow (`workflow_dispatch`).** Prepare the workflow, the ref and the
+  exact inputs, then propose launching it.
+- **It is a documented command or script.** Understand its effects and prerequisites, prepare
+  the invocation, then propose running it.
+- **It reacts to a release (`release` with `types: [published]`).** That trigger says what
+  happens after a release is published, not who publishes it. Find what creates the release;
+  until you have, the procedure is uncertain.
+- **There is no procedure, several that contradict each other, or a dependency you cannot
+  reach.** Report the uncertainty and the decision that is missing. Do not invent a release
+  mechanism or install one.
