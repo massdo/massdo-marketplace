@@ -113,13 +113,13 @@ class RepositoryValidation(unittest.TestCase):
     def check(self, *args, **kwargs):
         return self.run_command("./scripts/check.sh", *args, **kwargs)
 
-    def bump(self, *, changelog="Changed", version_hash="fedcba9876543210"):
+    def bump(self, *, changelog="Changed", version_hash="fedcba9876543210", version="1.1.0"):
         for ecosystem in ("codex", "claude", "cursor", "kimi"):
             path = f"plugins/demo/.{ecosystem}-plugin/plugin.json"
             data = json.loads((self.root / path).read_text())
-            data["version"] = "1.1.0"
+            data["version"] = version
             self.json(path, data)
-        self.json(self.release, {"version": "1.1.0", "version_hash": version_hash, "changelog": changelog})
+        self.json(self.release, {"version": version, "version_hash": version_hash, "changelog": changelog})
         self.write_skill(version_hash)
 
     def divergent_branches(self, conflict=False):
@@ -289,6 +289,76 @@ class RepositoryValidation(unittest.TestCase):
                 self.bump(**{field: value})
                 result = self.check("--baseline", self.base, ok=False)
                 self.assertIn(f"{field} is unchanged", result.stderr)
+
+    def test_release_gate_rejects_plugin_edits_additions_and_deletions(self):
+        for path, content in (
+            (self.skill, "changed instructions\n"),
+            ("plugins/demo/skills/example/agents/openai.yaml", "interface: {}\n"),
+            ("plugins/demo/rules/a.md", None),
+        ):
+            with self.subTest(path=path):
+                target = self.root / path
+                original = target.read_text() if target.exists() else None
+                if content is None:
+                    target.unlink()
+                elif path == self.skill:
+                    self.write(path, original + content)
+                else:
+                    self.write(path, content)
+                result = self.check("--baseline", self.base, "--require-release", ok=False)
+                self.assertIn("demo: plugin files changed", result.stderr)
+                self.assertIn("must increase", result.stderr)
+                if original is None:
+                    target.unlink()
+                else:
+                    self.write(path, original)
+
+    def test_release_gate_accepts_complete_bump(self):
+        self.bump()
+        self.check("--baseline", self.base, "--require-release")
+
+    def test_release_gate_rejects_unchanged_hash_or_changelog(self):
+        for field, value in (("changelog", "Initial release"), ("version_hash", "0123456789abcdef")):
+            with self.subTest(field=field):
+                self.bump(**{field: value})
+                result = self.check("--baseline", self.base, "--require-release", ok=False)
+                self.assertIn(f"{field} is unchanged", result.stderr)
+
+    def test_release_gate_rejects_version_rollback(self):
+        self.bump(version="0.9.0")
+        result = self.check("--baseline", self.base, "--require-release", ok=False)
+        self.assertIn("must increase", result.stderr)
+
+    def test_release_gate_allows_repository_only_changes_and_new_plugins(self):
+        self.write("README.md", "Repository documentation changed\n")
+        self.check("--baseline", self.base, "--require-release")
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        self.check("--baseline", self.base, "--require-release")
+
+    def test_release_gate_requires_baseline(self):
+        result = self.check("--require-release", ok=False)
+        self.assertIn("--require-release requires --baseline", result.stderr)
+
+    def test_release_gate_ci_requires_bump_only_for_main_pr(self):
+        self.write_skill(description="Changed skill.")
+        self.commit("work in progress")
+        event = {"GITHUB_EVENT_NAME": "pull_request", "PR_BASE_SHA": self.base}
+        result = self.run_command("./scripts/check-ci.sh", ok=False,
+                                  env=event | {"PR_BASE_REF": "main"})
+        self.assertIn("demo: plugin files changed", result.stderr)
+        self.run_command("./scripts/check-ci.sh", env=event | {"PR_BASE_REF": "staging"})
+        self.bump()
+        self.run_command("./scripts/check-ci.sh", env=event | {"PR_BASE_REF": "main"})
+
+    def test_release_gate_ci_checks_entire_main_push(self):
+        self.write_skill(description="Changed skill.")
+        self.commit("plugin change")
+        self.write("README.md", "Later repository change\n")
+        self.commit("repository change")
+        event = {"GITHUB_EVENT_NAME": "push", "PUSH_BEFORE_SHA": self.base,
+                 "PUSH_CREATED": "false", "GITHUB_REF": "refs/heads/main"}
+        result = self.run_command("./scripts/check-ci.sh", ok=False, env=event)
+        self.assertIn("demo: plugin files changed", result.stderr)
 
     def test_every_skill_must_declare_version_hash(self):
         self.write_skill(None)
