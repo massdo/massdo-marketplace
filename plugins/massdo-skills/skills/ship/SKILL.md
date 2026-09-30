@@ -92,9 +92,12 @@ gh pr diff N --repo OWNER/REPO
   what they mean, never rounded up. Bringing someone's branch up to date is a write to it and
   needs its own agreement.
 - **Checks.** `gh pr checks --required` lists the checks this pull request must pass. What
-  `main` requires is also in `gh api repos/OWNER/REPO/branches/main/protection` and
-  `gh api repos/OWNER/REPO/rules/branches/main`; a refusal (403, 404) means unknown, not
-  none. Every required check must have concluded successfully **on the current head commit**
+  `main` requires is also in its classic protection,
+  `gh api repos/OWNER/REPO/branches/main/protection`, and in its rulesets,
+  `gh api repos/OWNER/REPO/rules/branches/main`; read the two separately. A 404 whose message
+  is `Branch not protected` is an answer, not a refusal: `main` has no classic protection, and
+  its rulesets still decide. Any other refusal (403, 404) means unknown, not none. Every
+  required check must have concluded successfully **on the current head commit**
   (`headRefOid`) — a run on an earlier head does not count. Pending, failed, cancelled,
   skipped or missing is not green, and a required check that never ran is the quiet one. When
   nothing is required, say so: there is no automated evidence, and the proposal must not
