@@ -171,3 +171,39 @@ Then act on the procedure you found:
 - **There is no procedure, several that contradict each other, or a dependency you cannot
   reach.** Report the uncertainty and the decision that is missing. Do not invent a release
   mechanism or install one.
+
+## 4. Propose, then merge
+
+**The proposal.** Put in front of the user the repository, `main` with its baseline commit, the
+selected pull requests with the head commits you verified, the merge order and why, the
+validations done, the merge method, and the automatic effects each merge will have according
+to the release procedure you found. Then wait for the user's agreement, unless one already
+given in the session covers exactly this.
+
+The method is the one the repository allows and documents: its merge settings
+(`gh api repos/OWNER/REPO --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'`),
+the rules on `main` (`gh api repos/OWNER/REPO/rules/branches/main` can restrict methods), and
+its contributor documents. When several are allowed and none is documented, ask in the
+proposal instead of choosing.
+
+**The merges.** For each pull request, in the agreed order:
+
+1. Read it again. Its head must still be the commit you verified, and its checks, reviews and
+   mergeability must still hold.
+2. Merge it locked on that commit:
+   `gh pr merge N --repo OWNER/REPO --match-head-commit <headRefOid> --<method>`, where the
+   method is `merge`, `squash` or `rebase`. GitHub refuses the merge if the branch moved since
+   you verified it, so what lands is exactly what was examined.
+3. Confirm the result:
+   `gh pr view N --repo OWNER/REPO --json state,mergedAt,mergeCommit,autoMergeRequest`.
+   Auto-merge and a merge queue only record a request. Wait for the real outcome before
+   reporting a merge, and before starting the next one; a request still pending after a
+   reasonable wait is reported as pending, not as merged.
+4. Verify the remaining pull requests again, as in "Verify each pull request": `main` just
+   moved, so one of them may now conflict, be behind, or have new checks running.
+
+Respect GitHub's protections. Never use `--admin` to get around one; when a protection blocks
+a merge, report it. Stop when the approved scope changes — a head commit moved, the user
+changed the list — or a new verification fails, and report the partly delivered state: what
+merged and at which commit, what did not and why. What remains goes back through a proposal
+and needs a new agreement.
