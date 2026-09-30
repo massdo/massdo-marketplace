@@ -224,19 +224,21 @@ back through a proposal and needs a new agreement.
 1. **Check `main`.** Fetch `REMOTE`, then take the final commit of `main` and look at its runs:
    `gh run list --repo OWNER/REPO --commit <sha> --json databaseId,name,status,conclusion,event,url`.
    A workflow takes a moment to start, so read again when nothing shows yet. Wait for the ones
-   the merge was expected to start with `gh run watch <id> --exit-status`, and report each
-   result as it is.
+   the merge was expected to start with `gh run watch <id> --repo OWNER/REPO --exit-status`,
+   and report each result as it is.
 2. **Prepare the release, when the procedure needs an action from you or the user** — a tag,
    a manual workflow, a documented command. Put a concrete proposal in front of the user
    before asking: the version and the tag, the commit, the notes, any assets, and the command
    exactly as the repository documents it. When the procedure needs edits first — a version
    bump, a changelog, a release pull request — prepare and present them here; opening or
    pushing them is an action that needs its own agreement. Never create a tag that disagrees
-   with the versions the repository declares. `gh release create <tag>` creates the tag itself
-   when it does not exist, so add `--verify-tag` when the tag is meant to exist already.
+   with the versions the repository declares. `gh release create <tag> --repo OWNER/REPO`
+   creates the tag itself when it does not exist, so add `--verify-tag` when the tag is meant
+   to exist already.
 3. **Follow what was triggered.** Watch the workflows the merge or the tag started, then
    confirm the commit, the tag and the URL of the release or package, according to the effect
-   you announced: `gh release view <tag> --json url,tagName,targetCommitish,isDraft` for a
+   you announced:
+   `gh release view <tag> --repo OWNER/REPO --json url,tagName,targetCommitish,isDraft` for a
    GitHub Release, `git ls-remote --tags REMOTE <tag> '<tag>^{}'` for a tag (an annotated tag
    shows its own object, then the commit it points at; a lightweight tag shows the commit
    only), the registry page for a package.
