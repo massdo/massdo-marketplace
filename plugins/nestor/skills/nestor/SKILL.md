@@ -76,6 +76,9 @@ Never block the requested journal operation. Never write on disk. Never invent a
 - A full response replaces the held item content and matched pair with `item`, `tags`, `relations` and `etag` from that response. A changed or stale pair normally produces this full response, not a mutation conflict.
 - `item.version` is the item's revision. `version_hash` identifies the plugin release and never substitutes for that revision or the item's ETag.
 
+For first reads, unchanged or changed items and mixed grouped reads, see
+[the conditional-read examples](references/item-reads.md).
+
 ## antipattern
 
 An `antipattern` is an action the agent must avoid at all costs. The first three entries govern reads; the others protect optimistic mutations:
