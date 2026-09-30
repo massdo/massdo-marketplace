@@ -77,7 +77,7 @@ For each candidate, read the evidence that decides whether it can land on `main`
 now.
 
 ```bash
-gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,headRefName,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
+gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,baseRefName,headRefName,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
 gh pr checks N --repo OWNER/REPO --required
 gh pr diff N --repo OWNER/REPO
 ```
@@ -192,14 +192,15 @@ proposal instead of choosing.
 
 **The merges.** For each pull request, in the agreed order:
 
-1. Read it again. Its head must still be the commit you verified, and its checks, reviews and
-   mergeability must still hold.
+1. Read it again. Its base must still be `main` and its head the commit you verified, and its
+   checks, reviews and mergeability must still hold. The merge below guards the head, not the
+   base: a pull request retargeted to another branch keeps its head and would merge there.
 2. Merge it locked on that commit:
    `gh pr merge N --repo OWNER/REPO --match-head-commit <headRefOid> --<method>`, where the
    method is `merge`, `squash` or `rebase`. GitHub refuses the merge if the branch moved since
    you verified it, so what lands is exactly what was examined.
 3. Confirm the result:
-   `gh pr view N --repo OWNER/REPO --json state,mergedAt,mergeCommit,autoMergeRequest`.
+   `gh pr view N --repo OWNER/REPO --json state,mergedAt,mergeCommit,baseRefName,autoMergeRequest`.
    Auto-merge and a merge queue only record a request. Wait for the real outcome before
    reporting a merge, and before starting the next one; a request still pending after a
    reasonable wait is reported as pending, not as merged.
@@ -207,10 +208,10 @@ proposal instead of choosing.
    moved, so one of them may now conflict, be behind, or have new checks running.
 
 Respect GitHub's protections. Never use `--admin` to get around one; when a protection blocks
-a merge, report it. Stop when the approved scope changes — a head commit moved, the user
-changed the list — or a new verification fails, and report the partly delivered state: what
-merged and at which commit, what did not and why. What remains goes back through a proposal
-and needs a new agreement.
+a merge, report it. Stop when the approved scope changes — a head commit moved, a base
+changed, the user changed the list — or a new verification fails, and report the partly
+delivered state: what merged and at which commit, what did not and why. What remains goes
+back through a proposal and needs a new agreement.
 
 ## 5. Finish
 
