@@ -91,8 +91,9 @@ gh pr diff N --repo OWNER/REPO
   branch to be up to date), `BLOCKED`, `DIRTY`, `UNSTABLE` and `UNKNOWN` are reported with
   what they mean, never rounded up. Bringing someone's branch up to date is a write to it and
   needs its own agreement.
-- **Checks.** What `main` requires is in `gh api repos/OWNER/REPO/branches/main/protection`
-  and `gh api repos/OWNER/REPO/rules/branches/main`; a refusal (403, 404) means unknown, not
+- **Checks.** `gh pr checks --required` lists the checks this pull request must pass. What
+  `main` requires is also in `gh api repos/OWNER/REPO/branches/main/protection` and
+  `gh api repos/OWNER/REPO/rules/branches/main`; a refusal (403, 404) means unknown, not
   none. Every required check must have concluded successfully **on the current head commit**
   (`headRefOid`) — a run on an earlier head does not count. Pending, failed, cancelled,
   skipped or missing is not green, and a required check that never ran is the quiet one. When
