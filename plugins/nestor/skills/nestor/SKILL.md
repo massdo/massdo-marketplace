@@ -109,8 +109,9 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 
 ## Cite items
 
-- Name every item a response cites as `slug (description)`, for example `green_earwig (commande manuelle de signalement des appels MCP)`.
-- Apply that form to each item of a list, a search result, or a mutation report.
+- Put every cited task or note slug in Markdown inline code and keep its parenthesized business description in normal text: `purple_muskox` (projets similaires).
+- Never escape underscores inside the slug's backticks.
+- Apply that form to lists, search results, item details, mutation reports, and skills that use this shared citation rule.
 - Keep the description to a few words naming the item's business subject, in the language of the conversation. Never copy the whole title.
 - Write the description from data already held, and leave it out when none is. Never call a tool only to write it.
 - The form only names the item. It never replaces the details the user asked for, such as its status or body.
