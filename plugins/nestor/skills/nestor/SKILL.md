@@ -59,13 +59,22 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Find items and projects
 
-- Use `get_item` when id or slug is known, whatever the read is for. For a single item, pass the received reference as a string in `ref`, together with `scope` and `version_hash`; the response holds `item` and `etag`. Never send `id`, `slug` or `refs` as input keys to this tool. A single field, a status check, and a full read all take the same tool.
-- When several known items need a full read, pass an array of 1 to 5 references in `ref` in one `get_item` call, together with `scope` and `version_hash`. An array always returns `results`, even with one reference. Match `results[i]` with the input `ref[i]` and check the echoed `ref`. Preserve repeated entries. An entry with `error` concerns that position only. Leave out any item whose content and matched pair are already held.
+- Use `get_item` when id or slug is known, whatever the read is for. For a single item, pass the received reference as a string in `ref`, together with `known`, `scope` and `version_hash`. Never send `id`, `slug` or `refs` as input keys to this tool. A single field, a status check, and a full read all take the same tool; apply the conditional-read rules below.
+- When several known items need reading or a freshness check, pass an array of 1 to 5 references in `ref` in one `get_item` call, together with `known`, `scope` and `version_hash`. Pass a `known` array of the same length as `ref`, with a matched pair or null at each position. An array always returns `results`, even with one reference. Match `results[i]` with the input `ref[i]` and check the echoed `ref`. Preserve repeated entries. An entry with `error` concerns that position only. Leave out held items that need no freshness check; handle each remaining position's full or unchanged response separately.
 - Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
 - Use `get_project` to resolve a project the user names: it reads by exact `name` as well as by id. Keep `search_project` for browsing every project, called without a `query`, or for proposing candidates when the given name matches none, called with that name as `query`. Never guess a project identifier.
 - Report incomplete results whenever a response has `hasMore: true`.
+
+## Conditional item reads
+
+- Always send `known`: the matched `{ version, etag }` pair held with the necessary item content, or `known: null` when that content is absent or incomplete, or no matched pair is held. Never omit `known`, send an incomplete pair, or mix values from different responses.
+- Never use `known: null` to re-read content already held with its matched pair. A freshness check uses that pair, including when a task is already in context and the user asks an actionable yes/no question about it.
+- A pair from `create_item` or `update_item` identifies the state that operation produced. Send it in `known` only when that state is known; otherwise send null. A retained pair alone, for example after context compaction lost the body, is insufficient for a conditional read.
+- With `unchanged: true`, keep the held item content and matched pair and refresh the project name from the response. This short response supplies no content or ETag; do not follow it with a full read.
+- A full response replaces the held item content and matched pair with `item`, `tags`, `relations` and `etag` from that response. A changed or stale pair normally produces this full response, not a mutation conflict.
+- `item.version` is the item's revision. `version_hash` identifies the plugin release and never substitutes for that revision or the item's ETag.
 
 ## antipattern
 
@@ -93,7 +102,6 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 
 ## Use other journal tools
 
-- Use `get_item_version` for a freshness check only. It never prepares a mutation, because it returns no ETag.
 - Use `item_history`, `list_events`, or `project_history` for history.
 - Use `list_tags` and `manage_tag` for tags.
 - Use `get_project`, `search_project`, `manage_project`, and `project_history` for projects.
