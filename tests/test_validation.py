@@ -266,6 +266,69 @@ class RepositoryValidation(unittest.TestCase):
         self.assertIn("does not take the current item from a precondition conflict", result.stderr)
         self.assertIn("drops the empty-conflict get_item fallback", result.stderr)
 
+    def test_nestor_distributed_resources_reject_obsolete_item_version_tool(self):
+        for name in ("nestor", "nestor-beta"):
+            shutil.copytree(ROOT / "plugins" / name, self.root / "plugins" / name)
+        self.check()
+        for name in ("nestor", "nestor-beta"):
+            with self.subTest(plugin=name):
+                path = f"plugins/{name}/skills/example/references/obsolete.md"
+                self.write(path, "Use `get_item_version` to check freshness.\n")
+                result = self.check(ok=False)
+                self.assertIn("obsolete get_item_version instruction", result.stderr)
+                (self.root / path).unlink()
+
+    def test_nestor_conditional_read_examples_reject_invalid_mcp_inputs(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        version_hash = json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
+        path = "plugins/nestor/skills/nestor/references/invalid.md"
+        valid = {"ref": "brown_turtle", "known": None,
+                 "scope": {"mode": "global"}, "version_hash": version_hash}
+        cases = [
+            ({key: value for key, value in valid.items() if key != "known"}, "omits known"),
+            (valid | {"known": {"version": 3}}, "complete version/ETag pair"),
+            (valid | {"known": {"version": True, "etag": "held"}}, "complete version/ETag pair"),
+            (valid | {"known": {"version": 0, "etag": "held"}}, "complete version/ETag pair"),
+            (valid | {"known": {"version": 3, "etag": ""}}, "complete version/ETag pair"),
+            (valid | {"known": [None]}, "complete version/ETag pair"),
+            (valid | {"ref": ["brown_turtle"], "known": None}, "known must align"),
+            (valid | {"ref": ["brown_turtle", "brown_turtle"], "known": [None]}, "known must align"),
+            (valid | {"ref": [], "known": []}, "needs 1 to 5 refs"),
+            (valid | {"ref": ["brown_turtle"] * 6, "known": [None] * 6}, "needs 1 to 5 refs"),
+            (valid | {"ref": [7], "known": [None]}, "refs must be strings"),
+            (valid | {"version_hash": "not-the-release-hash"}, "version_hash does not match"),
+        ]
+        for example, diagnostic in cases:
+            with self.subTest(example=example):
+                self.write(path, "```json\n" + json.dumps(example) + "\n```\n")
+                result = self.check(ok=False)
+                self.assertIn(diagnostic, result.stderr)
+        self.write(path, "```json\n{invalid}\n```\n")
+        self.assertIn("invalid JSON example", self.check(ok=False).stderr)
+
+    def test_nestor_conditional_read_examples_accept_mixed_and_single_arrays(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        version_hash = json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
+        path = "plugins/nestor/skills/nestor/references/grouped.md"
+        pair = {"version": 3, "etag": "held"}
+        for refs, known in ((["brown_turtle"], [None]),
+                            (["brown_turtle", "gray_xerinae", "brown_turtle"], [pair, None, pair])):
+            with self.subTest(refs=refs):
+                example = {"ref": refs, "known": known,
+                           "scope": {"mode": "global"}, "version_hash": version_hash}
+                self.write(path, "```json\n" + json.dumps(example) + "\n```\n")
+                self.check()
+
+    def test_nestor_unchanged_examples_do_not_repeat_content_or_etag(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        path = "plugins/nestor/skills/nestor/references/unchanged.md"
+        for field in ("item", "title", "body", "tags", "relations", "etag"):
+            with self.subTest(field=field):
+                example = {"id": "DsoA", "version": 3, "unchanged": True, field: "repeated"}
+                self.write(path, "```json\n" + json.dumps(example) + "\n```\n")
+                result = self.check(ok=False)
+                self.assertIn("must not repeat content or ETag", result.stderr)
+
     def test_missing_baseline_is_an_error(self):
         result = self.check("--baseline", "missing-ref", ok=False)
         self.assertIn("not an available commit", result.stderr)

@@ -1,5 +1,5 @@
 {
-  "version": "0.9.4",
-  "version_hash": "afe007c7aa109f92",
-  "changelog": "Next Tasks now lists root tasks only, in the active view and in the backlog it offers: a subtask is left out and its parent stands for it. When subtasks are hidden it says how many, and a project whose only active tasks are subtasks is no longer reported empty. Order and pagination are unchanged."
+  "version": "0.9.5",
+  "version_hash": "f99af237ebe7e0f4",
+  "changelog": "Build, Spec and task cleanup use conditional get_item reads with required known. Held task content is reused after an unchanged response, and Spec retries conflicts from the current item without preventive or post-success reads."
 }

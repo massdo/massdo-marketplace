@@ -536,6 +536,49 @@ for plugin in plugin_dirs:
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
 
+# Nestor examples are executable input shapes, even though this repository
+# ships no MCP implementation. Catch obsolete tools and malformed conditional
+# reads in every distributed Markdown resource, including references.
+for name in ("nestor", "nestor-beta"):
+    for resource in sorted((PLUGINS / name).rglob("*.md")):
+        text = resource.read_text(encoding="utf-8")
+        where = resource.relative_to(ROOT)
+        check("get_item_version" not in text,
+              f"{where}: obsolete get_item_version instruction")
+        for block in re.findall(r"```json\n(.*?)\n```", text, re.DOTALL):
+            try:
+                example = json.loads(block)
+            except json.JSONDecodeError:
+                check(False, f"{where}: invalid JSON example")
+                continue
+            if not isinstance(example, dict):
+                continue
+            if example.get("unchanged") is True:
+                check(not ({"item", "title", "body", "tags", "relations", "etag"} & example.keys()),
+                      f"{where}: unchanged example must not repeat content or ETag")
+            if "ref" not in example:
+                continue
+            check("known" in example, f"{where}: get_item example omits known")
+            refs, known = example["ref"], example.get("known")
+            pairs = [known]
+            if isinstance(refs, list):
+                check(1 <= len(refs) <= 5, f"{where}: get_item example needs 1 to 5 refs")
+                check(all(isinstance(ref, str) for ref in refs),
+                      f"{where}: get_item refs must be strings")
+                check(isinstance(known, list) and len(known) == len(refs),
+                      f"{where}: known must align with ref position by position")
+                pairs = known if isinstance(known, list) else []
+            else:
+                check(isinstance(refs, str), f"{where}: get_item ref must be a string or array")
+            for pair in pairs:
+                check(pair is None or (
+                    isinstance(pair, dict) and set(pair) == {"version", "etag"}
+                    and type(pair["version"]) is int and pair["version"] >= 1
+                    and isinstance(pair["etag"], str) and bool(pair["etag"])
+                ), f"{where}: known needs null or a complete version/ETag pair")
+            check(example.get("version_hash") == published_hashes.get(name),
+                  f"{where}: get_item example version_hash does not match its plugin release")
+
 # --- Crude secret guard. ----------------------------------------------------
 
 bearer_header = "Authorization:" + " Bearer"
