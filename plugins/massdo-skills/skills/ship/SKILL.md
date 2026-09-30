@@ -77,7 +77,7 @@ For each candidate, read the evidence that decides whether it can land on `main`
 now.
 
 ```bash
-gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
+gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,headRefName,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
 gh pr checks N --repo OWNER/REPO --required
 gh pr diff N --repo OWNER/REPO
 ```
@@ -104,6 +104,9 @@ gh pr diff N --repo OWNER/REPO
   a "depends on #N" in a description, two pull requests editing the same lines or bumping the
   same version: each one fixes an order, or means the later pull request needs attention once
   the earlier one has merged.
+- **Work in progress.** Uncommitted changes or unpushed commits in a worktree on the
+  candidate's branch (`headRefName`) mean the remote head may not be what its author means to
+  ship. Say so in its reason, and ask about it in the proposal.
 - **The diff.** It is what lands on `main`. Read it for what the title does not say — a
   changed workflow or release file, anything that contradicts the description.
 
