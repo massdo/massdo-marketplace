@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.9.0",
-  "description": "Skills for response style and extracting information from raw text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
+  "version": "0.10.0",
+  "description": "Skills for response style, extracting information from raw text, and shipping GitHub pull requests: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, extract-signal, and ship, which reviews open pull requests, merges them into main once you agree, and follows the repository's release procedure.",
   "author": {
     "name": "Dorian Massoulier"
   },
@@ -15,7 +15,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Massdo Skills",
-    "shortDescription": "Response style and text clarification",
+    "shortDescription": "Response style, text clarification and pull request shipping",
     "developerName": "Dorian Massoulier",
     "websiteURL": "https://github.com/massdo/massdo-marketplace"
   }

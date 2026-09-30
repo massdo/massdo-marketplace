@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
-  "version_hash": "7e41c9d20f85a3b6",
-  "changelog": "extract-signal now acts on the extracted signal as your message, once it has shown it. Pass raw to get the signal alone, as before."
+  "version": "0.10.0",
+  "version_hash": "59c512fbfdbc669c",
+  "changelog": "New ship skill: it reviews your repository's open pull requests, merges the ready ones into main once you agree, and follows the repository's release procedure."
 }
