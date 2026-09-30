@@ -207,3 +207,49 @@ a merge, report it. Stop when the approved scope changes — a head commit moved
 changed the list — or a new verification fails, and report the partly delivered state: what
 merged and at which commit, what did not and why. What remains goes back through a proposal
 and needs a new agreement.
+
+## 5. Finish
+
+1. **Check `main`.** Fetch, then take the final commit of `main` and look at its runs:
+   `gh run list --repo OWNER/REPO --commit <sha> --json databaseId,name,status,conclusion,event,url`.
+   A workflow takes a moment to start, so read again when nothing shows yet. Wait for the ones
+   the merge was expected to start with `gh run watch <id> --exit-status`, and report each
+   result as it is.
+2. **Prepare the release, when the procedure needs an action from you or the user** — a tag,
+   a manual workflow, a documented command. Put a concrete proposal in front of the user
+   before asking: the version and the tag, the commit, the notes, any assets, and the command
+   exactly as the repository documents it. When the procedure needs edits first — a version
+   bump, a changelog, a release pull request — prepare and present them here; opening or
+   pushing them is an action that needs its own agreement. Never create a tag that disagrees
+   with the versions the repository declares. `gh release create <tag>` creates the tag itself
+   when it does not exist, so add `--verify-tag` when the tag is meant to exist already.
+3. **Follow what was triggered.** Watch the workflows the merge or the tag started, then
+   confirm the commit, the tag and the URL of the release or package, according to the effect
+   you announced: `gh release view <tag> --json url,tagName,targetCommitish,isDraft` for a
+   GitHub Release, `git ls-remote --tags origin <tag> '<tag>^{}'` for a tag (an annotated tag
+   shows its own object, then the commit it points at; a lightweight tag shows the commit
+   only), the registry page for a package.
+4. **Check what already exists.** Before creating a tag, a release or a package version, look
+   for it, and check its identity — which commit, which version — instead of recreating it. A
+   tag that exists does not move by itself; never move, delete or recreate one to make the
+   picture tidy. When it points somewhere unexpected, report that, and the decision it leaves
+   to the user.
+5. **No release expected?** Report only the merges and the validations you actually
+   confirmed.
+
+When an action fails after an earlier one succeeded, say what is done and what is not, and
+stop. A retry, a revert or a cleanup is a new action and needs its own agreement.
+
+## What this skill never does
+
+- It never targets a branch other than `main`, and never falls back to one.
+- It never merges every pull request, or publishes a release, on the strength of being
+  invoked.
+- It never stashes, discards, force-pushes, resolves a conflict or brings local commits into
+  a pull request without a separate authorization.
+- It never uses `--admin` to get past a protection.
+- It never runs a publishing command to learn what it does, and never invents or installs a
+  release mechanism.
+- It never reports a queued merge as merged, or a merge, a tag and a published release as one
+  thing.
+- It never moves, deletes or recreates an existing tag or release.
