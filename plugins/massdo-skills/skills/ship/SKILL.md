@@ -42,12 +42,15 @@ Start from the evidence, not from the user's description of it.
 1. **Resolve the repository exactly.** Run
    `gh repo view --json nameWithOwner,url,isFork,parent,defaultBranchRef` and `git remote -v`.
    Keep the resulting `OWNER/REPO` and pass it as `--repo` to every later `gh` call, so that
-   no command depends on an implicit default. A fork, or remotes that point at different
-   repositories, leave the target ambiguous: name the candidates and ask. When this is not a
-   GitHub repository, or `gh` is not authenticated, say so and stop.
-2. **Refresh the remote state.** Run `git fetch --prune` on the remote that points at that
-   repository (usually `origin`). Then confirm that `main` exists both as a remote-tracking
-   branch and on GitHub: `git rev-parse --verify refs/remotes/origin/main` and
+   no command depends on an implicit default. Keep the remote whose URL points at it as well —
+   `REMOTE` below, often `origin` but not always — and use it wherever a `git` command names a
+   remote: in a fork's clone, `origin` is usually the fork, and its `main` and its tags answer
+   for the wrong repository. A fork, or remotes that point at different repositories, leave
+   the target ambiguous: name the candidates and ask. When this is not a GitHub repository, no
+   remote points at it, or `gh` is not authenticated, say so and stop.
+2. **Refresh the remote state.** Run `git fetch --prune REMOTE`. Then confirm that `main`
+   exists both as a remote-tracking branch and on GitHub:
+   `git rev-parse --verify refs/remotes/REMOTE/main` and
    `gh api repos/OWNER/REPO/branches/main --jq .commit.sha`. Record that SHA as the baseline
    every later check refers to. If `main` is absent, that is the blocker described in
    "Scope and consent".
@@ -140,9 +143,9 @@ to hear that before agreeing.
 **Where to look.** The repository's agent and contributor files (`AGENTS.md`, `CLAUDE.md`,
 `CONTRIBUTING.md`), `README.md`, the scripts in `package.json` and `Makefile`, and any
 publishing configuration. Then `.github/workflows/*.yml` and `*.yaml`, read where they will
-act: on the remote `main` (`git show origin/main:<path>`), and, for every workflow or release
+act: on the remote `main` (`git show REMOTE/main:<path>`), and, for every workflow or release
 file a selected pull request adds, edits or deletes, in that pull request
-(`git fetch origin pull/N/head`, then `git show <headRefOid>:<path>`) — once it merges, that
+(`git fetch REMOTE pull/N/head`, then `git show <headRefOid>:<path>`) — once it merges, that
 is what `main` runs. A workflow file can exist and be disabled:
 `gh workflow list --repo OWNER/REPO --all` says which ones are active.
 
@@ -218,7 +221,7 @@ back through a proposal and needs a new agreement.
 
 ## 5. Finish
 
-1. **Check `main`.** Fetch, then take the final commit of `main` and look at its runs:
+1. **Check `main`.** Fetch `REMOTE`, then take the final commit of `main` and look at its runs:
    `gh run list --repo OWNER/REPO --commit <sha> --json databaseId,name,status,conclusion,event,url`.
    A workflow takes a moment to start, so read again when nothing shows yet. Wait for the ones
    the merge was expected to start with `gh run watch <id> --exit-status`, and report each
@@ -234,7 +237,7 @@ back through a proposal and needs a new agreement.
 3. **Follow what was triggered.** Watch the workflows the merge or the tag started, then
    confirm the commit, the tag and the URL of the release or package, according to the effect
    you announced: `gh release view <tag> --json url,tagName,targetCommitish,isDraft` for a
-   GitHub Release, `git ls-remote --tags origin <tag> '<tag>^{}'` for a tag (an annotated tag
+   GitHub Release, `git ls-remote --tags REMOTE <tag> '<tag>^{}'` for a tag (an annotated tag
    shows its own object, then the commit it points at; a lightweight tag shows the commit
    only), the registry page for a package.
 4. **Check what already exists.** Before creating a tag, a release or a package version, look
