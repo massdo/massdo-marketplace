@@ -173,8 +173,8 @@ Then act on the procedure you found:
   happens after a release is published, not who publishes it. Find what creates the release;
   until you have, the procedure is uncertain.
 - **There is no procedure, several that contradict each other, or a dependency you cannot
-  reach.** Report the uncertainty and the decision that is missing. Do not invent a release
-  mechanism or install one.
+  reach.** Report the uncertainty and the decision that is missing, and publish nothing on a
+  guess. Do not invent a release mechanism or install one.
 
 ## 4. Propose, then merge
 
