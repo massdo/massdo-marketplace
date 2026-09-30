@@ -289,6 +289,20 @@ is allowed. CI fetches history and calls `check-ci.sh`: a PR's merge tree is com
 its base SHA, and a push against the SHA before the entire push, not just the last commit.
 Only a first push with no predecessor explicitly omits that comparison.
 
+For PRs targeting `main` and pushes to `main`, CI also enables `--require-release`:
+any file added, edited or deleted under an existing plugin requires a higher version
+in its manifests and `plugin-release.json`, with a new hash and changelog. New plugins
+need a valid initial release; changes outside `plugins/` need no plugin release.
+Local commit hooks allow work in progress without a version bump, so the release can
+follow several implementation commits. Check the final branch before opening a PR:
+
+```bash
+./scripts/check.sh --baseline origin/main --require-release
+```
+
+GitHub protects `main` with the required `validate` check, including for administrators,
+and requires the branch to be up to date before merging.
+
 CI installs pinned PyYAML and Claude versions, runs the Git/validator regression tests and
 all validators, and records tool versions and installation duration in the job log. The
 release notification job still depends on successful validation. The tests exercise actual
