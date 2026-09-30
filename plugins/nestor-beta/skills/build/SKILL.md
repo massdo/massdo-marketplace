@@ -17,7 +17,7 @@ the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "03fa759b219932a1" }` on every Nestor MCP call.
+Pass `{ "version_hash": "afe007c7aa109f92" }` on every Nestor MCP call.
 
 ## Arguments
 
