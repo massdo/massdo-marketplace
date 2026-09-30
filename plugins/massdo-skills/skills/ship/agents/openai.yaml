@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ship"
+  short_description: "Review open pull requests, merge the ready ones into main, follow the release procedure — $massdo-skills:ship"
+  default_prompt: "Use $massdo-skills:ship to review the open pull requests, propose what to merge into main, and follow the repository's release procedure, asking me before each merge or release step."
+
+policy:
+  allow_implicit_invocation: true

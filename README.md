@@ -16,6 +16,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
+- `plugins/massdo-skills/skills/ship/`: review a GitHub repository's open pull requests, merge the ready ones into `main` once you agree, then follow the repository's own release procedure; see [Ship pending work](#ship-pending-work).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
@@ -98,7 +99,7 @@ ecosystems do not read the same one:
 
 | Skill | Model may invoke | Held by |
 |---|---|---|
-| `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
+| `nestor`, `activity`, `tree`, `check-for-updates`, `ship` | yes | nothing to set |
 | `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
@@ -107,6 +108,46 @@ and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documen
 spelling. `user-invocable: false` is never set here: combined
 with `disable-model-invocation` it leaves a skill that nothing can reach, and `validate.py`
 refuses it.
+
+## Ship pending work
+
+Invoke `/massdo-skills:ship` in Claude Code or `$massdo-skills:ship` in Codex. In Cursor,
+select `ship`; in Kimi Code, use `/skill:ship`. It takes no argument and only targets `main`:
+the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
+with no Nestor dependency. Its discovery is normal, so asking in plain language reaches it too
+— the agreements are what hold it back: an invocation prepares a diagnosis and a proposal,
+never authorizes merging every pull request or publishing a release, and each merge, tag
+push, workflow run or publication waits for agreement when it comes up. An agreement already
+given in the session holds for its exact scope only.
+
+1. **Inventory.** The exact GitHub repository, `main`, every open pull request (all pages,
+   split into those that target `main` and the others), and the worktrees, uncommitted
+   changes and unpushed commits this machine can see, with the limits of that view stated.
+2. **Verification.** For each pull request that targets `main`: the diff, the draft status,
+   reviews, conflicts, the required checks on the current head commit, and dependencies
+   between pull requests. An unknown state, a required check that is missing or inconclusive,
+   a missing required review or a conflict is never a green light. The result is a table of
+   ready, blocked and out-of-selection pull requests, with reasons and links.
+3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
+   `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
+   the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
+   package, a version notification and a deployment are told apart, and a name containing
+   `release` or `publish` is only a hint. A publishing command is never run to find out.
+4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
+   the validations and the automatic effects of each merge. After agreement, each merge is
+   locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
+   before the next one starts, and the remaining pull requests are verified again. Auto-merge
+   and merge queues are requests, not merges, and `--admin` is never used.
+5. **Release.** It checks the runs of the final commit of `main`. When the procedure needs a
+   tag, a manual workflow or a documented command, it prepares the exact version, tag, notes
+   and command, then asks. It never creates a tag that disagrees with the declared versions,
+   never moves an existing one, and reports only what it confirmed.
+
+What a merge into `main` starts here is described in
+[Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
+`Validate` workflow's `notify-plugin-releases` job sends the `plugin-release.json` documents
+to the journal server. That is a version notification, not a GitHub Release, and tags stay
+informational.
 
 ## Plugin release document
 

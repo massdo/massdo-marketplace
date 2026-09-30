@@ -15,7 +15,7 @@ Each invocation replaces the previous state instead of adding to it, so an invoc
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "7e41c9d20f85a3b6" }` on every Nestor MCP call.
+Pass `{ "version_hash": "59c512fbfdbc669c" }` on every Nestor MCP call.
 
 ## Scope
 
