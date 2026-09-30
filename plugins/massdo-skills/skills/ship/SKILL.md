@@ -70,3 +70,57 @@ Start from the evidence, not from the user's description of it.
 Present what you found, and say what you could not see. You see this machine's clones and
 worktrees and GitHub's state. You do not see another agent's unsaved work, another machine,
 or a session that has not pushed; say so instead of implying the picture is complete.
+
+## 2. Verify each pull request
+
+For each candidate, read the evidence that decides whether it can land on `main` as it stands
+now.
+
+```bash
+gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
+gh pr checks N --repo OWNER/REPO --required
+gh pr diff N --repo OWNER/REPO
+```
+
+- **Draft.** `isDraft` true means not ready. Read that field itself rather than inferring a
+  draft from `mergeStateStatus`.
+- **Conflicts.** `mergeable` must be `MERGEABLE`; `CONFLICTING` is blocked. GitHub computes
+  mergeability lazily, so `UNKNOWN` only means it has not been computed yet: read again after
+  a few seconds, a few times. Still `UNKNOWN` means unknown, and unknown is not a green light.
+- **Merge state.** `mergeStateStatus` must be `CLEAN`. `BEHIND` (the repository requires the
+  branch to be up to date), `BLOCKED`, `DIRTY`, `UNSTABLE` and `UNKNOWN` are reported with
+  what they mean, never rounded up. Bringing someone's branch up to date is a write to it and
+  needs its own agreement.
+- **Checks.** What `main` requires is in `gh api repos/OWNER/REPO/branches/main/protection`
+  and `gh api repos/OWNER/REPO/rules/branches/main`; a refusal (403, 404) means unknown, not
+  none. Every required check must have concluded successfully **on the current head commit**
+  (`headRefOid`) — a run on an earlier head does not count. Pending, failed, cancelled,
+  skipped or missing is not green, and a required check that never ran is the quiet one. When
+  nothing is required, say so: there is no automated evidence, and the proposal must not
+  imply any.
+- **Reviews.** `reviewDecision` `CHANGES_REQUESTED` or `REVIEW_REQUIRED` is blocked. An empty
+  value means no review rule applies; say whether anyone reviewed.
+- **Dependencies between pull requests.** A base branch that is another pull request's head,
+  a "depends on #N" in a description, two pull requests editing the same lines or bumping the
+  same version: each one fixes an order, or means the later pull request needs attention once
+  the earlier one has merged.
+- **The diff.** It is what lands on `main`. Read it for what the title does not say — a
+  changed workflow or release file, anything that contradicts the description.
+
+An unknown state, a required check that is absent or inconclusive, a missing required review,
+or a conflict is never a green light.
+
+Give a table of the pull requests in three groups — **ready**, **blocked**, **out of
+selection** — with the link, the head commit you checked, and the reason for each. A reason
+cites its evidence:
+
+| Pull request | Group | Head | Reason |
+|---|---|---|---|
+| [#12 Add export](https://github.com/OWNER/REPO/pull/12) | ready | `a1b2c3d` | required check `validate` passed on this head; mergeable; no review rule |
+| [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | blocked | `e4f5a6b` | draft; conflicts with `main`; required check `validate` failed on this head |
+| [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | out of selection | `c7d8e9f` | its base is `feature/export`, not `main` |
+
+Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
+request without a separate authorization. When a check needs a checkout, use a clean,
+temporary worktree at the head commit under examination, outside the user's working tree, and
+remove it afterwards.
