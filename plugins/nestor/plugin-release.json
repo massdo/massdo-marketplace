@@ -1,5 +1,5 @@
 {
-  "version": "0.7.3",
-  "version_hash": "ad3a12df4031d2d7",
-  "changelog": "Projects are now reached with search_project, which browses them the way list_projects did and also proposes close names. An exact name still resolves with get_project, and a proposed match still waits for your choice."
+  "version": "0.7.4",
+  "version_hash": "be3bb9fcebd64416",
+  "changelog": "Task and note slugs are now shown in Markdown inline code, with their descriptions in normal text and underscores left unescaped."
 }
