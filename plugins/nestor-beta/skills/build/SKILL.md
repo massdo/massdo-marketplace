@@ -17,7 +17,7 @@ the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "afe007c7aa109f92" }` on every Nestor MCP call.
+Pass `{ "version_hash": "f99af237ebe7e0f4" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -41,8 +41,12 @@ and a wrong guess here is only discovered after a branch and a full implementati
 the most expensive way to learn that the target was wrong.
 
 The first argument is a Nestor item id or a `color_animal` slug. Pass the received value
-to `get_item` in `ref`, with `scope: { mode: "global" }` and `version_hash`. The server
-resolves the reference; do not select an input field from an underscore or another character.
+to `get_item` in `ref`, with `scope: { mode: "global" }`, `known` and `version_hash`. Send
+the matched `{ version, etag }` pair only when the necessary task content is held; otherwise
+send `known: null`. With `unchanged: true`, keep that content and pair and refresh the
+project name; a full response replaces them. Never omit `known` or use null to re-read
+held content with its pair. The server resolves the reference; do not select an input
+field from an underscore or another character.
 
 After the first argument, parse these optional named arguments in any order:
 
@@ -119,8 +123,8 @@ Then:
 ## Stage 3 — Implement the plan
 
 Write the code yourself, in this session, working from the task body as it stands. Reread it
-**in full** before the first edit and keep it open: the mental summary you would otherwise
-work from is where the constraints get lost.
+**in full** from the held content before the first edit and keep it open: the mental summary
+you would otherwise work from is where the constraints get lost.
 
 Hold yourself to these rules:
 

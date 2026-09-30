@@ -31,6 +31,20 @@ claude plugin install nestor@massdo-marketplace
 
 Every manifest a plugin ships pins the same `version`, so pushing commits ships nothing until that number changes: Claude Code resolves a version from `plugin.json` first and leaves each install on its cached copy while the number is unchanged.
 
+### Conditional Nestor item reads
+
+Nestor reads and freshness checks use `get_item` with required `known`: null when the
+necessary content or matched pair is missing, or `{ version, etag }` when both are held.
+An unchanged item returns `unchanged: true`; reuse its content and pair and refresh the
+project name. A changed item returns full content and its current pair. Grouped reads
+send a `known` array matching `ref` position by position. Mutations still send the held
+pair directly to `update_item`. The item's revision is independent of the plugin's
+`version_hash`. See the [Nestor read rules](plugins/nestor/skills/nestor/SKILL.md#conditional-item-reads).
+
+Publish these skills only after step 1 of `emerald_cephalopod` is deployed: the server
+must accept `known` first. Publishing the adapted Nestor plugin then permits step 2,
+removal of the former separate item-version tool in the `journal` repository.
+
 ## Install the Codex plugin from a clone
 
 ```bash
