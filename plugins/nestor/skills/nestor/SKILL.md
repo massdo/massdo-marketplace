@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.6"
+  pluginVersion: "0.7.7"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.6, hashed as `b97a2f2353767478`.
+This plugin version is 0.7.7, hashed as `16e1600107479cb8`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1b97a2f2353767478", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "116e1600107479cb8", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say `Une mise à jour du plugin Nestor est disponible.` for `pluginName: nestor`, or `Une mise à jour du plugin Nestor Beta est disponible.` for `pluginName: nestor-beta`. Without `pluginName`, say `Une mise à jour est disponible.`
@@ -21,6 +21,18 @@ Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": 
 Never block the requested journal operation. Never write on disk. Never invent a client identifier.
 
 `/nestor:check-for-updates` always reports the probe result, including `unknown`.
+
+## Cite items
+
+Whenever a reply cites a task or note, put its slug in Markdown inline code and its short
+business description in parentheses outside the backticks. Apply this to lists, prose,
+conclusions, answers about code, repeated mentions, and slugs supplied by the user.
+
+- Wrong: "`purple_muskox` is complete."
+- Right: "`purple_muskox` (similar projects) is complete."
+- Never escape underscores inside backticks. Branch and file names containing a slug are not item citations.
+- Write the description in the conversation's language from information already held; omit it when unavailable. Never call a tool only to obtain it, and never copy the whole title.
+- This form names the item; it never replaces requested details such as its status or body.
 
 ## Use the MCP as the source of truth
 
@@ -117,12 +129,3 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Mutate only the requested records and fields.
 - Obtain explicit user confirmation before trashing an item or confirming deletion of a tag or project.
 - After each mutation, report the confirmed result, affected identifier, and any warning.
-
-## Cite items
-
-- Put every cited task or note slug in Markdown inline code and keep its parenthesized business description in normal text: `purple_muskox` (projets similaires).
-- Never escape underscores inside the slug's backticks.
-- Apply that form to lists, search results, item details, mutation reports, and skills that use this shared citation rule.
-- Keep the description to a few words naming the item's business subject, in the language of the conversation. Never copy the whole title.
-- Write the description from data already held, and leave it out when none is. Never call a tool only to write it.
-- The form only names the item. It never replaces the details the user asked for, such as its status or body.

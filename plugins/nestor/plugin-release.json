@@ -1,5 +1,5 @@
 {
-  "version": "0.7.6",
-  "version_hash": "b97a2f2353767478",
-  "changelog": "Update notices now identify whether Nestor or Nestor Beta is outdated through a compact version hash prefix."
+  "version": "0.7.7",
+  "version_hash": "16e1600107479cb8",
+  "changelog": "Item citations now use a prominent rule covering prose and repeated mentions, with an English counterexample and descriptions outside the slug's inline code."
 }
