@@ -70,21 +70,28 @@ Start from the evidence, not from the user's description of it.
    test. Keep the summary short: name the worktrees that hold uncommitted changes or unpushed
    commits, and count the clean ones instead of listing them.
 
-Present what you found, and say what you could not see. You see this machine's clones and
-worktrees and GitHub's state. You do not see another agent's unsaved work, another machine,
-or a session that has not pushed; say so instead of implying the picture is complete.
+Keep this inventory for the scored report below. Lead the diagnosis with that report, then
+give the count, the baseline and a short local-work summary. You see this machine's clones
+and worktrees and GitHub's state. You do not see another agent's unsaved work, another
+machine, or a session that has not pushed; say so instead of implying complete coverage.
 
 ## 2. Verify each pull request
 
-For each candidate, read the evidence that decides whether it can land on `main` as it stands
-now.
+For every open pull request, read the evidence that decides whether it can land on `main`
+as it stands now. Only a candidate whose base is `main` can be ready; the others remain out
+of selection, but still receive a score with the same meaning.
 
 ```bash
-gh pr view N --repo OWNER/REPO --json number,title,url,isDraft,baseRefName,headRefName,headRefOid,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
+gh pr view N --repo OWNER/REPO --json number,title,url,body,isDraft,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
+gh pr checks N --repo OWNER/REPO
 gh pr checks N --repo OWNER/REPO --required
 gh pr diff N --repo OWNER/REPO
 ```
 
+- **Pinned evidence.** Keep the full `headRefOid` and the full `main` baseline SHA with the
+  evidence. Re-read the head, base and GitHub's `main` SHA before reporting. If either commit
+  or the base changed, discard the old assessment, repeat the affected checks and score the
+  new pair. A diff or a check read during that change does not belong to a stable assessment.
 - **Draft.** `isDraft` true means not ready. Read that field itself rather than inferring a
   draft from `mergeStateStatus`.
 - **Conflicts.** `mergeable` must be `MERGEABLE`; `CONFLICTING` is blocked. GitHub computes
@@ -102,33 +109,73 @@ gh pr diff N --repo OWNER/REPO
   its rulesets still decide. Any other refusal (403, 404) means unknown, not none. Every
   required check must have concluded successfully **on the current head commit**
   (`headRefOid`) — a run on an earlier head does not count. Pending, failed, cancelled,
-  skipped or missing is not green, and a required check that never ran is the quiet one. When
-  nothing is required, say so: there is no automated evidence, and the proposal must not
-  imply any.
+  skipped or missing is not green, and a required check that never ran is the quiet one.
+  If the rollup does not establish a check's SHA, read its run details or the check-runs and
+  status APIs for the pinned head before calling it passed. Distinguish **no CI configured**
+  (confirmed from the configuration and the observed runs), **no checks required** (optional
+  checks may still supply evidence), **a required check missing/pending/failed**, and
+  **requirements unknown**. An empty check list alone proves neither no CI nor no rules.
 - **Reviews.** `reviewDecision` `CHANGES_REQUESTED` or `REVIEW_REQUIRED` is blocked. An empty
-  value means no review rule applies; say whether anyone reviewed.
+  value establishes no review requirement only when the protection and ruleset evidence
+  agrees; otherwise the requirement is unknown. Say which reviews were actually received
+  and whether the required approvals apply to this head.
 - **Dependencies between pull requests.** A base branch that is another pull request's head,
   a "depends on #N" in a description, two pull requests editing the same lines or bumping the
   same version: each one fixes an order, or means the later pull request needs attention once
   the earlier one has merged.
-- **Work in progress.** Uncommitted changes or unpushed commits in a worktree on the
-  candidate's branch (`headRefName`) mean the remote head may not be what its author means to
-  ship. Say so in its reason, and ask about it in the proposal.
+- **Work in progress.** Uncommitted changes or unpushed commits in a worktree matching the
+  candidate's head repository and branch (`headRefName`) mean the remote head may not be what
+  its author means to ship. Say so in its reason, and ask about it in the proposal.
 - **The diff.** It is what lands on `main`. Read it for what the title does not say — a
-  changed workflow or release file, anything that contradicts the description.
+  changed workflow or release file, anything that contradicts the description. A diff for
+  another base does not establish integration with `main`; state that limit. Record relevant
+  validations actually executed, with command, result and commit, separately from claims
+  made in the PR body. A declared test result without inspected evidence stays unverified.
 
 An unknown state, a required check that is absent or inconclusive, a missing required review,
 or a conflict is never a green light.
 
-Give a table of the pull requests in three groups — **ready**, **blocked**, **out of
-selection** — with the link, the head commit you checked, and the reason for each. A reason
-cites its evidence:
+### Merge confidence and report
 
-| Pull request | Group | Head | Reason |
-|---|---|---|---|
-| [#12 Add export](https://github.com/OWNER/REPO/pull/12) | ready | `a1b2c3d` | required check `validate` passed on this head; mergeable; no review rule |
-| [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | blocked | `e4f5a6b` | draft; conflicts with `main`; required check `validate` failed on this head |
-| [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | out of selection | `c7d8e9f` | its base is `feature/export`, not `main` |
+Give every open PR an integer percentage from 0 to 100: confidence that **this PR can merge
+into `main` at the examined head and baseline, with acceptable technical risk within the
+checks performed**. One meaning serves **ready**, **blocked** and **out of selection**. It
+does not measure confidence in the grouping, and it is not a statistically calibrated
+probability. The facts are objective; their weighting and the remaining risk are judgment.
+
+Use these indicative anchors, adapted to merge readiness rather than doctor's delivery
+thresholds; do not turn them into a points formula or a new merge gate:
+
+- **95–99%: complete favorable evidence.** Base `main`, non-draft, `MERGEABLE` and `CLEAN`;
+  applicable protections and rulesets known; required checks and reviews satisfied or
+  confirmed not required; diff read and relevant validations observed on this head;
+  dependencies, overlaps, local work and workflow/release effects accounted for.
+- **0–10%: a confirmed obstacle as the PR stands.** A conflict, failed required check,
+  missing required approval, draft or different base prevents it landing on `main` now.
+  Identify the obstacle even when other evidence is favorable.
+- **20–60%: evidence absent or inconclusive.** Unavailable requirements, unknown mergeability
+  or limited validation coverage leave material uncertainty. No CI is a coverage limit,
+  not a failed check; actual local or optional checks may improve the assessment. A 403 is
+  unknown requirements, not absent rules or a confirmed check failure.
+
+Within these anchors, weigh the evidence and explain the remaining judgment briefly. A high
+score replaces no mandatory check, protection, group rule or user agreement. Groups are
+decided by the existing gates above, never by a percentage threshold. Any head or `main`
+change invalidates the score; reassess after each merge and before seeking renewed approval.
+
+Start every PR line with `85% - [#N Title](URL) — head SHA — main SHA — base — group — evidence
+and limits`. In a table, put the percentage first, before the PR. Lead with the scored list,
+in the user's language. Give concise observed facts, name missing or unknown evidence, and
+make clear that the percentage is the residual judgment. These examples share the examined
+`main` baseline `b012345`; abbreviated SHAs are for display only:
+
+| Confidence (estimate) | Pull request | Head / main | Base | Group | Evidence and limits |
+|---|---|---|---|---|---|
+| 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood; judgment: broad coverage, residual risk beyond tests |
+| 5% | [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | `e4f5a6b` / `b012345` | `main` | blocked | observed: conflict and required `validate` failed on this head; judgment: cannot land as-is |
+| 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read; unknown: automated validation coverage; judgment: limited change, limited evidence |
+| 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
+| 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
 request without a separate authorization. When a check needs a checkout, use a clean,

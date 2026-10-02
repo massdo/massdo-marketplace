@@ -141,7 +141,13 @@ given in the session holds for its exact scope only.
    reviews, conflicts, the required checks on the current head commit, and dependencies
    between pull requests. An unknown state, a required check that is missing or inconclusive,
    a missing required review or a conflict is never a green light. The result is a table of
-   ready, blocked and out-of-selection pull requests, with reasons and links.
+   ready, blocked and out-of-selection pull requests, with an integer confidence percentage
+   first on every row, before its link. Each score refers to the examined head and `main`
+   baseline: facts and unknown evidence are stated separately from the judgment about
+   remaining risk. It estimates merge confidence, not a measured probability or confidence
+   in the group, and never replaces checks or agreement. It is reassessed when either commit
+   changes. Examples cover complete evidence, a conflict or failed check, no CI, and
+   inaccessible requirements.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
