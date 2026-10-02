@@ -1,5 +1,5 @@
 {
-  "version": "0.7.5",
-  "version_hash": "7ed86fbb7c035748",
-  "changelog": "Item reads and freshness checks now use get_item with required known: a held version/ETag pair or null for missing content. Unchanged responses reuse held content and refresh the project name; grouped reads align pairs by position. Optimistic mutations retain their direct held-pair protections."
+  "version": "0.7.6",
+  "version_hash": "5eb71bc2a4766ac6",
+  "changelog": "The item citation rule now appears near the top of the Nestor skill and explicitly covers prose, conclusions and repeated mentions, with an English counterexample."
 }
