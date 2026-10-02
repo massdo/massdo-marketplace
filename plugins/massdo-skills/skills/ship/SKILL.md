@@ -1,6 +1,7 @@
 ---
 name: ship
-description: Review the open pull requests of the current GitHub repository, propose which ones to merge into main, then recognize and follow the repository's own release procedure. Use it when the user wants to ship, land or release pending work — "ship it", "merge the open PRs", "what can go to main", "cut a release" — in any language, even without naming the skill. Invoke it as /massdo-skills:ship or $massdo-skills:ship; it takes no argument and only targets main. It needs Git and the GitHub CLI. Preparing the diagnosis is free; every merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Use it for "ship it", "merge the open PRs", "what can go to main", "cut a release", or "ship list", in any language, even without naming the skill. Invoke /massdo-skills:ship or $massdo-skills:ship with optional list to return only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
+argument-hint: "[list]"
 ---
 
 # Ship
@@ -17,13 +18,42 @@ and ask when each action comes up rather than once at the start.
 
 Pass `{ "version_hash": "59c512fbfdbc669c" }` on every Nestor MCP call.
 
+## Modes
+
+`/massdo-skills:ship [list]` — Codex: `$massdo-skills:ship [list]`.
+
+- **No mode argument:** run the existing diagnosis, proposal, agreed merges and repository
+  release procedure below.
+- **`list`:** `ship list` returns only the scored list of every open PR. Apply inventory and
+  verification with the read-only substitutions below, then stop before sections 3–5. Do
+  not propose merges or releases, ask for approval, or offer a next action. `list` is a mode,
+  never a target branch; the target remains `main`.
+
+In `list`, make only the reads needed for the list and its scores: GitHub queries and local
+inspection. Never mutate remote state or local files, refs, branches or worktrees. Do not
+fetch, checkout, create/remove a worktree, write output files, run builds or tests that could
+write artifacts, merge, tag, launch workflows, publish or deploy. Read existing CI results
+and logs instead; unperformed validation is a stated coverage limit.
+
+Read remote files needed to understand checks or changed workflow/release effects with
+`gh api --method GET "repos/OWNER/REPO/contents/PATH?ref=SHA"`, decoding the returned content,
+or `git show SHA:PATH` when the pinned object already exists locally. Do not fetch a missing
+object. Keep unrelated release discovery out of this mode.
+
+The response contains only PR rows or lines in the user's language: percentage first, link
+and title, examined head and `main` baseline, base, group, concise evidence and useful limits.
+Put unknown data in the affected PR's reason, including local coverage limits; no separate
+inventory, progress narration, proposal or approval question. If there are no open PRs, say
+only that. If the repository, authentication or `main` cannot be resolved, give one concise
+error and stop without asking for an action.
+
 ## Scope and consent
 
-- **The target is `main`, and only `main`.** The skill takes no argument and never asks which
-  branch to ship to; text written after the skill name is part of the user's message, not a
-  target. When `main` does not exist on the remote, explain the blocker and stop. Never fall
-  back to another branch: that would be choosing the target on the user's behalf.
-- **An invocation prepares a diagnosis and a proposal, nothing more.** It is not agreement to
+- **The target is `main`, and only `main`.** The optional `list` argument selects a mode. The
+  skill never asks which branch to ship to; other text written after its name remains the
+  user's message, not a target. When `main` does not exist on the remote, explain the blocker
+  and stop. Never fall back to another branch.
+- **Without `list`, an invocation prepares a diagnosis and a proposal.** It is not agreement to
   merge every pull request, and not agreement to publish a release. Ask at the moment of each
   action that changes something beyond this machine: a merge, a tag push, a workflow run, a
   script run, a release creation. An agreement already given in the session holds for its
@@ -46,34 +76,45 @@ Start from the evidence, not from the user's description of it.
    `REMOTE` below, often `origin` but not always — and use it wherever a `git` command names a
    remote: in a fork's clone, `origin` is usually the fork, and its `main` and its tags answer
    for the wrong repository. A fork, or remotes that point at different repositories, leave
-   the target ambiguous: name the candidates and ask. When this is not a GitHub repository, no
-   remote points at it, or `gh` is not authenticated, say so and stop.
-2. **Refresh the remote state.** Run `git fetch --prune REMOTE`. Then confirm that `main`
-   exists both as a remote-tracking branch and on GitHub:
-   `git rev-parse --verify refs/remotes/REMOTE/main` and
-   `gh api repos/OWNER/REPO/branches/main --jq .commit.sha`. Record that SHA as the baseline
-   every later check refers to. If `main` is absent, that is the blocker described in
-   "Scope and consent".
+   the target ambiguous: name the candidates and ask in normal mode; in `list`, report the
+   ambiguity and stop. When this is not a GitHub repository, no remote points at it, or `gh`
+   is not authenticated, say so and stop.
+2. **Read the remote state.** In normal mode, run `git fetch --prune REMOTE`, then confirm
+   `main` as a remote-tracking branch with `git rev-parse --verify refs/remotes/REMOTE/main`.
+   In both modes, read GitHub's current `main` with
+   `gh api repos/OWNER/REPO/branches/main --jq .commit.sha` and record its full SHA as the
+   baseline. In normal mode, the fetched SHA must match it; refresh again if they differ.
+   In `list`, do not fetch or require a local remote-tracking ref: GitHub's SHA is the
+   baseline. If `main` is absent, that is the blocker described in "Scope and consent".
 3. **Read every open pull request.** `gh pr list` returns 30 results by default and does not
    say when it stops, so walk every page:
    `gh api --paginate "repos/OWNER/REPO/pulls?state=open&per_page=100" --jq '.[] | [.number, .base.ref, .draft, .head.sha[0:7], .title] | @tsv'`.
-   State how many you read.
+   In normal mode, state how many you read; in `list`, return every row without a summary.
 4. **Split them.** The pull requests whose base is `main` are the candidates. The others,
    whose base is another branch — often one that stacks on a candidate — are out of
    selection: list them anyway, with the base they target.
-5. **Look at this machine.** `git worktree list --porcelain` lists the worktrees. For each
-   reachable one, `git -C <path> status --porcelain=v1 --branch` shows uncommitted changes
+5. **Look at this machine.** In normal mode, `git worktree list --porcelain` lists the
+   worktrees. For each reachable one, `git -C <path> status --porcelain=v1 --branch` shows uncommitted changes
    and `git -C <path> log --oneline HEAD --not --remotes` the commits that no remote branch
    contains yet, a detached worktree included. `git log --oneline --branches --not --remotes`
    covers the local branches checked out nowhere. Having no upstream does not make a branch
    unpushed, since its commits may already sit on another remote branch: these two are the
    test. Keep the summary short: name the worktrees that hold uncommitted changes or unpushed
    commits, and count the clean ones instead of listing them.
+   In `list`, use `git worktree list --porcelain` and inspect only local work relevant to the
+   PR head repositories and branches, using
+   `GIT_OPTIONAL_LOCKS=0 git -C <path> status --porcelain=v1 --branch` so status does not
+   refresh the index. Use `git ls-remote <candidate-head-repository-url> refs/heads/BRANCH`
+   for a live remote head, including a fork's own repository, and compare local history to
+   that SHA only if its object is already present. Cached remote
+   refs alone do not prove commits are unpushed. If comparison is unavailable, put local
+   push state unknown in the affected row; do not fetch to resolve it.
 
-Keep this inventory for the scored report below. Lead the diagnosis with that report, then
-give the count, the baseline and a short local-work summary. You see this machine's clones
-and worktrees and GitHub's state. You do not see another agent's unsaved work, another
-machine, or a session that has not pushed; say so instead of implying complete coverage.
+Keep this inventory for the scored report below. Lead the normal diagnosis with that report,
+then give the count, the baseline and a short local-work summary. In `list`, output only the
+scored report. You see this machine's clones and worktrees and GitHub's state. You do not see
+another agent's unsaved work, another machine, or a session that has not pushed; say so
+instead of implying complete coverage.
 
 ## 2. Verify each pull request
 
@@ -178,9 +219,10 @@ make clear that the percentage is the residual judgment. These examples share th
 | 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
-request without a separate authorization. When a check needs a checkout, use a clean,
-temporary worktree at the head commit under examination, outside the user's working tree, and
-remove it afterwards.
+request without a separate authorization. In normal mode, when a check needs a checkout,
+use a clean temporary worktree at the examined head outside the user's working tree, and
+remove it afterwards. In `list`, use observed CI/log evidence without a checkout or local
+validation run, record missing coverage in the score, output the scored report and **stop**.
 
 ## 3. Recognize the release procedure — before any merge
 
@@ -246,8 +288,10 @@ proposal instead of choosing.
 **The merges.** For each pull request, in the agreed order:
 
 1. Read it again. Its base must still be `main` and its head the commit you verified, and its
-   checks, reviews and mergeability must still hold. The merge below guards the head, not the
-   base: a pull request retargeted to another branch keeps its head and would merge there.
+   checks, reviews and mergeability must still hold. Read `main`'s current SHA too and
+   reassess the evidence and score if that baseline moved. The merge below guards the head,
+   not the base: a pull request retargeted to another branch keeps its head and would merge
+   there.
 2. Merge it locked on that commit:
    `gh pr merge N --repo OWNER/REPO --match-head-commit <headRefOid> --<method>`, where the
    method is `merge`, `squash` or `rebase`. GitHub refuses the merge if the branch moved since
@@ -303,6 +347,8 @@ stop. A retry, a revert or a cleanup is a new action and needs its own agreement
 ## What this skill never does
 
 - It never targets a branch other than `main`, and never falls back to one.
+- In `list`, it never mutates remote or local state, runs merge/release steps or asks for
+  approval; only the scored PR list is returned.
 - It never merges every pull request, or publishes a release, on the strength of being
   invoked.
 - It never stashes, discards, force-pushes, resolves a conflict or brings local commits into
