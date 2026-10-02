@@ -1,7 +1,8 @@
 ---
 name: ship
-description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Use it for "ship it", "merge the open PRs", "what can go to main", "cut a release", or "ship list", in any language, even without naming the skill. Invoke /massdo-skills:ship or $massdo-skills:ship with optional list to return only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /massdo-skills:ship or $massdo-skills:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
+disable-model-invocation: true
 ---
 
 # Ship
@@ -16,7 +17,7 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "e0ef45bf19103113" }` on every Nestor MCP call.
+Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
 
 ## Modes
 
