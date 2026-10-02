@@ -189,9 +189,10 @@ informational.
 ### Several documents, one release set
 
 The server reads the documents as a **set**, not one of them. `validatePluginReleaseSet`
-refuses a set whose names or hashes repeat, and `resolvePluginRelease` then finds the entry
-whose hash matches the one the call carries — so the hash alone identifies the plugin, and a
-call needs to name none. `probe_plugin_version` and the update warning both resolve that way.
+refuses a set whose names or hashes repeat. Nestor skills send `1` followed by their release
+hash; Nestor Beta skills send `2` followed by theirs. The prefix identifies the plugin even
+after its published hash changes, so `probe_plugin_version` and automatic update warnings
+can return its `pluginName`. Release documents keep the unprefixed 16-character hash.
 
 Two consequences:
 
@@ -199,7 +200,8 @@ Two consequences:
   whatever plugin declares the MCP server it calls — a skill that sends none leaves the
   server unable to tell an outdated install that it is outdated. `nestor-beta` declares no
   server and still publishes its own release, so each of its skills sends `nestor-beta`'s
-  hash. `scripts/validate.py` refuses any skill without a hash, in every plugin.
+  hash with prefix `2`. `scripts/validate.py` requires the correct prefix and release hash
+  in Nestor skills and executable read examples. Other plugins keep unprefixed hashes.
 - A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
   value must collide with no other published release. Reusing a hash makes the server
   resolve the wrong plugin; keeping the old one makes it report an outdated client as

@@ -1,5 +1,5 @@
 {
-  "version": "0.7.5",
-  "version_hash": "7ed86fbb7c035748",
-  "changelog": "Item reads and freshness checks now use get_item with required known: a held version/ETag pair or null for missing content. Unchanged responses reuse held content and refresh the project name; grouped reads align pairs by position. Optimistic mutations retain their direct held-pair protections."
+  "version": "0.7.6",
+  "version_hash": "b97a2f2353767478",
+  "changelog": "Update notices now identify whether Nestor or Nestor Beta is outdated through a compact version hash prefix."
 }

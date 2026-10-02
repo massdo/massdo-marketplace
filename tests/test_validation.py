@@ -280,7 +280,7 @@ class RepositoryValidation(unittest.TestCase):
 
     def test_nestor_conditional_read_examples_reject_invalid_mcp_inputs(self):
         shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
-        version_hash = json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
+        version_hash = "1" + json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
         path = "plugins/nestor/skills/nestor/references/invalid.md"
         valid = {"ref": "brown_turtle", "known": None,
                  "scope": {"mode": "global"}, "version_hash": version_hash}
@@ -297,6 +297,9 @@ class RepositoryValidation(unittest.TestCase):
             (valid | {"ref": ["brown_turtle"] * 6, "known": [None] * 6}, "needs 1 to 5 refs"),
             (valid | {"ref": [7], "known": [None]}, "refs must be strings"),
             (valid | {"version_hash": "not-the-release-hash"}, "version_hash does not match"),
+            (valid | {"version_hash": version_hash[1:]}, "version_hash does not match"),
+            (valid | {"version_hash": "2" + version_hash[1:]}, "version_hash does not match"),
+            (valid | {"version_hash": "1ffffffffffffffff"}, "version_hash does not match"),
         ]
         for example, diagnostic in cases:
             with self.subTest(example=example):
@@ -308,7 +311,7 @@ class RepositoryValidation(unittest.TestCase):
 
     def test_nestor_conditional_read_examples_accept_mixed_and_single_arrays(self):
         shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
-        version_hash = json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
+        version_hash = "1" + json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
         path = "plugins/nestor/skills/nestor/references/grouped.md"
         pair = {"version": 3, "etag": "held"}
         for refs, known in ((["brown_turtle"], [None]),
@@ -433,6 +436,31 @@ class RepositoryValidation(unittest.TestCase):
         self.write_skill()
         result = self.check(ok=False)
         self.assertIn("publishes no plugin-release.json", result.stderr)
+
+    def test_nestor_skills_require_their_own_prefix_and_release_hash(self):
+        previous = "demo"
+        for name, prefix in (("nestor", "1"), ("nestor-beta", "2")):
+            (self.root / "plugins" / previous).rename(self.root / "plugins" / name)
+            for path in self.root.rglob("*.json"):
+                data = json.loads(path.read_text())
+                if data.get("name") == previous:
+                    data["name"] = name
+                for entry in data.get("plugins", []):
+                    key = "id" if "id" in entry else "name"
+                    entry[key] = name
+                    if isinstance(entry["source"], dict):
+                        entry["source"]["path"] = f"./plugins/{name}"
+                    else:
+                        entry["source"] = f"./plugins/{name}"
+                self.json(path, data)
+            self.skill = f"plugins/{name}/skills/example/SKILL.md"
+            self.write_skill(prefix + "0123456789abcdef")
+            self.check()
+            for invalid in ("0123456789abcdef", ("2" if prefix == "1" else "1") + "0123456789abcdef", prefix + "ffffffffffffffff"):
+                self.write_skill(invalid)
+                result = self.check(ok=False)
+                self.assertIn("version_hash does not match", result.stderr)
+            previous = name
 
     def test_ci_compares_multi_commit_push_to_before_sha(self):
         self.bump(changelog="Initial release")

@@ -1,5 +1,5 @@
 {
-  "version": "0.9.5",
-  "version_hash": "f99af237ebe7e0f4",
-  "changelog": "Build, Spec and task cleanup use conditional get_item reads with required known. Held task content is reused after an unchanged response, and Spec retries conflicts from the current item without preventive or post-success reads."
+  "version": "0.9.6",
+  "version_hash": "82a6866cadd70f62",
+  "changelog": "Nestor Beta skills now identify their plugin in version hashes so update notices can name it even after its published hash changes."
 }
