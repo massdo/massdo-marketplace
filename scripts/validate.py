@@ -8,6 +8,7 @@ here is indexed by position or hardcoded to a plugin name, so adding a plugin
 or reordering a catalog does not break the script.
 """
 
+import argparse
 import json
 import re
 import subprocess
@@ -91,13 +92,14 @@ def read_json_at(ref: str, path: Path) -> dict | None:
 
 # A release is published by the file tree alone, so every check below reads the
 # tree. Resolve the baseline once so a missing commit never disables checks.
-argv = sys.argv[1:]
-if argv[:1] == ["--baseline"] and len(argv) == 2:
-    BASELINE: str | None = argv[1]
-elif not argv:
-    BASELINE = None
-else:
-    raise SystemExit("usage: validate.py [--baseline <git-ref>]")
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--baseline", metavar="git-ref")
+parser.add_argument("--require-release", action="store_true",
+                    help="require a version increase for each changed plugin")
+args = parser.parse_args()
+BASELINE: str | None = args.baseline
+if args.require_release and BASELINE is None:
+    parser.error("--require-release requires --baseline")
 
 if BASELINE is not None:
     resolved = subprocess.run(
@@ -107,6 +109,19 @@ if BASELINE is not None:
     if resolved.returncode != 0:
         raise SystemExit(f"FAIL baseline {BASELINE!r} is not an available commit")
     BASELINE = resolved.stdout.strip()
+
+
+changed_plugins: set[str] = set()
+if args.require_release:
+    for command in (
+        ["git", "diff", "--name-only", "--no-renames", "-z", BASELINE, "--", "plugins/"],
+        ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", "plugins/"],
+    ):
+        result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=True)
+        for filename in result.stdout.split("\0"):
+            parts = Path(filename).parts
+            if len(parts) >= 3 and parts[0] == "plugins":
+                changed_plugins.add(parts[1])
 
 
 plugin_dirs = sorted(p for p in PLUGINS.iterdir() if p.is_dir())
@@ -256,6 +271,21 @@ for plugin in plugin_dirs:
                 else None
             )
             if isinstance(published, dict):
+                if name in changed_plugins:
+                    previous_version = published.get("version")
+                    current_version = release.get("version")
+                    valid_versions = all(
+                        isinstance(version, str) and SEMVER.fullmatch(version)
+                        for version in (previous_version, current_version)
+                    )
+                    check(
+                        valid_versions
+                        and tuple(map(int, current_version.split(".")))
+                        > tuple(map(int, previous_version.split("."))),
+                        f"{name}: plugin files changed but version must increase "
+                        f"from {previous_version!r} (found {current_version!r}); "
+                        "update the manifests, release hash and changelog",
+                    )
                 check(
                     published.get("version") == release.get("version")
                     or published.get("changelog") != release.get("changelog"),
@@ -502,6 +532,49 @@ for plugin in plugin_dirs:
             declared.group(1) == plugin_hash_prefixes.get(name, "") + published_hashes[name],
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
+
+# Nestor examples are executable input shapes, even though this repository
+# ships no MCP implementation. Catch obsolete tools and malformed conditional
+# reads in every distributed Markdown resource, including references.
+for name in ("nestor", "nestor-beta"):
+    for resource in sorted((PLUGINS / name).rglob("*.md")):
+        text = resource.read_text(encoding="utf-8")
+        where = resource.relative_to(ROOT)
+        check("get_item_version" not in text,
+              f"{where}: obsolete get_item_version instruction")
+        for block in re.findall(r"```json\n(.*?)\n```", text, re.DOTALL):
+            try:
+                example = json.loads(block)
+            except json.JSONDecodeError:
+                check(False, f"{where}: invalid JSON example")
+                continue
+            if not isinstance(example, dict):
+                continue
+            if example.get("unchanged") is True:
+                check(not ({"item", "title", "body", "tags", "relations", "etag"} & example.keys()),
+                      f"{where}: unchanged example must not repeat content or ETag")
+            if "ref" not in example:
+                continue
+            check("known" in example, f"{where}: get_item example omits known")
+            refs, known = example["ref"], example.get("known")
+            pairs = [known]
+            if isinstance(refs, list):
+                check(1 <= len(refs) <= 5, f"{where}: get_item example needs 1 to 5 refs")
+                check(all(isinstance(ref, str) for ref in refs),
+                      f"{where}: get_item refs must be strings")
+                check(isinstance(known, list) and len(known) == len(refs),
+                      f"{where}: known must align with ref position by position")
+                pairs = known if isinstance(known, list) else []
+            else:
+                check(isinstance(refs, str), f"{where}: get_item ref must be a string or array")
+            for pair in pairs:
+                check(pair is None or (
+                    isinstance(pair, dict) and set(pair) == {"version", "etag"}
+                    and type(pair["version"]) is int and pair["version"] >= 1
+                    and isinstance(pair["etag"], str) and bool(pair["etag"])
+                ), f"{where}: known needs null or a complete version/ETag pair")
+            check(example.get("version_hash") == plugin_hash_prefixes[name] + published_hashes.get(name, ""),
+                  f"{where}: get_item example version_hash does not match its plugin release")
 
 # --- Crude secret guard. ----------------------------------------------------
 

@@ -1,14 +1,14 @@
 ---
 name: next-tasks
-description: List the active tasks of one Nestor project — todo, in progress and awaiting review — for a project named as an argument or inferred from the workspace's Git repository. Use only when the user explicitly invokes next-tasks; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
+description: List the active root tasks of one Nestor project — todo, in progress and awaiting review — for a project named as an argument or inferred from the workspace's Git repository. Use only when the user explicitly invokes next-tasks; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
 argument-hint: "[project]"
 disable-model-invocation: true
 ---
 
 # Nestor Next Tasks
 
-Show what is moving in one Nestor project: the tasks of its `active` view. When nothing
-is, offer its backlog.
+Show what is moving in one Nestor project: the root tasks of its `active` view, each one
+standing for its subtasks. When nothing is, offer its backlog.
 
 This is a consultation. It creates no project, changes no item and writes nothing. The
 `nestor` skill holds the shared journal procedures and the way items are cited; this skill
@@ -16,7 +16,7 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "264a7b4b1603a5fb2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "282a6866cadd70f62" }` on every Nestor MCP call.
 
 ## Invocation
 
@@ -71,12 +71,13 @@ and announce an archived project before reading it.
 
 ## Read the active tasks
 
-Call `list_items` with `view: "active"` in the resolved project's scope.
+Call `list_items` with `view: "active"` and `filters: { "parentTaskId": null }` in the
+resolved project's scope. Send the `null` explicitly: a missing key means no filter.
 
 That view holds the `todo`, `in_progress` and `need_review` tasks, scheduled or not, with
 no time bound. It already leaves out the backlog, completed and cancelled tasks, archives,
-the trash and every note. Add no further filter — in particular, do not restrict the read
-to root tasks, since a subtask is active work like any other.
+the trash and every note. `parentTaskId: null` keeps only the root tasks: a subtask is
+never listed, its parent stands for it. Add no other filter.
 
 **Keep the server's order**: descending priority, then ascending schedule, then descending
 modification, with the server breaking ties. Never re-sort the pages here.
@@ -84,8 +85,17 @@ modification, with the server breaking ties. Never re-sort the pages here.
 **Keep the server's pagination.** Add no volume limit of your own. When a response carries
 `hasMore`, say that results remain; a partial page is never presented as the whole view.
 
-When the view is empty, say so, name the project that was read, then offer the backlog as
-described below.
+**Read the counters, not just the page.** `taskViewCounts.active` counts every active task,
+subtasks included; `totalCount` counts the roots only.
+
+- `taskViewCounts.active` is zero: the view is empty. Say so, name the project that was
+  read, then offer the backlog as described below.
+- `totalCount` is zero while `taskViewCounts.active` is not: every active task is a
+  subtask whose parent is not active, so nothing can stand for them. Read the view again
+  without the `parentTaskId` filter and list those tasks.
+- `totalCount` is below `taskViewCounts.active`: end with the difference as a number of
+  subtasks not listed, naming none.
+- A missing counter changes nothing: judge by the page, as before.
 
 Cite the items exactly as the `nestor` skill prescribes. Invent no layout, no grouping and
 no table of your own: one citation form across every skill is what makes an item reference
@@ -100,12 +110,13 @@ The backlog holds work set aside for later, not work that is moving, so it is ne
 unasked. The `active` response already counts it, within the same scope, in
 `taskViewCounts.backlog`: decide from that count, without another call.
 
-- Above zero, give the count and ask whether to show the backlog too, then stop and wait
-  for the answer.
+- Above zero, give the count, subtasks included, and ask whether to show the backlog too,
+  then stop and wait for the answer.
 - At zero, say the backlog is empty as well and ask nothing: the answer to that question
   is already known.
 - Absent, ask the same question without a count rather than read the backlog to find one.
 
-On a yes, call `list_items` with `view: "backlog"` in the same project scope and show it
-under the rules of the active view: no further filter, the server's order and pagination,
-`hasMore` reported, the same citation form.
+On a yes, call `list_items` with `view: "backlog"` and the same `parentTaskId: null` filter
+in the same project scope and show it under the rules of the active view, with
+`taskViewCounts.backlog` in place of `taskViewCounts.active`: roots only, the server's
+order and pagination, `hasMore` reported, the same citation form.

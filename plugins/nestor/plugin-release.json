@@ -1,5 +1,5 @@
 {
-  "version": "0.7.4",
-  "version_hash": "bd431e0f0d759d04",
-  "changelog": "Update notices now identify the outdated Nestor plugin through a compact version hash prefix."
+  "version": "0.7.6",
+  "version_hash": "b97a2f2353767478",
+  "changelog": "Update notices now identify whether Nestor or Nestor Beta is outdated through a compact version hash prefix."
 }

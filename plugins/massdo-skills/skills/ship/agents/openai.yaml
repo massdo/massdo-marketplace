@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ship"
+  short_description: "Score PR merge confidence; list or ship to main"
+  default_prompt: "Use $massdo-skills:ship to score open pull requests, propose what to merge into main, and follow the repository's release procedure, asking me before each merge or release step."
+
+policy:
+  allow_implicit_invocation: true

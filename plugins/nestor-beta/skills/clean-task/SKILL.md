@@ -14,7 +14,7 @@ modify other items.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "264a7b4b1603a5fb2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "282a6866cadd70f62" }` on every Nestor MCP call.
 
 ## Invocation
 
@@ -28,6 +28,14 @@ an exact slug. With no reference or multiple references, ask only for the single
 target and stop without mutation. Never infer a target from an earlier task or a plan.
 
 Clean only the body of the specified task; leave its other fields unchanged.
+
+Read it with `get_item`, passing the reference in `ref`, the global `scope`, `known` and
+`version_hash`. Send the matched `{ version, etag }` pair when the necessary task content
+is held; otherwise send `known: null`. With `unchanged: true`, keep the content and pair
+and refresh the project name; a full response replaces them. Never omit `known` or use
+null to re-read held content with its pair. Use the Nestor skill's shared procedures for
+mutations: send the held pair directly to `update_item`, without a preventive read or a
+read after success.
 
 ## Decide what can be removed
 

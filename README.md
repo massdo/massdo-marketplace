@@ -16,6 +16,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
+- `plugins/massdo-skills/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
@@ -29,6 +30,20 @@ claude plugin install nestor@massdo-marketplace
 ```
 
 Every manifest a plugin ships pins the same `version`, so pushing commits ships nothing until that number changes: Claude Code resolves a version from `plugin.json` first and leaves each install on its cached copy while the number is unchanged.
+
+### Conditional Nestor item reads
+
+Nestor reads and freshness checks use `get_item` with required `known`: null when the
+necessary content or matched pair is missing, or `{ version, etag }` when both are held.
+An unchanged item returns `unchanged: true`; reuse its content and pair and refresh the
+project name. A changed item returns full content and its current pair. Grouped reads
+send a `known` array matching `ref` position by position. Mutations still send the held
+pair directly to `update_item`. The item's revision is independent of the plugin's
+`version_hash`. See the [Nestor read rules](plugins/nestor/skills/nestor/SKILL.md#conditional-item-reads).
+
+Publish these skills only after step 1 of `emerald_cephalopod` is deployed: the server
+must accept `known` first. Publishing the adapted Nestor plugin then permits step 2,
+removal of the former separate item-version tool in the `journal` repository.
 
 ## Install the Codex plugin from a clone
 
@@ -98,7 +113,7 @@ ecosystems do not read the same one:
 
 | Skill | Model may invoke | Held by |
 |---|---|---|
-| `nestor`, `activity`, `tree`, `check-for-updates` | yes | nothing to set |
+| `nestor`, `activity`, `tree`, `check-for-updates`, `ship` | yes | nothing to set |
 | `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
@@ -107,6 +122,60 @@ and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documen
 spelling. `user-invocable: false` is never set here: combined
 with `disable-model-invocation` it leaves a skill that nothing can reach, and `validate.py`
 refuses it.
+
+## Ship pending work
+
+Invoke `/massdo-skills:ship [list]` in Claude Code or `$massdo-skills:ship [list]` in Codex. In
+Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
+the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
+with no Nestor dependency. Its discovery is normal, so asking in plain language reaches it too
+— the agreements are what hold it back: an invocation prepares a diagnosis and a proposal,
+never authorizes merging every pull request or publishing a release, and each merge, tag
+push, workflow run or publication waits for agreement when it comes up. An agreement already
+given in the session holds for its exact scope only.
+
+The optional `list` argument (`ship list`, or `$massdo-skills:ship list` in Codex) returns
+only the list of every open PR: confidence percentage first, link/title, examined head and
+`main` baseline, base, group and concise evidence and limits. It performs only reads, with
+no fetch, file/ref/branch/worktree changes, local build/test runs, merge or release steps,
+proposal, approval question or publication. It uses GitHub's live baseline and existing
+CI/log evidence, and states missing evidence in the affected row. `list` is a mode, not a
+branch target; without it the workflow below is preserved.
+
+1. **Inventory.** The exact GitHub repository, `main`, every open pull request (all pages,
+   split into those that target `main` and the others), and the worktrees, uncommitted
+   changes and unpushed commits this machine can see, with the limits of that view stated.
+2. **Verification.** For each pull request that targets `main`: the diff, the draft status,
+   reviews, conflicts, the required checks on the current head commit, and dependencies
+   between pull requests. An unknown state, a required check that is missing or inconclusive,
+   a missing required review or a conflict is never a green light. The result is a table of
+   ready, blocked and out-of-selection pull requests, with an integer confidence percentage
+   first on every row, before its link. Each score refers to the examined head and `main`
+   baseline: facts and unknown evidence are stated separately from the judgment about
+   remaining risk. It estimates merge confidence, not a measured probability or confidence
+   in the group, and never replaces checks or agreement. It is reassessed when either commit
+   changes. Examples cover complete evidence, a conflict or failed check, no CI, and
+   inaccessible requirements.
+3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
+   `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
+   the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
+   package, a version notification and a deployment are told apart, and a name containing
+   `release` or `publish` is only a hint. A publishing command is never run to find out.
+4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
+   the validations and the automatic effects of each merge. After agreement, each merge is
+   locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
+   before the next one starts, and the remaining pull requests are verified again. Auto-merge
+   and merge queues are requests, not merges, and `--admin` is never used.
+5. **Release.** It checks the runs of the final commit of `main`. When the procedure needs a
+   tag, a manual workflow or a documented command, it prepares the exact version, tag, notes
+   and command, then asks. It never creates a tag that disagrees with the declared versions,
+   never moves an existing one, and reports only what it confirmed.
+
+What a merge into `main` starts here is described in
+[Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
+`Validate` workflow's `notify-plugin-releases` job sends the `plugin-release.json` documents
+to the journal server. That is a version notification, not a GitHub Release, and tags stay
+informational.
 
 ## Plugin release document
 
@@ -120,9 +189,10 @@ refuses it.
 ### Several documents, one release set
 
 The server reads the documents as a **set**, not one of them. `validatePluginReleaseSet`
-refuses a set whose names or hashes repeat, and `resolvePluginRelease` then finds the entry
-whose hash matches the one the call carries — so the hash alone identifies the plugin, and a
-call needs to name none. `probe_plugin_version` and the update warning both resolve that way.
+refuses a set whose names or hashes repeat. Nestor skills send `1` followed by their release
+hash; Nestor Beta skills send `2` followed by theirs. The prefix identifies the plugin even
+after its published hash changes, so `probe_plugin_version` and automatic update warnings
+can return its `pluginName`. Release documents keep the unprefixed 16-character hash.
 
 Two consequences:
 
@@ -130,7 +200,8 @@ Two consequences:
   whatever plugin declares the MCP server it calls — a skill that sends none leaves the
   server unable to tell an outdated install that it is outdated. `nestor-beta` declares no
   server and still publishes its own release, so each of its skills sends `nestor-beta`'s
-  hash. `scripts/validate.py` refuses any skill without a hash, in every plugin.
+  hash with prefix `2`. `scripts/validate.py` requires the correct prefix and release hash
+  in Nestor skills and executable read examples. Other plugins keep unprefixed hashes.
 - A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
   value must collide with no other published release. Reusing a hash makes the server
   resolve the wrong plugin; keeping the old one makes it report an outdated client as
@@ -288,6 +359,20 @@ version hash. An unavailable baseline is an error; a new plugin absent from a va
 is allowed. CI fetches history and calls `check-ci.sh`: a PR's merge tree is compared against
 its base SHA, and a push against the SHA before the entire push, not just the last commit.
 Only a first push with no predecessor explicitly omits that comparison.
+
+For PRs targeting `main` and pushes to `main`, CI also enables `--require-release`:
+any file added, edited or deleted under an existing plugin requires a higher version
+in its manifests and `plugin-release.json`, with a new hash and changelog. New plugins
+need a valid initial release; changes outside `plugins/` need no plugin release.
+Local commit hooks allow work in progress without a version bump, so the release can
+follow several implementation commits. Check the final branch before opening a PR:
+
+```bash
+./scripts/check.sh --baseline origin/main --require-release
+```
+
+GitHub protects `main` with the required `validate` check, including for administrators,
+and requires the branch to be up to date before merging.
 
 CI installs pinned PyYAML and Claude versions, runs the Git/validator regression tests and
 all validators, and records tool versions and installation duration in the job log. The

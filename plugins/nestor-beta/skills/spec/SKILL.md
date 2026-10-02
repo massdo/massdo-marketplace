@@ -27,7 +27,7 @@ task bodies are written in that same language.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "264a7b4b1603a5fb2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "282a6866cadd70f62" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -56,7 +56,11 @@ a real idea, however short, arrives as a sentence, and a sentence is never mista
 slug.
 
 For a reference, read the task with `get_item`, passing the received value in `ref`, with
-`scope: { mode: "global" }` and `version_hash`. Do not select a field from its spelling:
+`scope: { mode: "global" }`, `known` and `version_hash`. Send the matched `{ version, etag }`
+pair only when the necessary task content is held; otherwise send `known: null`. With
+`unchanged: true`, keep that content and pair and refresh the project name; a full response
+replaces them. Never omit `known` or use null to re-read held content with its pair.
+Do not select a field from its spelling:
 the server resolves IDs, prefixes and exact slugs. Its title and body become the starting
 material, in place of the prose the user would otherwise have typed.
 
@@ -72,7 +76,7 @@ cannot separate those two; a failed read can, and it costs one call.
 
 Keep the task's identity: it is the root of the tree, and Stage 4 writes the specification
 into it rather than creating a second item beside it. Hold the `version` and `etag` that
-`get_item` returned — Stage 4 uses them.
+the opening read returned or confirmed — Stage 4 uses them.
 
 ## Stage 1 — The interview
 
@@ -253,8 +257,12 @@ way, because every child needs its id.
 **With a source task**, write the specification into it with `update_item`, sending the
 `version` and `etag` held since the opening read. A whole interview stands between those two
 calls, so the server may well reject the pair as stale — that is the expected path, not an
-error: call `get_item` once and repeat the same update. Never refresh the pair preventively,
-and never send a `version` and an `etag` that came from different reads.
+error: take the current item and pair from `details.current`, adapt the specification to
+any intervening changes and retry once. Only when the rejection has no `details.current`,
+call `get_item` once with the held content's matched pair in `known`, or null when content
+or pair is absent, and use the full or unchanged response under the rules above. Never
+refresh the pair preventively, reuse the rejected pair for a mutation or replay the
+rejected patch unchanged. Never send a `version` and an `etag` that came from different reads.
 
 **Without one**, create the root with `create_item`, `type: "task"`, no `parentTaskId`, and
 the specification as `body`.

@@ -13,7 +13,7 @@ Read the data through the Nestor MCP server. Never read a SQLite file or an expo
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1bd431e0f0d759d04" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1b97a2f2353767478" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -87,7 +87,10 @@ Project names are unique in Nestor, so a name resolves to at most one project.
    render.
 
 **With `item` and no `project`.** Call `get_item` with `ref: item`, the global `scope`, and
-`version_hash`. Global scope
+`known` and `version_hash`. Send the matched `{ version, etag }` pair when the necessary
+item content is held; otherwise send `known: null`. With `unchanged: true`, keep the held
+content and pair and refresh the project name; a full response replaces them. Never omit
+`known` or use null to re-read held content with its pair. Global scope
 reaches every item that belongs to no project or to a live project, so this works in the
 normal case. It fails only for an archived project: on `NOT_FOUND`, ask for the project
 name and retry in project scope.
@@ -150,5 +153,7 @@ corrected, or a `view` you ignored because `item` was given. Otherwise say nothi
 summarise the tree in prose; the reader just looked at it.
 
 When you rendered without titles and the user then asks what an item is about, call
-`get_item` with that id in `ref`, the resolved `scope`, and `version_hash` rather than
-re-rendering the whole tree with `verbose:true`.
+`get_item` with that id in `ref`, the resolved `scope`, `known` and `version_hash` rather
+than re-rendering the whole tree with `verbose:true`. Apply the conditional-read rules
+above: the tree alone supplies no matched version/ETag pair, so send `known: null` unless
+the necessary content and pair are held from another response.

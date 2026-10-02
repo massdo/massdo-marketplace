@@ -39,6 +39,7 @@ jobs:
         run: ./scripts/check-ci.sh
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           PUSH_CREATED: ${{ github.event.created }}
 
