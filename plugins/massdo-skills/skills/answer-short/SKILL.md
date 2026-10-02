@@ -15,7 +15,7 @@ L'argument est le texte écrit après le nom du skill à l'invocation ; selon le
 
 ## Identifier la version du plugin
 
-Passe `{ "version_hash": "e0ef45bf19103113" }` à chaque appel MCP Nestor.
+Passe `{ "version_hash": "3fd5bebcd7f547e1" }` à chaque appel MCP Nestor.
 
 ## Portée du verrou
 

@@ -113,8 +113,8 @@ ecosystems do not read the same one:
 
 | Skill | Model may invoke | Held by |
 |---|---|---|
-| `nestor`, `activity`, `tree`, `check-for-updates`, `ship` | yes | nothing to set |
-| `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
+| `nestor`, `check-for-updates` | yes | nothing to set |
+| `activity`, `tree`, `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `ship`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
 and it still permits the explicit `$<plugin>:<skill>` invocation. Cursor documents
@@ -128,11 +128,11 @@ refuses it.
 Invoke `/massdo-skills:ship [list]` in Claude Code or `$massdo-skills:ship [list]` in Codex. In
 Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
-with no Nestor dependency. Its discovery is normal, so asking in plain language reaches it too
-— the agreements are what hold it back: an invocation prepares a diagnosis and a proposal,
-never authorizes merging every pull request or publishing a release, and each merge, tag
-push, workflow run or publication waits for agreement when it comes up. An agreement already
-given in the session holds for its exact scope only.
+with no Nestor dependency. It starts on that explicit invocation only, never on a request in
+plain language, and the agreements hold it back further: an invocation prepares a diagnosis
+and a proposal, never authorizes merging every pull request or publishing a release, and
+each merge, tag push, workflow run or publication waits for agreement when it comes up. An
+agreement already given in the session holds for its exact scope only.
 
 The optional `list` argument (`ship list`, or `$massdo-skills:ship list` in Codex) returns
 only the list of every open PR: confidence percentage first, link/title, examined head and

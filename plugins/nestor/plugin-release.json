@@ -1,5 +1,5 @@
 {
-  "version": "0.7.7",
-  "version_hash": "16e1600107479cb8",
-  "changelog": "Item citations now use a prominent rule covering prose and repeated mentions, with an English counterexample and descriptions outside the slug's inline code."
+  "version": "0.7.8",
+  "version_hash": "d46eb6484539128d",
+  "changelog": "Activity and Tree now start only when you invoke them by name; a plain-language request no longer triggers them."
 }
