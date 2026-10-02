@@ -12,4 +12,4 @@ dependencies:
       url: "https://journal.mcp-marketplace.org/mcp"
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
