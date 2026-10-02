@@ -16,7 +16,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
-- `plugins/massdo-skills/skills/ship/`: review a GitHub repository's open pull requests, merge the ready ones into `main` once you agree, then follow the repository's own release procedure; see [Ship pending work](#ship-pending-work).
+- `plugins/massdo-skills/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
@@ -125,14 +125,22 @@ refuses it.
 
 ## Ship pending work
 
-Invoke `/massdo-skills:ship` in Claude Code or `$massdo-skills:ship` in Codex. In Cursor,
-select `ship`; in Kimi Code, use `/skill:ship`. It takes no argument and only targets `main`:
+Invoke `/massdo-skills:ship [list]` in Claude Code or `$massdo-skills:ship [list]` in Codex. In
+Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
 with no Nestor dependency. Its discovery is normal, so asking in plain language reaches it too
 — the agreements are what hold it back: an invocation prepares a diagnosis and a proposal,
 never authorizes merging every pull request or publishing a release, and each merge, tag
 push, workflow run or publication waits for agreement when it comes up. An agreement already
 given in the session holds for its exact scope only.
+
+The optional `list` argument (`ship list`, or `$massdo-skills:ship list` in Codex) returns
+only the list of every open PR: confidence percentage first, link/title, examined head and
+`main` baseline, base, group and concise evidence and limits. It performs only reads, with
+no fetch, file/ref/branch/worktree changes, local build/test runs, merge or release steps,
+proposal, approval question or publication. It uses GitHub's live baseline and existing
+CI/log evidence, and states missing evidence in the affected row. `list` is a mode, not a
+branch target; without it the workflow below is preserved.
 
 1. **Inventory.** The exact GitHub repository, `main`, every open pull request (all pages,
    split into those that target `main` and the others), and the worktrees, uncommitted
@@ -141,7 +149,13 @@ given in the session holds for its exact scope only.
    reviews, conflicts, the required checks on the current head commit, and dependencies
    between pull requests. An unknown state, a required check that is missing or inconclusive,
    a missing required review or a conflict is never a green light. The result is a table of
-   ready, blocked and out-of-selection pull requests, with reasons and links.
+   ready, blocked and out-of-selection pull requests, with an integer confidence percentage
+   first on every row, before its link. Each score refers to the examined head and `main`
+   baseline: facts and unknown evidence are stated separately from the judgment about
+   remaining risk. It estimates merge confidence, not a measured probability or confidence
+   in the group, and never replaces checks or agreement. It is reassessed when either commit
+   changes. Examples cover complete evidence, a conflict or failed check, no CI, and
+   inaccessible requirements.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
