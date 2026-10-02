@@ -145,8 +145,10 @@ gh pr diff N --repo OWNER/REPO
 - **Checks.** `gh pr checks --required` lists the checks this pull request must pass. What
   `main` requires is also in its classic protection,
   `gh api repos/OWNER/REPO/branches/main/protection`, and in its rulesets,
-  `gh api repos/OWNER/REPO/rules/branches/main`; read the two separately. A 404 whose message
-  is `Branch not protected` is an answer, not a refusal: `main` has no classic protection, and
+  `gh api --paginate "repos/OWNER/REPO/rules/branches/main?per_page=100"`; read the two
+  separately, including every rule page. A partial or truncated response leaves requirements
+  incomplete and must be reported as unknown. A 404 whose message is `Branch not protected`
+  is an answer, not a refusal: `main` has no classic protection, and
   its rulesets still decide. Any other refusal (403, 404) means unknown, not none. Every
   required check must have concluded successfully **on the current head commit**
   (`headRefOid`) — a run on an earlier head does not count. Pending, failed, cancelled,
@@ -281,7 +283,8 @@ given in the session covers exactly this.
 
 The method is the one the repository allows and documents: its merge settings
 (`gh api repos/OWNER/REPO --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'`),
-the rules on `main` (`gh api repos/OWNER/REPO/rules/branches/main` can restrict methods), and
+the rules on `main`
+(`gh api --paginate "repos/OWNER/REPO/rules/branches/main?per_page=100"` can restrict methods), and
 its contributor documents. When several are allowed and none is documented, ask in the
 proposal instead of choosing.
 
