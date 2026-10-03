@@ -160,8 +160,8 @@ workflow below is preserved.
    check, no CI, and inaccessible requirements. Every title must be in English without a
    Nestor id or slug, and every `nestor tasks:` footer — see
    [Link tasks to pull requests](#link-tasks-to-pull-requests) — is checked for its format,
-   for tasks that exist in Nestor and for ids that match what the diff covers; a pull
-   request that groups others into `main` keeps their ids. A title or footer that fails
+   for tasks that exist in Nestor and for slugs that match what the diff covers; a pull
+   request that groups others into `main` keeps their slugs. A title or footer that fails
    blocks the pull request until it is corrected, whatever its percentage, and a missing
    footer is reported as traceability that was not validated.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
@@ -289,21 +289,24 @@ cited the way the `nestor` skill prescribes.
 tasks ends its description with one visible line, the last of the description:
 
 ```
-nestor tasks: Xh23, DJ87, HDQZKJ9
+nestor tasks: brown_turtle, gray_xerinae, copper_manatee
 ```
 
-The ids are the exact ids Nestor returned, of whatever length and never slugs, separated by a
-comma and a space, without duplicates. The line lists the tasks the changes actually
-contribute to, subtasks included; a partial contribution may be listed, a task that is only
-mentioned as a dependency may not. Branch names, commit subjects and pull request titles
-stay descriptive and carry no Nestor id or slug, and titles are in English.
+These are the tasks' slugs, exactly as Nestor returns them and never ids, separated by a
+comma and a space, without duplicates. An id comes back shortened to a length that varies
+from one response to the next, so it cannot be compared exactly; a slug is stable, and
+unique inside its project. The line lists the tasks the changes actually contribute to,
+subtasks included; a partial contribution may be listed, a task that is only mentioned as a
+dependency may not. Branch names, commit subjects and pull request titles stay descriptive
+and carry no Nestor id or slug, and titles are in English.
 
 - `build` writes the footer when it opens the pull request, keeps it true when subtasks join
   that pull request, and verifies the title, the footer and the base branch before the task
   takes its final status.
 - `ship` checks the title and the footer before a merge, has them corrected when they do not
-  conform, and keeps the ids when a delivery groups several pull requests.
-- `doctor` reads the descriptions of merged pull requests and takes ids from the footer alone.
+  conform, and keeps the slugs when a delivery groups several pull requests.
+- `doctor` reads the descriptions of merged pull requests and takes slugs from the footer
+  alone.
 
 That footer is the only link. Nothing reads a slug or an id from a branch name, a title or a
 commit message any more, and there is no fallback to the former references.
@@ -322,7 +325,7 @@ its own only when the search returns a single result in total; several results, 
 reliable inferred name all go back to the user for a choice, and nothing is created.
 
 Open tasks are matched to merged pull requests through the `nestor tasks:` footer of their
-description alone, never through a title, a branch name or a commit message, and ids are
+description alone, never through a title, a branch name or a commit message, and slugs are
 compared exactly. The pinned code is then checked against each task's completion criteria:
 a merged pull request and a valid footer do not prove completion, and a missing or invalid
 footer proposes no closure. Closures are proposed with evidence, and nothing is closed

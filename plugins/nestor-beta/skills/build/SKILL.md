@@ -17,7 +17,7 @@ the diff in front of you is the only evidence it needs.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "277cfad66a8f3745e" }` on every Nestor MCP call.
+Pass `{ "version_hash": "29c32ca8cffc534f7" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -121,7 +121,7 @@ Then:
    footer of every open pull request — the `nestor tasks:` line that ends its description,
    see Stage 5 — with
    `gh pr list --state open --limit 1000 --json number,headRefName,baseRefName,body`. A
-   pull request whose footer lists an id of that family is the family's: continue on its
+   pull request whose footer lists a slug of that family is the family's: continue on its
    head branch. Its base must be `targetBranch`; if it differs, or if several pull requests
    match, say so and stop. The footer and Nestor's parent/child relations are the only
    link: never infer it from a branch name.
@@ -197,18 +197,19 @@ repository's own Git workflow.
    above.
 
    ```
-   nestor tasks: Xh23, DJ87, HDQZKJ9
+   nestor tasks: brown_turtle, gray_xerinae, copper_manatee
    ```
 
-   - Write the exact ids Nestor returned, whatever their length — never a slug.
-   - Separate them with a comma and a space, and write each id once.
+   - Write each task's slug exactly as Nestor returns it, never an id: an id comes back
+     shortened to a length that varies from one response to the next, a slug does not.
+   - Separate them with a comma and a space, and write each slug once.
    - List the tasks the changes actually contribute to, the subtasks concerned included. A
      task that is only mentioned as a dependency stays out.
    - A partial contribution may be listed: the footer links a task to the code, it does
      not declare the task finished.
 
    Keep the footer true as the pull request evolves: when a subtask joins a pull request,
-   keep every id already listed and add the new ones, and adjust the title when the scope
+   keep every slug already listed and add the new ones, and adjust the title when the scope
    changes.
 4. Read the pull request back with `gh pr view --json url,title,body,baseRefName` and
    check what GitHub reports: the title, the footer, and the base branch, which must be

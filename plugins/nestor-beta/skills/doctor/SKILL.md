@@ -17,7 +17,7 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "277cfad66a8f3745e" }` on every Nestor MCP call.
+Pass `{ "version_hash": "29c32ca8cffc534f7" }` on every Nestor MCP call.
 
 ## 1. Select the project and tasks
 
@@ -86,16 +86,16 @@ A merged pull request references the tasks it contributes to in its footer and n
 else: one visible line, the last of its description.
 
 ```
-nestor tasks: Xh23, DJ87, HDQZKJ9
+nestor tasks: brown_turtle, gray_xerinae, copper_manatee
 ```
 
-These are the exact ids Nestor returned, whatever their length, never slugs, separated by a
-comma and a space.
+These are the tasks' slugs, exactly as Nestor returns them, never ids, separated by a comma
+and a space.
 
 Read the description of every pull request merged since the earliest creation date among
-the audited tasks; omit this bound if a creation date is missing. Extract ids from that
+the audited tasks; omit this bound if a creation date is missing. Extract slugs from that
 footer only, never from a title, the rest of a description, a branch name or a commit
-message. Compare them with the task ids exactly: no substring match, and no semantic
+message. Compare them with the task slugs exactly: no substring match, and no semantic
 matching between a task and a pull request that resembles it. A missing or invalid footer
 references no task.
 
@@ -107,7 +107,7 @@ back to commits.
 
 Propose closure only when both conditions are verified:
 
-- The footer of a merged PR, delivered into the pinned history, lists the task's exact id.
+- The footer of a merged PR, delivered into the pinned history, lists the task's exact slug.
 - The implementation in the pinned tree satisfies all completion criteria in the task.
   Inspect the relevant code and diffs; a merged PR and a valid footer alone are
   insufficient, since a footer may reference a partial contribution.
