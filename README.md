@@ -128,12 +128,15 @@ refuses it.
 Invoke `/nestor-beta:ship [list]` in Claude Code or `$nestor-beta:ship [list]` in Codex. In
 Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
-with the Nestor MCP server confirming the tasks they reference. It starts on that explicit
-invocation only, never on a request in plain language, and the agreements hold it back
-further: an invocation prepares a diagnosis and a proposal, never authorizes merging every
-pull request or publishing a release, and each pull request edit, merge, tag push, workflow
-run or publication waits for agreement when it comes up. An agreement already given in the
-session holds for its exact scope only.
+with the Nestor MCP server confirming the tasks they reference. Those tasks are read in the
+Nestor project named after the repository, where each slug names exactly one task; when no
+project carries that name, the tasks stay unverified and, outside `list`, it asks which
+project the repository belongs to. It starts on that explicit invocation only, never on a
+request in plain language, and the agreements hold it back further: an invocation prepares a
+diagnosis and a proposal, never authorizes merging every pull request or publishing a
+release, and each pull request edit, merge, tag push, workflow run or publication waits for
+agreement when it comes up. An agreement already given in the session holds for its exact
+scope only.
 
 The optional `list` argument (`ship list`, or `$nestor-beta:ship list` in Codex) returns
 only the list of every open PR: confidence percentage first, link/title, examined head and
@@ -160,10 +163,10 @@ workflow below is preserved.
    check, no CI, and inaccessible requirements. Every title must be in English without a
    Nestor id or slug, and every `nestor tasks:` footer — see
    [Link tasks to pull requests](#link-tasks-to-pull-requests) — is checked for its format,
-   for tasks that exist in Nestor and for slugs that match what the diff covers; a pull
-   request that groups others into `main` keeps their slugs. A title or footer that fails
-   blocks the pull request until it is corrected, whatever its percentage, and a missing
-   footer is reported as traceability that was not validated.
+   for tasks that exist in the repository's Nestor project and for slugs that match what the
+   diff covers; a pull request that groups others into `main` keeps their slugs. A title or
+   footer that fails blocks the pull request until it is corrected, whatever its percentage,
+   and a missing footer is reported as traceability that was not validated.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a

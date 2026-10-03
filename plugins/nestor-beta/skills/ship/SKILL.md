@@ -18,7 +18,7 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "29c32ca8cffc534f7" }` on every Nestor MCP call.
+Pass `{ "version_hash": "26d77f90eff9c58d4" }` on every Nestor MCP call.
 
 ## Modes
 
@@ -198,18 +198,24 @@ nestor tasks: brown_turtle, gray_xerinae, copper_manatee
 ```
 
 These are the tasks' slugs, exactly as Nestor returns them, never ids; a comma and a space
-separate them, and none appears twice. Check four things:
+separate them, and none appears twice.
+
+**Project.** A slug is unique inside a project, not across the journal, so the tasks are
+read in the Nestor project of this repository: the one named after it. Read it once with
+`get_project`, passing the `REPO` of `OWNER/REPO` as `name`, and keep the id it returns for
+the scope of every task read. When no project carries that exact name, the tasks stay
+unverified: say so, and outside `list` ask which project the repository belongs to.
+
+Then check four things:
 
 - **Format.** The footer is one line, the last of the description, written exactly this way.
 - **Existence.** Read the listed slugs with `get_item`, up to five per call in `ref`, with
-  `scope: { mode: "global" }` and a `known` array of the same length. At each position, send
-  the matched `{ version, etag }` pair when the task's content is already held — another
-  pull request lists the same task, or an earlier verification read it — and `null` only
-  when that content is absent or incomplete. With `unchanged: true`, keep the held content
-  and pair; a full answer replaces them. Every slug must resolve to one task. A slug is
-  unique inside a project, not across the journal: when Nestor answers `AMBIGUOUS`, read
-  the candidates it returns and keep the one the correspondence check confirms. If it
-  confirms none, or several, the slug fails this check.
+  `scope: { mode: "project", projectId }` and a `known` array of the same length. At each
+  position, send the matched `{ version, etag }` pair when the task's content is already
+  held — another pull request lists the same task, or an earlier verification read it —
+  and `null` only when that content is absent or incomplete. With `unchanged: true`, keep
+  the held content and pair; a full answer replaces them. Every slug must resolve to one
+  task of that project.
 - **Correspondence.** The diff actually contributes to each listed task, the subtasks
   concerned included. A partial contribution is enough: the footer links a task to the
   code, it does not declare the task finished. A task that is only mentioned as a
