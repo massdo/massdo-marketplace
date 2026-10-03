@@ -288,9 +288,14 @@ no `origin` — so a subdirectory or a linked worktree resolves to the same proj
 
 An exact `get_project` read comes first, and a close match from `search_project` stands on
 its own only when the search returns a single result in total; several results, none, or no
-reliable inferred name all go back to the user for a choice, and nothing is created. The
-audit itself is unchanged: open tasks are checked against merged history, closures are
-proposed with evidence, and nothing is closed without approval.
+reliable inferred name all go back to the user for a choice, and nothing is created.
+
+Open tasks are matched to merged pull requests through the `nestor tasks:` footer of their
+description alone, never through a title, a branch name or a commit message, and ids are
+compared exactly. The pinned code is then checked against each task's completion criteria:
+a merged pull request and a valid footer do not prove completion, and a missing or invalid
+footer proposes no closure. Closures are proposed with evidence, and nothing is closed
+without approval.
 
 ### Promote a skill into nestor
 
