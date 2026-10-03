@@ -161,9 +161,9 @@ workflow below is preserved.
    Nestor id or slug, and every `nestor tasks:` footer — see
    [Link tasks to pull requests](#link-tasks-to-pull-requests) — is checked for its format,
    for tasks that exist in Nestor and for ids that match what the diff covers; a pull
-   request that groups others into `main` keeps their ids. A title or footer that fails blocks the pull
-   request until it is corrected, whatever its percentage, and a missing footer is reported
-   as traceability that was not validated.
+   request that groups others into `main` keeps their ids. A title or footer that fails
+   blocks the pull request until it is corrected, whatever its percentage, and a missing
+   footer is reported as traceability that was not validated.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
