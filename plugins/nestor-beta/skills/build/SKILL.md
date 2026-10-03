@@ -87,8 +87,10 @@ plan is trustworthy.
 ## Stage 2 — Prepare the branch
 
 Read the repository's own rules first — `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md` — for
-its branch naming, commit convention and Git workflow. They win over anything here. This
-skill orchestrates; the repository decides its own conventions.
+its branch naming, commit convention and Git workflow. They win over anything here, with
+one exception: a Nestor id or slug never goes in a branch name, a commit subject or a pull
+request title, and that title is in English. This skill orchestrates; the repository
+decides its own conventions.
 
 Then:
 
@@ -112,13 +114,20 @@ Then:
      affirmative reply sets `targetBranch` to that exact available branch.
    - If there is no credible single match, say that no target branch was found, show the
      available branches, ask for `target:<branch>`, and stop.
-5. Decide which work branch to use. **When the task has a `parentTaskId`, the branch belongs
-   to the parent task, not to this one.** A parent and its subtasks are one deliverable and
-   ship together. Look for an existing branch for that parent and continue on it; create
-   it only if it does not exist.
-6. Otherwise create a fresh branch from `origin/<targetBranch>`, named after the task: the
-   commit type that fits the work, then the slug — `feat/brown_turtle`,
-   `fix/gray_xerinae`.
+5. Decide which work branch to use. **A parent task and its subtasks are one deliverable:
+   they ship together, in one pull request on one branch.** Read the task's family in
+   Nestor, whatever the status of its members: its parent and that parent's subtasks when
+   it has a `parentTaskId`, otherwise the task itself and its own subtasks. Then read the
+   footer of every open pull request — the `nestor tasks:` line that ends its description,
+   see Stage 5 — with
+   `gh pr list --state open --limit 1000 --json number,headRefName,baseRefName,body`. A
+   pull request whose footer lists an id of that family is the family's: continue on its
+   head branch. Its base must be `targetBranch`; if it differs, or if several pull requests
+   match, say so and stop. The footer and Nestor's parent/child relations are the only
+   link: never infer it from a branch name.
+6. Otherwise create a fresh branch from `origin/<targetBranch>` with a descriptive name: the
+   commit type that fits the work, then a few words about the change — `feat/csv-export`,
+   `fix/login-redirect`.
 
 ## Stage 3 — Implement the plan
 
@@ -138,10 +147,9 @@ Hold yourself to these rules:
 - Follow the plan's own sections in order. **Commit once per section**, so the history
   matches the plan and a reviewer can read them side by side. Use the repository's commit
   convention.
-- Each commit cites, in its subject, the short Nestor id of the task whose plan section it
-  implements — unless that task is the one that owns the branch, which the PR title
-  already cites. Use the short id, never the slug. A standalone task therefore carries no
-  id in its commits, and a parent's subtasks each carry their own.
+- Keep every commit subject descriptive: it says what the commit changes and carries no
+  Nestor id or slug. The task is referenced in one place only, the pull request footer of
+  Stage 5.
 - Run that section's own verification **before** committing it. A section whose
   verification fails is not committed; report the failure instead of working around it.
 - Never edit French prose with `sed`, `python` or any other string-rewriting shell tool.
@@ -174,30 +182,54 @@ the plan itself was wrong, stop and say so — do not quietly redesign it.
 Report honestly: what passed, what you fixed, what still fails. A failing check reported
 plainly is worth far more than a green summary that does not hold.
 
-## Stage 5 — Close the task in Nestor
-
-Set the task's status with `update_item` and pass them as `expectedVersion` and `expectedEtag`.
-
-Use `completed` when every criterion passed. Use `need_review` when the work stands but
-something still needs a human eye, and say what.
-
-## Stage 6 — Open the pull request, then stop
+## Stage 5 — Open the pull request and verify it
 
 Enter this stage once `targetBranch` is resolved: that happens when the arguments contain
 `prod` or `target:<branch>`, or when the user answered Stage 2 with a target. Follow the
 repository's own Git workflow.
 
-1. Push the branch and open the PR with `gh`, explicitly passing `targetBranch` as its base.
-   The title contains the short Nestor id of the task that owns the branch — the one
-   Stage 2 settled on, which is the built task itself when it has no parent. Use the
-   short id (for example `DsoA`), never the slug. The body describes what the task asked
-   for and what the audit found; it may repeat this id, but the title is the required
-   citation. Verify the PR's reported base branch and stop if it differs from
-   `targetBranch`.
-2. Report the PR URL and stop. Do not merge, do not wait for checks, do not tag.
+1. Push the branch. When Stage 2 found the family's pull request, keep working in it;
+   otherwise open one with `gh`, explicitly passing `targetBranch` as its base.
+2. Give it an English title that describes the change, without any Nestor id or slug.
+3. Describe the changes and their validation in the body, as for any pull request, and
+   keep Nestor references out of that text. They go in the footer: one visible line, the
+   last of the description, with nothing after it — a signature or attribution line goes
+   above.
+
+   ```
+   nestor tasks: Xh23, DJ87, HDQZKJ9
+   ```
+
+   - Write the exact ids Nestor returned, whatever their length — never a slug.
+   - Separate them with a comma and a space, and write each id once.
+   - List the tasks the changes actually contribute to, the subtasks concerned included. A
+     task that is only mentioned as a dependency stays out.
+   - A partial contribution may be listed: the footer links a task to the code, it does
+     not declare the task finished.
+
+   Keep the footer true as the pull request evolves: when a subtask joins a pull request,
+   keep every id already listed and add the new ones, and adjust the title when the scope
+   changes.
+4. Read the pull request back with `gh pr view --json url,title,body,baseRefName` and
+   check what GitHub reports: the title, the footer, and the base branch, which must be
+   `targetBranch`. Correct a title or a footer that does not conform, then read again. If
+   the pull request could not be created, or if a check still fails — a base that differs
+   from `targetBranch` included — say what failed and stop: the task keeps its current
+   status.
 
 Never force-push, never rewrite a published branch, and never bypass a commit hook with
 `--no-verify`. If a hook refuses the commit, its diagnostic is the work to do.
+
+## Stage 6 — Close the task in Nestor, then stop
+
+The task takes its final status only once its pull request is open and verified. Set it
+with `update_item`, passing the held `{ version, etag }` pair as `expectedVersion` and
+`expectedEtag`.
+
+Use `completed` when every criterion passed. Use `need_review` when the work stands but
+something still needs a human eye, and say what.
+
+Report the PR URL and stop. Do not merge, do not wait for checks, do not tag.
 
 ## What this skill never does
 
@@ -206,3 +238,6 @@ Never force-push, never rewrite a published branch, and never bypass a commit ho
 - It never substitutes a missing target branch without the user's confirmation.
 - It never merges, waits for CI on `targetBranch`, or tags a release. The open PR is the end.
 - It never trusts its own recollection of the work in place of the diff.
+- It never writes a Nestor id or slug in a branch name, a commit subject or a pull request
+  title. The footer is the only reference.
+- It never gives the task its final status before its pull request is open and verified.
