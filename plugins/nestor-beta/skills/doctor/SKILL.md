@@ -1,6 +1,6 @@
 ---
 name: doctor
-description: Audit a Nestor project's open tasks against merged repository history and propose evidence-backed closures for user approval. Use only on an explicit doctor request; the project is named as an argument or inferred from the workspace's Git repository.
+description: Audit a Nestor project's open tasks against the merged pull requests whose footer references them and propose evidence-backed closures for user approval. Use only on an explicit doctor request; the project is named as an argument or inferred from the workspace's Git repository.
 argument-hint: "[project]"
 disable-model-invocation: true
 ---
@@ -17,7 +17,7 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "282a6866cadd70f62" }` on every Nestor MCP call.
+Pass `{ "version_hash": "277cfad66a8f3745e" }` on every Nestor MCP call.
 
 ## 1. Select the project and tasks
 
@@ -82,22 +82,35 @@ or freshness cannot be established, report the limitation and stop before propos
 Pin the integration commit and inspect its tree. Unmerged branches and local changes do
 not count as delivered work.
 
-Start searching history at the earliest creation date among the audited tasks. Omit this
-bound if a creation date is missing. For unresolved tasks, search older commit messages
-for exact task references; inspect older diffs only when a reference or task evidence
-points there. Code may predate a task recorded retrospectively.
+A merged pull request references the tasks it contributes to in its footer and nowhere
+else: one visible line, the last of its description.
 
-Search commit messages and merged pull requests for exact task slugs or ids. Similar titles
-are insufficient. Confirm that matching PRs delivered changes into the pinned integration
-history. If PR search is unavailable, report that limitation and continue with commits.
+```
+nestor tasks: Xh23, DJ87, HDQZKJ9
+```
+
+These are the exact ids Nestor returned, whatever their length, never slugs, separated by a
+comma and a space.
+
+Read the description of every pull request merged since the earliest creation date among
+the audited tasks; omit this bound if a creation date is missing. Extract ids from that
+footer only, never from a title, the rest of a description, a branch name or a commit
+message. Compare them with the task ids exactly: no substring match, and no semantic
+matching between a task and a pull request that resembles it. A missing or invalid footer
+references no task.
+
+Confirm that each referencing PR delivered its changes into the pinned integration history.
+If PR descriptions cannot be read, report that limitation and propose no closure; never fall
+back to commits.
 
 ## 3. Check completion
 
 Propose closure only when both conditions are verified:
 
-- A merged commit or PR explicitly references the task by slug or id.
+- The footer of a merged PR, delivered into the pinned history, lists the task's exact id.
 - The implementation in the pinned tree satisfies all completion criteria in the task.
-  Inspect the relevant code and diffs; a commit message alone is insufficient.
+  Inspect the relevant code and diffs; a merged PR and a valid footer alone are
+  insufficient, since a footer may reference a partial contribution.
 
 Leave uncertain or partially implemented tasks open for user review. This includes tasks
 with vague criteria or requirements that cannot be verified from the repository.
@@ -111,9 +124,10 @@ implementation appears complete.
 
 Present three groups:
 
-- **Proposed closures:** task reference, title and supporting commits, PRs and code evidence.
+- **Proposed closures:** task reference, title, supporting PRs and code evidence.
 - **Needs user review:** evidence found and the missing or uncertain criteria.
-- **No evidence:** count of tasks for which no reference or implementation evidence was found.
+- **No evidence:** count of tasks for which no footer reference or implementation evidence
+  was found.
 
 Give every audited task a delivery confidence score from 0 to 100: the probability that it
 is delivered in the pinned integration history and meets all its completion criteria. One
@@ -124,9 +138,9 @@ scores 95%.
 
 Calibrate the score on two indicative anchors rather than a rigid formula:
 
-- 90% or more: a merged commit or PR references the task, and the pinned tree satisfies all
-  its completion criteria.
-- 5% at most: no reference and no implementation evidence was found.
+- 90% or more: the footer of a merged PR references the task, and the pinned tree satisfies
+  all its completion criteria.
+- 5% at most: no footer reference and no implementation evidence was found.
 
 Between them, set the score by judgment.
 

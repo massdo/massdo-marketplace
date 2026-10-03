@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /massdo-skills:ship or $massdo-skills:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests with a merge confidence percentage, check their English title and Nestor task footer, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
 disable-model-invocation: true
 ---
@@ -9,7 +9,8 @@ disable-model-invocation: true
 
 Turn "what is open on this repository" into a diagnosis, then a proposal, and — only once the
 user agrees — into merges on `main`, followed by the release procedure the repository already
-has. Git and the GitHub CLI (`gh`) are all it needs.
+has. Git and the GitHub CLI (`gh`) do the work; the Nestor MCP server confirms the tasks a
+pull request references.
 
 The user decides every action that cannot be undone. Your part is to make that decision easy
 and safe: look at everything there is to see, say what you found and what you could not see,
@@ -17,11 +18,11 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
+Pass `{ "version_hash": "277cfad66a8f3745e" }` on every Nestor MCP call.
 
 ## Modes
 
-`/massdo-skills:ship [list]` — Codex: `$massdo-skills:ship [list]`.
+`/nestor-beta:ship [list]` — Codex: `$nestor-beta:ship [list]`.
 
 - **No mode argument:** run the existing diagnosis, proposal, agreed merges and repository
   release procedure below.
@@ -30,11 +31,12 @@ Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
   not propose merges or releases, ask for approval, or offer a next action. `list` is a mode,
   never a target branch; the target remains `main`.
 
-In `list`, make only the reads needed for the list and its scores: GitHub queries and local
-inspection. Never mutate remote state or local files, refs, branches or worktrees. Do not
-fetch, checkout, create/remove a worktree, write output files, run builds or tests that could
-write artifacts, merge, tag, launch workflows, publish or deploy. Read existing CI results
-and logs instead; unperformed validation is a stated coverage limit.
+In `list`, make only the reads needed for the list and its scores: GitHub queries, Nestor
+reads and local inspection. Never mutate remote state or local files, refs, branches or
+worktrees. Do not fetch, checkout, create/remove a worktree, write output files, run builds
+or tests that could write artifacts, edit a pull request, merge, tag, launch workflows,
+publish or deploy. Read existing CI results and logs instead; unperformed validation is a
+stated coverage limit.
 
 Read remote files needed to understand checks or changed workflow/release effects with
 `gh api --method GET "repos/OWNER/REPO/contents/PATH?ref=SHA"`, decoding the returned content,
@@ -43,10 +45,11 @@ object. Keep unrelated release discovery out of this mode.
 
 The response contains only PR rows or lines in the user's language: percentage first, link
 and title, examined head and `main` baseline, base, group, concise evidence and useful limits.
-Put unknown data in the affected PR's reason, including local coverage limits; no separate
-inventory, progress narration, proposal or approval question. If there are no open PRs, say
-only that. If the repository, authentication or `main` cannot be resolved, give one concise
-error and stop without asking for an action.
+Put unknown data in the affected PR's reason, including local coverage limits and any title
+or footer that does not conform; no separate inventory, progress narration, proposal or
+approval question. If there are no open PRs, say only that. If the repository,
+authentication or `main` cannot be resolved, give one concise error and stop without asking
+for an action.
 
 ## Scope and consent
 
@@ -56,9 +59,10 @@ error and stop without asking for an action.
   and stop. Never fall back to another branch.
 - **Without `list`, an invocation prepares a diagnosis and a proposal.** It is not agreement to
   merge every pull request, and not agreement to publish a release. Ask at the moment of each
-  action that changes something beyond this machine: a merge, a tag push, a workflow run, a
-  script run, a release creation. An agreement already given in the session holds for its
-  exact scope — those pull requests, those head commits, that action — and for nothing wider.
+  action that changes something beyond this machine: a pull request edit, a merge, a tag
+  push, a workflow run, a script run, a release creation. An agreement already given in the
+  session holds for its exact scope — those pull requests, those head commits, that action —
+  and for nothing wider.
 - **A release is a conditional step.** Follow the procedure the repository already has, and
   trigger no deployment beyond the effects its own workflows already announce.
 - **Report what you observed.** A pull request is open, queued for merge or merged; a tag
@@ -179,6 +183,47 @@ gh pr diff N --repo OWNER/REPO
 An unknown state, a required check that is absent or inconclusive, a missing required review,
 or a conflict is never a green light.
 
+### Title and Nestor footer
+
+A pull request also has to say what it delivers and which Nestor tasks it serves. Check
+both on every open pull request, from the `title` and `body` read above.
+
+**Title.** It is in English and carries no Nestor id or slug.
+
+**Footer.** A pull request that contributes to Nestor tasks ends its description with one
+visible line, the last of the description:
+
+```
+nestor tasks: Xh23, DJ87, HDQZKJ9
+```
+
+These are the exact ids Nestor returned, whatever their length, never slugs; a comma and a
+space separate them, and none appears twice. Check four things:
+
+- **Format.** The footer is one line, the last of the description, written exactly this way.
+- **Existence.** Read the listed ids with `get_item`, up to five per call in `ref`, with
+  `scope: { mode: "global" }` and a `known` array of the same length. At each position, send
+  the matched `{ version, etag }` pair when the task's content is already held — another
+  pull request lists the same task, or an earlier verification read it — and `null` only
+  when that content is absent or incomplete. With `unchanged: true`, keep the held content
+  and pair; a full answer replaces them. Every id must resolve to one task.
+- **Correspondence.** The diff actually contributes to each listed task, the subtasks
+  concerned included. A partial contribution is enough: the footer links a task to the
+  code, it does not declare the task finished. A task that is only mentioned as a
+  dependency does not belong in the list. Decide from the task you read and from the diff;
+  never invent a correspondence from a resembling title.
+- **Grouped deliveries.** A pull request that brings other pull requests or an intermediate
+  branch into `main` keeps every id their footers carried. Read the footers of the pull
+  requests merged into its head branch that `main` does not hold yet, and name each id
+  that was lost.
+
+A title that fails, or a footer that fails one of these checks, is non-conforming: the pull
+request is blocked until it is corrected, whatever its percentage. A missing or invalid
+footer is not validated traceability. A missing footer alone does not block, since a pull
+request may serve no Nestor task, but only the user can confirm that: say it is missing and
+never guess the tasks. When Nestor cannot be reached, the tasks stay unverified, which is a
+limit to state, not a pass.
+
 ### Merge confidence and report
 
 Give every open PR an integer percentage from 0 to 100: confidence that **this PR can merge
@@ -215,9 +260,10 @@ make clear that the percentage is the residual judgment. These examples share th
 
 | Confidence (estimate) | Pull request | Head / main | Base | Group | Evidence and limits |
 |---|---|---|---|---|---|
-| 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood; judgment: broad coverage, residual risk beyond tests |
+| 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood, title and footer conform; judgment: broad coverage, residual risk beyond tests |
+| 96% | [#18 Add retry](https://github.com/OWNER/REPO/pull/18) | `a9b8c7d` / `b012345` | `main` | blocked | observed: non-draft, MERGEABLE/CLEAN, required checks passed on this head, diff read; footer lists `DJ87`, which Nestor does not know; judgment: technically ready, blocked until the footer is corrected |
 | 5% | [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | `e4f5a6b` / `b012345` | `main` | blocked | observed: conflict and required `validate` failed on this head; judgment: cannot land as-is |
-| 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read; unknown: automated validation coverage; judgment: limited change, limited evidence |
+| 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read, no Nestor footer; unknown: automated validation coverage, tasks served; judgment: limited change, limited evidence |
 | 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
 | 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
 
@@ -274,6 +320,16 @@ Then act on the procedure you found:
   reach.** Report the uncertainty and the decision that is missing, and publish nothing on a
   guess. Do not invent a release mechanism or install one.
 
+**Notes built from pull request descriptions.** Whatever triggers it, a procedure that reuses
+those descriptions in what it publishes must leave the `nestor tasks:` footer out. Check
+here, in the chain you just read, that it drops that line. When it does not, a merge or a
+release that publishes on its own carries the footer out before anyone can remove it: say so
+in the proposal with the correction the procedure needs, and trigger no merge or release
+that would publish the footer until that correction is agreed and in place. The correction
+is to the procedure, never to the pull request: the footer stays in the description, where
+it is the only link to the tasks. Filtering you cannot establish leaves the procedure
+uncertain.
+
 ## 4. Propose, then merge
 
 **The proposal.** Put in front of the user the repository, `main` with its baseline commit, the
@@ -289,13 +345,21 @@ the rules on `main`
 its contributor documents. When several are allowed and none is documented, ask in the
 proposal instead of choosing.
 
+**Titles and footers.** Have non-conforming metadata corrected before the merge. Name each
+title or footer that fails and the correction it needs, using only ids you verified; for a
+missing footer, ask whether the pull request serves Nestor tasks, and which ones. Editing a
+pull request is a write of its own — `gh pr edit N --repo OWNER/REPO --title … --body-file …`
+— so it waits for its agreement, and the pull request is verified again afterwards.
+
 **The merges.** For each pull request, in the agreed order:
 
 1. Read it again. Its base must still be `main` and its head the commit you verified, and its
    checks, reviews and mergeability must still hold. Read `main`'s current SHA too and
    reassess the evidence and score if that baseline moved. The merge below guards the head,
    not the base: a pull request retargeted to another branch keeps its head and would merge
-   there.
+   there. It does not guard the title or the description either: read both again, and when
+   one changed since you checked it, check it again before merging, even though the code is
+   the same.
 2. Merge it locked on that commit:
    `gh pr merge N --repo OWNER/REPO --match-head-commit <headRefOid> --<method>`, where the
    method is `merge`, `squash` or `rebase`. GitHub refuses the merge if the branch moved since
@@ -324,7 +388,8 @@ back through a proposal and needs a new agreement.
 2. **Prepare the release, when the procedure needs an action from you or the user** — a tag,
    a manual workflow, a documented command. Put a concrete proposal in front of the user
    before asking: the version and the tag, the commit, the notes, any assets, and the command
-   exactly as the repository documents it. When the procedure needs edits first — a version
+   exactly as the repository documents it. Notes that reuse pull request descriptions leave
+   their `nestor tasks:` footer out. When the procedure needs edits first — a version
    bump, a changelog, a release pull request — prepare and present them here; opening or
    pushing them is an action that needs its own agreement. Never create a tag that disagrees
    with the versions the repository declares. `gh release create <tag> --repo OWNER/REPO`
@@ -336,7 +401,8 @@ back through a proposal and needs a new agreement.
    `gh release view <tag> --repo OWNER/REPO --json url,tagName,targetCommitish,isDraft` for a
    GitHub Release, `git ls-remote --tags REMOTE <tag> '<tag>^{}'` for a tag (an annotated tag
    shows its own object, then the commit it points at; a lightweight tag shows the commit
-   only), the registry page for a package.
+   only), the registry page for a package. Confirm too that the published notes carry no
+   `nestor tasks:` footer, and report one that got through.
 4. **Check what already exists.** Before creating a tag, a release or a package version, look
    for it, and check its identity — which commit, which version — instead of recreating it. A
    tag that exists does not move by itself; never move, delete or recreate one to make the
@@ -351,10 +417,15 @@ stop. A retry, a revert or a cleanup is a new action and needs its own agreement
 ## What this skill never does
 
 - It never targets a branch other than `main`, and never falls back to one.
-- In `list`, it never mutates remote or local state, runs merge/release steps or asks for
-  approval; only the scored PR list is returned.
+- In `list`, it never mutates remote or local state, a pull request's title and description
+  included, runs merge/release steps or asks for approval; only the scored PR list is
+  returned.
 - It never merges every pull request, or publishes a release, on the strength of being
   invoked.
+- It never merges a pull request whose title or Nestor footer is non-conforming, and never
+  guesses the tasks a pull request serves.
+- It never puts a `nestor tasks:` footer in the release notes it prepares, and never triggers
+  a merge or a release that would publish one.
 - It never stashes, discards, force-pushes, resolves a conflict or brings local commits into
   a pull request without a separate authorization.
 - It never uses `--admin` to get past a protection.

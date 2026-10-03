@@ -44,7 +44,7 @@ is a separate step that starts once the extraction is complete, and only without
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
+Pass `{ "version_hash": "0a6bcd189636a1d9" }` on every Nestor MCP call.
 
 ## Method
 

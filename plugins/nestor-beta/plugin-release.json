@@ -1,5 +1,5 @@
 {
-  "version": "0.9.6",
-  "version_hash": "82a6866cadd70f62",
-  "changelog": "Nestor Beta skills now identify their plugin in version hashes so update notices can name it even after its published hash changes."
+  "version": "0.10.0",
+  "version_hash": "77cfad66a8f3745e",
+  "changelog": "Ship moves here from massdo-skills: invoke it with /nestor-beta:ship [list] or $nestor-beta:ship [list].\nBuild, Ship and Doctor now link Nestor tasks to pull requests through one footer line in the PR description, such as nestor tasks: Xh23, DJ87. Ids and slugs leave branch names, commit subjects and PR titles, and PR titles are in English.\nShip checks titles and footers before a merge, and Doctor finds delivered tasks through that footer only, with no fallback to the former references."
 }

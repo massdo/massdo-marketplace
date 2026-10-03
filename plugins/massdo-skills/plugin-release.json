@@ -1,5 +1,5 @@
 {
-  "version": "0.11.1",
-  "version_hash": "3fd5bebcd7f547e1",
-  "changelog": "Ship now starts only when you invoke it by name; a plain-language request no longer triggers it."
+  "version": "0.11.2",
+  "version_hash": "0a6bcd189636a1d9",
+  "changelog": "Ship moved to the nestor-beta plugin: install it and invoke /nestor-beta:ship [list] or $nestor-beta:ship [list]. massdo-skills no longer provides it."
 }

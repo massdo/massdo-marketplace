@@ -15,8 +15,8 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/.mcp.json`: Claude Code and Codex public MCP connection.
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
+- `plugins/nestor-beta/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
-- `plugins/massdo-skills/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
@@ -125,22 +125,24 @@ refuses it.
 
 ## Ship pending work
 
-Invoke `/massdo-skills:ship [list]` in Claude Code or `$massdo-skills:ship [list]` in Codex. In
+Invoke `/nestor-beta:ship [list]` in Claude Code or `$nestor-beta:ship [list]` in Codex. In
 Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
-with no Nestor dependency. It starts on that explicit invocation only, never on a request in
-plain language, and the agreements hold it back further: an invocation prepares a diagnosis
-and a proposal, never authorizes merging every pull request or publishing a release, and
-each merge, tag push, workflow run or publication waits for agreement when it comes up. An
-agreement already given in the session holds for its exact scope only.
+with the Nestor MCP server confirming the tasks they reference. It starts on that explicit
+invocation only, never on a request in plain language, and the agreements hold it back
+further: an invocation prepares a diagnosis and a proposal, never authorizes merging every
+pull request or publishing a release, and each pull request edit, merge, tag push, workflow
+run or publication waits for agreement when it comes up. An agreement already given in the
+session holds for its exact scope only.
 
-The optional `list` argument (`ship list`, or `$massdo-skills:ship list` in Codex) returns
+The optional `list` argument (`ship list`, or `$nestor-beta:ship list` in Codex) returns
 only the list of every open PR: confidence percentage first, link/title, examined head and
 `main` baseline, base, group and concise evidence and limits. It performs only reads, with
-no fetch, file/ref/branch/worktree changes, local build/test runs, merge or release steps,
-proposal, approval question or publication. It uses GitHub's live baseline and existing
-CI/log evidence, and states missing evidence in the affected row. `list` is a mode, not a
-branch target; without it the workflow below is preserved.
+no fetch, file/ref/branch/worktree changes, local build/test runs, pull request edits, merge
+or release steps, proposal, approval question or publication. It uses GitHub's live baseline
+and existing CI/log evidence, and states missing evidence and any title or footer that does
+not conform in the affected row. `list` is a mode, not a branch target; without it the
+workflow below is preserved.
 
 1. **Inventory.** The exact GitHub repository, `main`, every open pull request (all pages,
    split into those that target `main` and the others), and the worktrees, uncommitted
@@ -154,22 +156,36 @@ branch target; without it the workflow below is preserved.
    baseline: facts and unknown evidence are stated separately from the judgment about
    remaining risk. It estimates merge confidence, not a measured probability or confidence
    in the group, and never replaces checks or agreement. It is reassessed when either commit
-   changes. Examples cover complete evidence, a conflict or failed check, no CI, and
-   inaccessible requirements.
+   changes. Examples cover complete evidence, a non-conforming footer, a conflict or failed
+   check, no CI, and inaccessible requirements. Every title must be in English without a
+   Nestor id or slug, and every `nestor tasks:` footer — see
+   [Link tasks to pull requests](#link-tasks-to-pull-requests) — is checked for its format,
+   for tasks that exist in Nestor and for ids that match what the diff covers; a pull
+   request that groups others into `main` keeps their ids. A title or footer that fails
+   blocks the pull request until it is corrected, whatever its percentage, and a missing
+   footer is reported as traceability that was not validated.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
    package, a version notification and a deployment are told apart, and a name containing
    `release` or `publish` is only a hint. A publishing command is never run to find out.
+   When published notes reuse pull request descriptions, it checks at this point that the
+   procedure drops the `nestor tasks:` footer; when it does not, no merge or release that
+   would publish the footer starts until the correction is agreed and in place. The footer
+   itself always stays in the pull request description, which is where `doctor` reads it.
 4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
-   the validations and the automatic effects of each merge. After agreement, each merge is
-   locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
-   before the next one starts, and the remaining pull requests are verified again. Auto-merge
-   and merge queues are requests, not merges, and `--admin` is never used.
+   the validations and the automatic effects of each merge. Titles and footers that do not
+   conform are corrected first, each edit with its own agreement. After agreement, each merge
+   is locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
+   before the next one starts, and the remaining pull requests are verified again. The title
+   and the footer are read again just before each merge, since that lock does not cover them.
+   Auto-merge and merge queues are requests, not merges, and `--admin` is never used.
 5. **Release.** It checks the runs of the final commit of `main`. When the procedure needs a
    tag, a manual workflow or a documented command, it prepares the exact version, tag, notes
-   and command, then asks. It never creates a tag that disagrees with the declared versions,
-   never moves an existing one, and reports only what it confirmed.
+   and command, then asks. Notes it prepares from pull request descriptions leave the footer
+   out, and it confirms that published notes carry none. It never creates a tag that disagrees
+   with the declared versions, never moves an existing one, and reports only what it
+   confirmed.
 
 What a merge into `main` starts here is described in
 [Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
@@ -267,6 +283,31 @@ without a question. An exact `get_project` read comes first, and a close match f
 anything else is confirmed by the user. Nothing is created or modified, and items are
 cited the way the `nestor` skill prescribes.
 
+### Link tasks to pull requests
+
+`build`, `ship` and `doctor` share one contract. A pull request that contributes to Nestor
+tasks ends its description with one visible line, the last of the description:
+
+```
+nestor tasks: Xh23, DJ87, HDQZKJ9
+```
+
+The ids are the exact ids Nestor returned, of whatever length and never slugs, separated by a
+comma and a space, without duplicates. The line lists the tasks the changes actually
+contribute to, subtasks included; a partial contribution may be listed, a task that is only
+mentioned as a dependency may not. Branch names, commit subjects and pull request titles
+stay descriptive and carry no Nestor id or slug, and titles are in English.
+
+- `build` writes the footer when it opens the pull request, keeps it true when subtasks join
+  that pull request, and verifies the title, the footer and the base branch before the task
+  takes its final status.
+- `ship` checks the title and the footer before a merge, has them corrected when they do not
+  conform, and keeps the ids when a delivery groups several pull requests.
+- `doctor` reads the descriptions of merged pull requests and takes ids from the footer alone.
+
+That footer is the only link. Nothing reads a slug or an id from a branch name, a title or a
+commit message any more, and there is no fallback to the former references.
+
 ### Audit a project's delivered tasks
 
 Invoke `/nestor-beta:doctor [project]` in Claude Code or `$nestor-beta:doctor [project]`
@@ -278,9 +319,14 @@ no `origin` — so a subdirectory or a linked worktree resolves to the same proj
 
 An exact `get_project` read comes first, and a close match from `search_project` stands on
 its own only when the search returns a single result in total; several results, none, or no
-reliable inferred name all go back to the user for a choice, and nothing is created. The
-audit itself is unchanged: open tasks are checked against merged history, closures are
-proposed with evidence, and nothing is closed without approval.
+reliable inferred name all go back to the user for a choice, and nothing is created.
+
+Open tasks are matched to merged pull requests through the `nestor tasks:` footer of their
+description alone, never through a title, a branch name or a commit message, and ids are
+compared exactly. The pinned code is then checked against each task's completion criteria:
+a merged pull request and a valid footer do not prove completion, and a missing or invalid
+footer proposes no closure. Closures are proposed with evidence, and nothing is closed
+without approval.
 
 ### Promote a skill into nestor
 
