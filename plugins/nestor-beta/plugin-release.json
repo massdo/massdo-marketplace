@@ -1,5 +1,5 @@
 {
-  "version": "0.10.1",
-  "version_hash": "9c32ca8cffc534f7",
-  "changelog": "The pull request footer now lists task slugs instead of ids, such as nestor tasks: brown_turtle, gray_xerinae.\nBuild writes them, Ship checks them and Doctor matches tasks on them: a slug is stable, where an id comes back at a length that varies."
+  "version": "0.10.2",
+  "version_hash": "6d77f90eff9c58d4",
+  "changelog": "Ship now reads the tasks of a pull request footer in the Nestor project named after the repository, where each slug names exactly one task.\nWhen no project carries that name, the tasks stay unverified and Ship asks which project the repository belongs to."
 }
