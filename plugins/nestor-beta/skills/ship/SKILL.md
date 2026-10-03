@@ -200,7 +200,7 @@ nestor tasks: Xh23, DJ87, HDQZKJ9
 These are the exact ids Nestor returned, whatever their length, never slugs; a comma and a
 space separate them, and none appears twice. Check four things:
 
-- **Format.** One such line, last in the description, written exactly this way.
+- **Format.** The footer is one line, the last of the description, written exactly this way.
 - **Existence.** Read the listed ids with `get_item`, up to five per call in `ref`, with
   `scope: { mode: "global" }` and `null` for each in `known`. Every id must resolve to one
   task.
@@ -214,11 +214,12 @@ space separate them, and none appears twice. Check four things:
   requests merged into its head branch that `main` does not hold yet, and name each id
   that was lost.
 
-A title or footer that fails a check is non-conforming: the pull request is blocked until it
-is corrected, whatever its percentage. A missing or invalid footer is not validated
-traceability. When the footer is missing, say so and do not guess the tasks: only the user
-can confirm that a pull request serves no Nestor task. When Nestor cannot be reached, the
-tasks stay unverified, which is a limit to state, not a pass.
+A title that fails, or a footer that fails one of these checks, is non-conforming: the pull
+request is blocked until it is corrected, whatever its percentage. A missing or invalid
+footer is not validated traceability. A missing footer alone does not block, since a pull
+request may serve no Nestor task, but only the user can confirm that: say it is missing and
+never guess the tasks. When Nestor cannot be reached, the tasks stay unverified, which is a
+limit to state, not a pass.
 
 ### Merge confidence and report
 
