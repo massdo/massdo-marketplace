@@ -202,8 +202,11 @@ space separate them, and none appears twice. Check four things:
 
 - **Format.** The footer is one line, the last of the description, written exactly this way.
 - **Existence.** Read the listed ids with `get_item`, up to five per call in `ref`, with
-  `scope: { mode: "global" }` and `null` for each in `known`. Every id must resolve to one
-  task.
+  `scope: { mode: "global" }` and a `known` array of the same length. At each position, send
+  the matched `{ version, etag }` pair when the task's content is already held — another
+  pull request lists the same task, or an earlier verification read it — and `null` only
+  when that content is absent or incomplete. With `unchanged: true`, keep the held content
+  and pair; a full answer replaces them. Every id must resolve to one task.
 - **Correspondence.** The diff actually contributes to each listed task, the subtasks
   concerned included. A partial contribution is enough: the footer links a task to the
   code, it does not declare the task finished. A task that is only mentioned as a
