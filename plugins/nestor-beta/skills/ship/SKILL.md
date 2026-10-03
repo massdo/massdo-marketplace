@@ -194,27 +194,30 @@ both on every open pull request, from the `title` and `body` read above.
 visible line, the last of the description:
 
 ```
-nestor tasks: Xh23, DJ87, HDQZKJ9
+nestor tasks: brown_turtle, gray_xerinae, copper_manatee
 ```
 
-These are the exact ids Nestor returned, whatever their length, never slugs; a comma and a
-space separate them, and none appears twice. Check four things:
+These are the tasks' slugs, exactly as Nestor returns them, never ids; a comma and a space
+separate them, and none appears twice. Check four things:
 
 - **Format.** The footer is one line, the last of the description, written exactly this way.
-- **Existence.** Read the listed ids with `get_item`, up to five per call in `ref`, with
+- **Existence.** Read the listed slugs with `get_item`, up to five per call in `ref`, with
   `scope: { mode: "global" }` and a `known` array of the same length. At each position, send
   the matched `{ version, etag }` pair when the task's content is already held — another
   pull request lists the same task, or an earlier verification read it — and `null` only
   when that content is absent or incomplete. With `unchanged: true`, keep the held content
-  and pair; a full answer replaces them. Every id must resolve to one task.
+  and pair; a full answer replaces them. Every slug must resolve to one task. A slug is
+  unique inside a project, not across the journal: when Nestor answers `AMBIGUOUS`, read
+  the candidates it returns and keep the one the correspondence check confirms. If it
+  confirms none, or several, the slug fails this check.
 - **Correspondence.** The diff actually contributes to each listed task, the subtasks
   concerned included. A partial contribution is enough: the footer links a task to the
   code, it does not declare the task finished. A task that is only mentioned as a
   dependency does not belong in the list. Decide from the task you read and from the diff;
   never invent a correspondence from a resembling title.
 - **Grouped deliveries.** A pull request that brings other pull requests or an intermediate
-  branch into `main` keeps every id their footers carried. Read the footers of the pull
-  requests merged into its head branch that `main` does not hold yet, and name each id
+  branch into `main` keeps every slug their footers carried. Read the footers of the pull
+  requests merged into its head branch that `main` does not hold yet, and name each slug
   that was lost.
 
 A title that fails, or a footer that fails one of these checks, is non-conforming: the pull
@@ -261,7 +264,7 @@ make clear that the percentage is the residual judgment. These examples share th
 | Confidence (estimate) | Pull request | Head / main | Base | Group | Evidence and limits |
 |---|---|---|---|---|---|
 | 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood, title and footer conform; judgment: broad coverage, residual risk beyond tests |
-| 96% | [#18 Add retry](https://github.com/OWNER/REPO/pull/18) | `a9b8c7d` / `b012345` | `main` | blocked | observed: non-draft, MERGEABLE/CLEAN, required checks passed on this head, diff read; footer lists `DJ87`, which Nestor does not know; judgment: technically ready, blocked until the footer is corrected |
+| 96% | [#18 Add retry](https://github.com/OWNER/REPO/pull/18) | `a9b8c7d` / `b012345` | `main` | blocked | observed: non-draft, MERGEABLE/CLEAN, required checks passed on this head, diff read; footer lists `gray_xerinae`, which Nestor does not know; judgment: technically ready, blocked until the footer is corrected |
 | 5% | [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | `e4f5a6b` / `b012345` | `main` | blocked | observed: conflict and required `validate` failed on this head; judgment: cannot land as-is |
 | 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read, no Nestor footer; unknown: automated validation coverage, tasks served; judgment: limited change, limited evidence |
 | 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
@@ -346,7 +349,7 @@ its contributor documents. When several are allowed and none is documented, ask 
 proposal instead of choosing.
 
 **Titles and footers.** Have non-conforming metadata corrected before the merge. Name each
-title or footer that fails and the correction it needs, using only ids you verified; for a
+title or footer that fails and the correction it needs, using only slugs you verified; for a
 missing footer, ask whether the pull request serves Nestor tasks, and which ones. Editing a
 pull request is a write of its own — `gh pr edit N --repo OWNER/REPO --title … --body-file …`
 — so it waits for its agreement, and the pull request is verified again afterwards.
