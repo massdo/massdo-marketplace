@@ -325,8 +325,10 @@ those descriptions in what it publishes must leave the `nestor tasks:` footer ou
 here, in the chain you just read, that it drops that line. When it does not, a merge or a
 release that publishes on its own carries the footer out before anyone can remove it: say so
 in the proposal with the correction the procedure needs, and trigger no merge or release
-that would publish the footer until that correction is agreed and in place. Filtering you
-cannot establish leaves the procedure uncertain.
+that would publish the footer until that correction is agreed and in place. The correction
+is to the procedure, never to the pull request: the footer stays in the description, where
+it is the only link to the tasks. Filtering you cannot establish leaves the procedure
+uncertain.
 
 ## 4. Propose, then merge
 

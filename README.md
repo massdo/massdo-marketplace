@@ -171,7 +171,8 @@ workflow below is preserved.
    `release` or `publish` is only a hint. A publishing command is never run to find out.
    When published notes reuse pull request descriptions, it checks at this point that the
    procedure drops the `nestor tasks:` footer; when it does not, no merge or release that
-   would publish the footer starts until the correction is agreed and in place.
+   would publish the footer starts until the correction is agreed and in place. The footer
+   itself always stays in the pull request description, which is where `doctor` reads it.
 4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
    the validations and the automatic effects of each merge. Titles and footers that do not
    conform are corrected first, each edit with its own agreement. After agreement, each merge
