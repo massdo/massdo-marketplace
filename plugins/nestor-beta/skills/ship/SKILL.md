@@ -320,6 +320,14 @@ Then act on the procedure you found:
   reach.** Report the uncertainty and the decision that is missing, and publish nothing on a
   guess. Do not invent a release mechanism or install one.
 
+**Notes built from pull request descriptions.** Whatever triggers it, a procedure that reuses
+those descriptions in what it publishes must leave the `nestor tasks:` footer out. Check
+here, in the chain you just read, that it drops that line. When it does not, a merge or a
+release that publishes on its own carries the footer out before anyone can remove it: say so
+in the proposal with the correction the procedure needs, and trigger no merge or release
+that would publish the footer until that correction is agreed and in place. Filtering you
+cannot establish leaves the procedure uncertain.
+
 ## 4. Propose, then merge
 
 **The proposal.** Put in front of the user the repository, `main` with its baseline commit, the
@@ -391,8 +399,8 @@ back through a proposal and needs a new agreement.
    `gh release view <tag> --repo OWNER/REPO --json url,tagName,targetCommitish,isDraft` for a
    GitHub Release, `git ls-remote --tags REMOTE <tag> '<tag>^{}'` for a tag (an annotated tag
    shows its own object, then the commit it points at; a lightweight tag shows the commit
-   only), the registry page for a package. When a workflow copied a `nestor tasks:` footer
-   into published notes, report it and propose removing it there.
+   only), the registry page for a package. Confirm too that the published notes carry no
+   `nestor tasks:` footer, and report one that got through.
 4. **Check what already exists.** Before creating a tag, a release or a package version, look
    for it, and check its identity — which commit, which version — instead of recreating it. A
    tag that exists does not move by itself; never move, delete or recreate one to make the
@@ -414,7 +422,8 @@ stop. A retry, a revert or a cleanup is a new action and needs its own agreement
   invoked.
 - It never merges a pull request whose title or Nestor footer is non-conforming, and never
   guesses the tasks a pull request serves.
-- It never puts a `nestor tasks:` footer in the release notes it prepares.
+- It never puts a `nestor tasks:` footer in the release notes it prepares, and never triggers
+  a merge or a release that would publish one.
 - It never stashes, discards, force-pushes, resolves a conflict or brings local commits into
   a pull request without a separate authorization.
 - It never uses `--admin` to get past a protection.

@@ -169,6 +169,9 @@ workflow below is preserved.
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
    package, a version notification and a deployment are told apart, and a name containing
    `release` or `publish` is only a hint. A publishing command is never run to find out.
+   When published notes reuse pull request descriptions, it checks at this point that the
+   procedure drops the `nestor tasks:` footer; when it does not, no merge or release that
+   would publish the footer starts until the correction is agreed and in place.
 4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
    the validations and the automatic effects of each merge. Titles and footers that do not
    conform are corrected first, each edit with its own agreement. After agreement, each merge
@@ -178,9 +181,10 @@ workflow below is preserved.
    Auto-merge and merge queues are requests, not merges, and `--admin` is never used.
 5. **Release.** It checks the runs of the final commit of `main`. When the procedure needs a
    tag, a manual workflow or a documented command, it prepares the exact version, tag, notes
-   and command, then asks. Notes that reuse pull request descriptions leave the footer out.
-   It never creates a tag that disagrees with the declared versions, never moves an existing
-   one, and reports only what it confirmed.
+   and command, then asks. Notes it prepares from pull request descriptions leave the footer
+   out, and it confirms that published notes carry none. It never creates a tag that disagrees
+   with the declared versions, never moves an existing one, and reports only what it
+   confirmed.
 
 What a merge into `main` starts here is described in
 [Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
