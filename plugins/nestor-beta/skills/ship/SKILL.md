@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /massdo-skills:ship or $massdo-skills:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests with a merge confidence percentage, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git and the GitHub CLI and only targets main. Without list, every merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
 disable-model-invocation: true
 ---
@@ -17,11 +17,11 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
+Pass `{ "version_hash": "282a6866cadd70f62" }` on every Nestor MCP call.
 
 ## Modes
 
-`/massdo-skills:ship [list]` — Codex: `$massdo-skills:ship [list]`.
+`/nestor-beta:ship [list]` — Codex: `$nestor-beta:ship [list]`.
 
 - **No mode argument:** run the existing diagnosis, proposal, agreed merges and repository
   release procedure below.

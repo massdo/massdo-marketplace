@@ -15,8 +15,8 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/.mcp.json`: Claude Code and Codex public MCP connection.
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
+- `plugins/nestor-beta/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
-- `plugins/massdo-skills/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
 - `.claude-plugin/marketplace.json`: Claude Code marketplace catalog.
 - `.cursor-plugin/marketplace.json`: Cursor marketplace catalog.
@@ -125,7 +125,7 @@ refuses it.
 
 ## Ship pending work
 
-Invoke `/massdo-skills:ship [list]` in Claude Code or `$massdo-skills:ship [list]` in Codex. In
+Invoke `/nestor-beta:ship [list]` in Claude Code or `$nestor-beta:ship [list]` in Codex. In
 Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
 with no Nestor dependency. It starts on that explicit invocation only, never on a request in
@@ -134,7 +134,7 @@ and a proposal, never authorizes merging every pull request or publishing a rele
 each merge, tag push, workflow run or publication waits for agreement when it comes up. An
 agreement already given in the session holds for its exact scope only.
 
-The optional `list` argument (`ship list`, or `$massdo-skills:ship list` in Codex) returns
+The optional `list` argument (`ship list`, or `$nestor-beta:ship list` in Codex) returns
 only the list of every open PR: confidence percentage first, link/title, examined head and
 `main` baseline, base, group and concise evidence and limits. It performs only reads, with
 no fetch, file/ref/branch/worktree changes, local build/test runs, merge or release steps,
