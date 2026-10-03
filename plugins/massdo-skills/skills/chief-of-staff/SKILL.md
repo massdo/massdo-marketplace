@@ -18,7 +18,7 @@ So `yolo 80` and `80 yolo` are the same invocation: no escalation, eighty words.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "3fd5bebcd7f547e1" }` on every Nestor MCP call.
+Pass `{ "version_hash": "0a6bcd189636a1d9" }` on every Nestor MCP call.
 
 ## The scarce resource
 
