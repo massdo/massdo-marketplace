@@ -128,19 +128,21 @@ refuses it.
 Invoke `/nestor-beta:ship [list]` in Claude Code or `$nestor-beta:ship [list]` in Codex. In
 Cursor, select `ship`; in Kimi Code, use `/skill:ship [list]`. It only targets `main`:
 the open pull requests of the current GitHub repository, read through Git and the GitHub CLI,
-with no Nestor dependency. It starts on that explicit invocation only, never on a request in
-plain language, and the agreements hold it back further: an invocation prepares a diagnosis
-and a proposal, never authorizes merging every pull request or publishing a release, and
-each merge, tag push, workflow run or publication waits for agreement when it comes up. An
-agreement already given in the session holds for its exact scope only.
+with the Nestor MCP server confirming the tasks they reference. It starts on that explicit
+invocation only, never on a request in plain language, and the agreements hold it back
+further: an invocation prepares a diagnosis and a proposal, never authorizes merging every
+pull request or publishing a release, and each pull request edit, merge, tag push, workflow
+run or publication waits for agreement when it comes up. An agreement already given in the
+session holds for its exact scope only.
 
 The optional `list` argument (`ship list`, or `$nestor-beta:ship list` in Codex) returns
 only the list of every open PR: confidence percentage first, link/title, examined head and
 `main` baseline, base, group and concise evidence and limits. It performs only reads, with
-no fetch, file/ref/branch/worktree changes, local build/test runs, merge or release steps,
-proposal, approval question or publication. It uses GitHub's live baseline and existing
-CI/log evidence, and states missing evidence in the affected row. `list` is a mode, not a
-branch target; without it the workflow below is preserved.
+no fetch, file/ref/branch/worktree changes, local build/test runs, pull request edits, merge
+or release steps, proposal, approval question or publication. It uses GitHub's live baseline
+and existing CI/log evidence, and states missing evidence and any title or footer that does
+not conform in the affected row. `list` is a mode, not a branch target; without it the
+workflow below is preserved.
 
 1. **Inventory.** The exact GitHub repository, `main`, every open pull request (all pages,
    split into those that target `main` and the others), and the worktrees, uncommitted
@@ -154,22 +156,30 @@ branch target; without it the workflow below is preserved.
    baseline: facts and unknown evidence are stated separately from the judgment about
    remaining risk. It estimates merge confidence, not a measured probability or confidence
    in the group, and never replaces checks or agreement. It is reassessed when either commit
-   changes. Examples cover complete evidence, a conflict or failed check, no CI, and
-   inaccessible requirements.
+   changes. Examples cover complete evidence, a non-conforming footer, a conflict or failed
+   check, no CI, and inaccessible requirements. Every title must be in English without a
+   Nestor id or slug, and every `nestor tasks:` footer is checked for its format, for tasks
+   that exist in Nestor and for ids that match what the diff covers; a pull request that
+   groups others into `main` keeps their ids. A title or footer that fails blocks the pull
+   request until it is corrected, whatever its percentage, and a missing footer is reported
+   as traceability that was not validated.
 3. **Release procedure.** Before any merge, it reads the repository's documents, scripts and
    `.github/workflows` — on the remote `main` and in the selected pull requests — and follows
    the chain from trigger to real effect, citing file and line. A tag, a GitHub Release, a
    package, a version notification and a deployment are told apart, and a name containing
    `release` or `publish` is only a hint. A publishing command is never run to find out.
 4. **Merge.** The proposal names the pull requests, their verified head commits, the order,
-   the validations and the automatic effects of each merge. After agreement, each merge is
-   locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
-   before the next one starts, and the remaining pull requests are verified again. Auto-merge
-   and merge queues are requests, not merges, and `--admin` is never used.
+   the validations and the automatic effects of each merge. Titles and footers that do not
+   conform are corrected first, each edit with its own agreement. After agreement, each merge
+   is locked on its verified head commit with `gh pr merge --match-head-commit`, confirmed
+   before the next one starts, and the remaining pull requests are verified again. The title
+   and the footer are read again just before each merge, since that lock does not cover them.
+   Auto-merge and merge queues are requests, not merges, and `--admin` is never used.
 5. **Release.** It checks the runs of the final commit of `main`. When the procedure needs a
    tag, a manual workflow or a documented command, it prepares the exact version, tag, notes
-   and command, then asks. It never creates a tag that disagrees with the declared versions,
-   never moves an existing one, and reports only what it confirmed.
+   and command, then asks. Notes that reuse pull request descriptions leave the footer out.
+   It never creates a tag that disagrees with the declared versions, never moves an existing
+   one, and reports only what it confirmed.
 
 What a merge into `main` starts here is described in
 [Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
