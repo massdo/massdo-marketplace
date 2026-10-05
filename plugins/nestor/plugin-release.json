@@ -1,5 +1,5 @@
 {
-  "version": "0.7.10",
-  "version_hash": "1043de0a13ba515a",
-  "changelog": "Task and note citations now put the slug and its parenthesized business summary together in one inline-code span. The Nestor skill defines the shared citation format."
+  "version": "0.7.11",
+  "version_hash": "894079cc95c89fef",
+  "changelog": "The manual update check identifies Nestor stable in this client and keeps unknown hashes and unusable catalogs inconclusive. Verified published release history accompanies server notifications."
 }

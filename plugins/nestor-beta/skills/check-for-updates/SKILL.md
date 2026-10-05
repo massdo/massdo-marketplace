@@ -5,7 +5,7 @@ description: Check updates for the Nestor Beta skill loaded in this client. Use 
 
 # Check for Nestor Beta updates
 
-Call `probe_plugin_version` with `{ "version_hash": "21de1e8e8043526d8" }`.
+Call `probe_plugin_version` with `{ "version_hash": "2980c63164324e3bd" }`.
 Use this skill's declared hash exclusively, even when another plugin's skill is loaded.
 This checks the Nestor Beta skill loaded in this client only.
 

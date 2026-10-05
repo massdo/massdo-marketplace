@@ -5,7 +5,7 @@ description: Check updates for the Nestor stable skill loaded in this client. Us
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version_hash": "11043de0a13ba515a" }`.
+Call `probe_plugin_version` with `{ "version_hash": "1894079cc95c89fef" }`.
 Use this skill's declared hash exclusively, even when another plugin's skill is loaded.
 This checks the Nestor stable skill loaded in this client only.
 
