@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nestor Beta Check for Updates"
+  short_description: "Check updates for Nestor Beta in this client"
+  default_prompt: "Use $nestor-beta:check-for-updates to check the Nestor Beta skill loaded in this client."

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Publish the current Nestor release documents to the journal server."""
+"""Publish current plugin releases and their verified history to the journal server."""
 
 import json
 import os
@@ -9,6 +9,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, urlunsplit
 from urllib.request import Request, urlopen
+
+from plugin_release_history import load_history
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,7 +39,11 @@ def release_payload() -> bytes:
     for name in RELEASE_NAMES:
         release = read_json(ROOT / "plugins" / name / "plugin-release.json")
         releases.append({"name": name, **release})
-    return json.dumps({"releases": releases}, separators=(",", ":")).encode()
+    history = load_history(ROOT, releases, baseline="HEAD")
+    payload = json.dumps({"releases": releases, "history": history}, separators=(",", ":")).encode()
+    if len(payload) > 65_536:
+        raise ValueError("plugin release payload exceeds 65536 bytes")
+    return payload
 
 
 def publish() -> None:

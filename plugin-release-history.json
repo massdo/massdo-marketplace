@@ -1,0 +1,429 @@
+[
+  {
+    "name": "massdo-skills",
+    "version": "0.7.1",
+    "version_hash": "630c7198fec779b4",
+    "commit": "3a483cf1ce3adf67b0d9ec3f680faaec7e78e610",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35960226788"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.8.0",
+    "version_hash": "b6d239a8399f92bd",
+    "commit": "5a750cc987456946720317fc18ac06c212440339",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36389455687"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.9.0",
+    "version_hash": "7e41c9d20f85a3b6",
+    "commit": "fd4e522253f6d67d4b47b3d3103511cc06ef851d",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36429397059"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.10.0",
+    "version_hash": "59c512fbfdbc669c",
+    "commit": "46b917543f6950d58a34e17ec42510448dca2569",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36787210512"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.11.0",
+    "version_hash": "e0ef45bf19103113",
+    "commit": "7f669105b219c301d7dad2a95bd46ca28a0a46d2",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36983680660"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.11.1",
+    "version_hash": "3fd5bebcd7f547e1",
+    "commit": "eb68691471256754d16be7850cfb05d3c88a203e",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37008807921"
+  },
+  {
+    "name": "massdo-skills",
+    "version": "0.11.2",
+    "version_hash": "0a6bcd189636a1d9",
+    "commit": "08147df3dd625aba5a815d662ceb4196924dab38",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37122590707"
+  },
+  {
+    "name": "nestor",
+    "version": "0.2.0",
+    "version_hash": "7b077772236c5f45",
+    "commit": "44abfae2726e5b093a3d2a0c509add947c8e5c8b",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32222909374"
+  },
+  {
+    "name": "nestor",
+    "version": "0.3.0",
+    "version_hash": "f918b2acb9fb1103",
+    "commit": "055b030d2507b05f60024d1e837ea639ee93362a",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32274714020"
+  },
+  {
+    "name": "nestor",
+    "version": "0.3.1",
+    "version_hash": "2995a679105fea81",
+    "commit": "f335774d133823b460238930b246d4825d706cc3",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32284261818"
+  },
+  {
+    "name": "nestor",
+    "version": "0.3.2",
+    "version_hash": "918aceaf0fa6e0b8",
+    "commit": "1dcbc4b91019ce4ecf3f0bbf6d3ca9fba69d7497",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32290210679"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.0",
+    "version_hash": "0e87a44fad01cd01",
+    "commit": "bbe47636513b5135fd54a831951054ffa67d3879",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32928516946"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.1",
+    "version_hash": "011ef0047cd81908",
+    "commit": "778da0ad26f39185871ac3eb5a30bb7fd1124e7f",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32947485141"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.2",
+    "version_hash": "d38554f310145da4",
+    "commit": "04626f152f18f2da1d1077fe91d08b78d88fb1f4",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/32988907320"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.3",
+    "version_hash": "890015e77049139e",
+    "commit": "118b1bb349723286618fd48b0cdfeb0c0b000c20",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/33085883940"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.4",
+    "version_hash": "370691e183c12bec",
+    "commit": "c585d667bcad7a0b216e5a12950efe7edfb45842",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/33257094574"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.5",
+    "version_hash": "e1f345d3a9652117",
+    "commit": "e2d5e31010dffd74c13e5d2ff5c6a57248a64ff6",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/33361509549"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.6",
+    "version_hash": "d6253857072898f9",
+    "commit": "d4a894d6a1a2f978eb1b929b05f85cab3e743110",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/33970896406"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.7",
+    "version_hash": "e761f821a63c69cb",
+    "commit": "c00e6242f21bfe9130d48f719d1f7f5491a59609",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34131908757"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.8",
+    "version_hash": "8213c5dab1f5719e",
+    "commit": "467d7d9e410104b413e1402bb857992206e53b47",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34143980364"
+  },
+  {
+    "name": "nestor",
+    "version": "0.4.9",
+    "version_hash": "9effd96628245e4f",
+    "commit": "348f2cffa386bfef0cc3b8687fd6d6bf096aa652",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34195342447"
+  },
+  {
+    "name": "nestor",
+    "version": "0.5.0",
+    "version_hash": "cce406ae1ed0ef21",
+    "commit": "c1ae863032b9ebe1b76dd2b0265088842e524972",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34222386604"
+  },
+  {
+    "name": "nestor",
+    "version": "0.6.0",
+    "version_hash": "d602f3717163cd15",
+    "commit": "67c04dfb3c16fe90692dbd25a5e87ed097b6d328",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35250869701"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.0",
+    "version_hash": "1c2270b35564e17a",
+    "commit": "cdbf2dc60f7faf782704ce41bec0d1a3aed6ff65",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35308434717"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.1",
+    "version_hash": "cd8031be30448999",
+    "commit": "e48c13a429b6174ef0e3bb9439f2af4b214691a9",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35324334954"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.2",
+    "version_hash": "69f65d3687e6891d",
+    "commit": "b37be248abf1b94ea7944c887baedfe9a4dbb435",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35327540085"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.3",
+    "version_hash": "ad3a12df4031d2d7",
+    "commit": "6048f839383120d57151e323a9db155022c02bf8",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35712153319"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.4",
+    "version_hash": "be3bb9fcebd64416",
+    "commit": "24b7726811ac33a9aa23c421fae28fb8cab68745",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36729366763"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.5",
+    "version_hash": "7ed86fbb7c035748",
+    "commit": "e8b3605ae703a7e78975d37c658d748ebffe5625",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36793643665"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.6",
+    "version_hash": "b97a2f2353767478",
+    "commit": "cc9b055de727c5aad34dd00625a81b138bebdcf5",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36999569546"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.7",
+    "version_hash": "16e1600107479cb8",
+    "commit": "2743f05700440bbcb783076f4b98cb98ac99d4ed",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37000007211"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.8",
+    "version_hash": "d46eb6484539128d",
+    "commit": "eb68691471256754d16be7850cfb05d3c88a203e",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37008807921"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.9",
+    "version_hash": "3e892a79a40c6b47",
+    "commit": "28f1ca2357b9e85442d85f1320c48a1d32a1135e",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37012064420"
+  },
+  {
+    "name": "nestor",
+    "version": "0.7.10",
+    "version_hash": "1043de0a13ba515a",
+    "commit": "4370db2cba8f7fc15e8d3ca1df795afbde3cc9fd",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37302775906"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.3.1",
+    "version_hash": "4bb9ad2a653b1e1c",
+    "commit": "8c95f8434e358fa51dcaf1d22d79d512de837f6c",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34125163773"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.3.2",
+    "version_hash": "4780aa832c028dd3",
+    "commit": "c00e6242f21bfe9130d48f719d1f7f5491a59609",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34131908757"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.3.3",
+    "version_hash": "cbcc9032528b52ef",
+    "commit": "8e1a5e83dbffe0328ca7ad57638dc48ba10c5694",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34134675480"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.3.4",
+    "version_hash": "a16dc784cce5379f",
+    "commit": "467d7d9e410104b413e1402bb857992206e53b47",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34143980364"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.3.5",
+    "version_hash": "92468fc4fde20827",
+    "commit": "348f2cffa386bfef0cc3b8687fd6d6bf096aa652",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34195342447"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.4.0",
+    "version_hash": "0f55c32d3623e465",
+    "commit": "c1ae863032b9ebe1b76dd2b0265088842e524972",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34222386604"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.5.0",
+    "version_hash": "06d7552690bf0c05",
+    "commit": "17565f9456fb1785c9519189b597745e2a7435f9",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/34498119124"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.6.0",
+    "version_hash": "83bfe517bb6928c9",
+    "commit": "cdbf2dc60f7faf782704ce41bec0d1a3aed6ff65",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35308434717"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.7.0",
+    "version_hash": "09562b125cffa9cd",
+    "commit": "65be700b6fde3d421ca2d416d7bad62e8a88a7a3",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35483902195"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.7.1",
+    "version_hash": "1e08038ba0ef1521",
+    "commit": "d033745915365a47db831a0cd208e0bfb694ca5a",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35484808337"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.7.2",
+    "version_hash": "dbd65949c456294d",
+    "commit": "590f3257313c7dd0001d9d69cc51de8e6b141cc6",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35503413722"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.7.3",
+    "version_hash": "2d6cf645fc368d44",
+    "commit": "6bcde4267473c8ace690caa4194b6ef6bd952b5a",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35518828899"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.7.4",
+    "version_hash": "2d6a13986427d8f9",
+    "commit": "8f1fd0479bc233414b96f2e8cf0736bbe2ed03de",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35521120425"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.8.0",
+    "version_hash": "0281c95726278767",
+    "commit": "c954529f2bc4d8e3b692dcae5ff8471717f53439",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35706300577"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.8.1",
+    "version_hash": "5438cf23e2a2a90c",
+    "commit": "6048f839383120d57151e323a9db155022c02bf8",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35712153319"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.8.2",
+    "version_hash": "c290c05e5d489128",
+    "commit": "9b1cfc78c0dc2ac90a8e6c047d60d81ddd94e47e",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35713001401"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.0",
+    "version_hash": "a18faeeeca56e4d4",
+    "commit": "ee4bcfe35912b865de1c6a8915ffa3a0c9b16fd2",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35743147402"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.1",
+    "version_hash": "ccfd4427861104bb",
+    "commit": "6b92d2aabb2e7a8009852bff37f0f64d8c41a6ca",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35858270321"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.2",
+    "version_hash": "33e5788bba8455c5",
+    "commit": "4a7ab4aa2f0f6ef40a814bafbdbd50cf0862eb74",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/35869365528"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.3",
+    "version_hash": "03fa759b219932a1",
+    "commit": "577d4fa70f4577131dad7013b7ecf9d92ec19b7e",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36301350426"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.4",
+    "version_hash": "afe007c7aa109f92",
+    "commit": "aa62e8d0dce665583358198750c5640fa4da302c",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36705585212"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.5",
+    "version_hash": "f99af237ebe7e0f4",
+    "commit": "e8b3605ae703a7e78975d37c658d748ebffe5625",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36793643665"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.9.6",
+    "version_hash": "82a6866cadd70f62",
+    "commit": "cc9b055de727c5aad34dd00625a81b138bebdcf5",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/36999569546"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.10.0",
+    "version_hash": "77cfad66a8f3745e",
+    "commit": "08147df3dd625aba5a815d662ceb4196924dab38",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37122590707"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.10.1",
+    "version_hash": "9c32ca8cffc534f7",
+    "commit": "14868da550fb7822463ac7b44fec345fa8b45216",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37125584913"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.10.2",
+    "version_hash": "6d77f90eff9c58d4",
+    "commit": "e8fdb3d6ce3c9905a870a2cd436846becf31afed",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37126746271"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.10.3",
+    "version_hash": "1de1e8e8043526d8",
+    "commit": "4370db2cba8f7fc15e8d3ca1df795afbde3cc9fd",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37302775906"
+  }
+]

@@ -8,6 +8,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/skills/activity/`: activity timer and time-report skill.
 - `plugins/nestor/skills/tree/`: shared tree-rendering skill.
 - `plugins/nestor/skills/check-for-updates/`: explicit plugin version check.
+- `plugins/nestor-beta/skills/check-for-updates/`: explicit Nestor Beta version check.
 - `plugins/nestor/.codex-plugin/`: Codex plugin manifest.
 - `plugins/nestor/.claude-plugin/`: Claude Code plugin manifest.
 - `plugins/nestor/.cursor-plugin/`: Cursor plugin manifest.
@@ -204,6 +205,33 @@ informational.
 - Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/<name>/plugin-release.json`
 - Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
 - Maximum size: 4096 bytes. A larger document is treated as unreadable.
+
+### Verified release history
+
+`plugin-release-history.json` preserves reviewed associations from revisions published on
+`main`, with the exact commit and a successful `Validate` push run for each association.
+Versions without a published hash and releases found only on work branches are excluded.
+The validator checks the source tree, numeric version/hash uniqueness, and preservation
+of previous associations. Run URLs are review evidence; local checks do not query GitHub.
+
+Before replacing a published release, add its association to this file if it is absent.
+Use the commit actually published on `main`, read its `plugin-release.json` with `git show`,
+and verify its successful push run with `gh run view <run> --json event,headSha,conclusion`.
+For a server notification, also check the notification job's checkout commit and successful
+publisher output: queued jobs check out the `main` revision current when they start.
+Never reconstruct an association from an arbitrary checkout or a declared client version.
+
+The authenticated publisher sends `{ "releases": [...], "history": [...] }` to the existing
+`/internal/plugin-releases` endpoint. Each history entry contains only `name`, `version`,
+and the raw `version_hash`; evidence stays in this repository and changelogs stay on current
+releases. The server merges history without deleting older associations. Local validation
+refuses a version/hash collision or a bump that omits the previous release from history.
+The notification checkout fetches full Git history to verify these sources.
+
+Activate this publisher only after the server accepts the historical publication contract.
+An open PR and local checks do not prove publication or client activation. After publication,
+verify `/nestor:check-for-updates` and `/nestor-beta:check-for-updates` in Claude and Codex,
+recording server publication and each client's loaded release separately.
 
 ### Several documents, one release set
 

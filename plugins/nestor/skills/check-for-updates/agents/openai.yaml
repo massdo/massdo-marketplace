@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Check for Updates"
-  short_description: "Check whether the Nestor plugin is up to date"
-  default_prompt: "Use $nestor:check-for-updates to check whether my Nestor plugin is up to date."
+  short_description: "Check updates for Nestor stable in this client"
+  default_prompt: "Use $nestor:check-for-updates to check the Nestor stable skill loaded in this client."
 
 dependencies:
   tools:
