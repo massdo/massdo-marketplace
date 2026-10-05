@@ -16,7 +16,7 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "26d77f90eff9c58d4" }` on every Nestor MCP call.
+Pass `{ "version_hash": "21de1e8e8043526d8" }` on every Nestor MCP call.
 
 ## Invocation
 
@@ -97,9 +97,7 @@ subtasks included; `totalCount` counts the roots only.
   subtasks not listed, naming none.
 - A missing counter changes nothing: judge by the page, as before.
 
-Cite the items exactly as the `nestor` skill prescribes. Invent no layout, no grouping and
-no table of your own: one citation form across every skill is what makes an item reference
-recognizable from one answer to the next.
+Cite the items exactly as the `nestor` skill prescribes.
 
 ## Offer the backlog
 

@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.7.9"
+  pluginVersion: "0.7.10"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.7.9, hashed as `3e892a79a40c6b47`.
+This plugin version is 0.7.10, hashed as `1043de0a13ba515a`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "13e892a79a40c6b47", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "11043de0a13ba515a", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, say `Une mise à jour du plugin Nestor est disponible.` for `pluginName: nestor`, or `Une mise à jour du plugin Nestor Beta est disponible.` for `pluginName: nestor-beta`. Without `pluginName`, say `Une mise à jour est disponible.`
@@ -24,15 +24,16 @@ Never block the requested journal operation. Never write on disk. Never invent a
 
 ## Cite items
 
-Whenever a reply cites a task or note, put its slug in Markdown inline code and its short
-business description in parentheses outside the backticks. Apply this to lists, prose,
-conclusions, answers about code, repeated mentions, and slugs supplied by the user.
+Whenever a reply cites a task or note, put the entire reference in one Markdown inline-code
+span: the slug followed by its short business description in parentheses. Apply this to
+lists, prose, conclusions, answers about code, repeated mentions, and slugs supplied by the user.
 
-- Wrong: "`purple_muskox` is complete."
-- Right: "`purple_muskox` (similar projects) is complete."
+- Wrong: "`purple_muskox` (similar projects) is complete."
+- Right: "`purple_muskox (similar projects)` is complete."
 - Never escape underscores inside backticks. Branch and file names containing a slug are not item citations.
 - Write the description in the conversation's language from information already held; omit it when unavailable. Never call a tool only to obtain it, and never copy the whole title.
 - This form names the item; it never replaces requested details such as its status or body.
+- Keep server-rendered trees, tool arguments and pull request footers in their required formats.
 
 ## Use the MCP as the source of truth
 
