@@ -1,5 +1,5 @@
 {
-  "version": "0.10.2",
-  "version_hash": "6d77f90eff9c58d4",
-  "changelog": "Ship now reads the tasks of a pull request footer in the Nestor project named after the repository, where each slug names exactly one task.\nWhen no project carries that name, the tasks stay unverified and Ship asks which project the repository belongs to."
+  "version": "0.10.3",
+  "version_hash": "1de1e8e8043526d8",
+  "changelog": "Next Tasks delegates citation formatting to Nestor without imposing a separate layout. Doctor uses the shared citation format in its examples and keeps its percentages and result groups."
 }

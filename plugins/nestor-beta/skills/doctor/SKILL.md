@@ -17,7 +17,7 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "26d77f90eff9c58d4" }` on every Nestor MCP call.
+Pass `{ "version_hash": "21de1e8e8043526d8" }` on every Nestor MCP call.
 
 ## 1. Select the project and tasks
 
@@ -145,13 +145,13 @@ Calibrate the score on two indicative anchors rather than a rigid formula:
 Between them, set the score by judgment.
 
 Start each task line in **Proposed closures** and **Needs user review** with its integer
-percentage, followed by ` - ` and the task's citation. **No evidence** stays a count,
-prefixed with the highest score among its tasks:
+percentage, followed by ` - ` and the task's citation as prescribed by the `nestor` skill.
+**No evidence** stays a count, prefixed with the highest score among its tasks:
 
 ```
 Needs user review
-95% - coffee_wildfowl (project search)
-20% - copper_manatee (OpenAI publication)
+95% - `coffee_wildfowl (project search)`
+20% - `copper_manatee (OpenAI publication)`
 
 5% - No evidence (18; highest score)
 ```
