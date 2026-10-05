@@ -42,10 +42,11 @@ class RepositoryValidation(unittest.TestCase):
             (self.root / directory).mkdir()
         for source in (ROOT / ".githooks").iterdir():
             shutil.copy2(source, self.root / ".githooks" / source.name)
-        for name in ("check.sh", "check-ci.sh", "check-commit.sh", "validate.py", "validate_skills.py"):
+        for name in ("check.sh", "check-ci.sh", "check-commit.sh", "validate.py", "validate_skills.py", "plugin_release_history.py"):
             shutil.copy2(ROOT / "scripts" / name, self.root / "scripts" / name)
         self.write(".gitignore", "__pycache__/\n")
         self.write("README.md", "Fixture marketplace\n")
+        self.json("plugin-release-history.json", [])
         for ecosystem, catalog in (
             ("codex", ".agents/plugins/marketplace.json"),
             ("claude", ".claude-plugin/marketplace.json"),
@@ -80,6 +81,7 @@ class RepositoryValidation(unittest.TestCase):
         self.git("config", "core.hooksPath", ".githooks")
         self.commit("initial")
         self.base = self.git("rev-parse", "HEAD").stdout.strip()
+        self.git("update-ref", "refs/remotes/origin/main", self.base)
 
     def write(self, path, text):
         target = self.root / path
@@ -114,6 +116,14 @@ class RepositoryValidation(unittest.TestCase):
         return self.run_command("./scripts/check.sh", *args, **kwargs)
 
     def bump(self, *, changelog="Changed", version_hash="fedcba9876543210", version="1.1.0"):
+        source = self.base
+        previous = json.loads(self.git("show", f"{source}:{self.release}").stdout)
+        history = json.loads((self.root / "plugin-release-history.json").read_text())
+        if not any(entry["version_hash"] == previous["version_hash"] for entry in history):
+            history.append({"name": "demo", "version": previous["version"],
+                            "version_hash": previous["version_hash"], "commit": source,
+                            "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/1"})
+            self.json("plugin-release-history.json", history)
         for ecosystem in ("codex", "claude", "cursor", "kimi"):
             path = f"plugins/demo/.{ecosystem}-plugin/plugin.json"
             data = json.loads((self.root / path).read_text())
@@ -437,12 +447,29 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("publishes no plugin-release.json", result.stderr)
 
+    def test_history_source_must_match_the_published_release(self):
+        self.json("plugin-release-history.json", [{
+            "name": "demo", "version": "1.0.0", "version_hash": "ffffffffffffffff",
+            "commit": self.base,
+            "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/1",
+        }])
+        result = self.check(ok=False)
+        self.assertIn("release history disagrees with published source", result.stderr)
+
+    def test_version_bump_must_keep_previous_release_in_history(self):
+        self.bump()
+        self.json("plugin-release-history.json", [])
+        result = self.check("--baseline", self.base, ok=False)
+        self.assertIn("must retain the previous release", result.stderr)
+
     def test_nestor_skills_require_their_own_prefix_and_release_hash(self):
         previous = "demo"
         for name, prefix in (("nestor", "1"), ("nestor-beta", "2")):
             (self.root / "plugins" / previous).rename(self.root / "plugins" / name)
             for path in self.root.rglob("*.json"):
                 data = json.loads(path.read_text())
+                if not isinstance(data, dict):
+                    continue
                 if data.get("name") == previous:
                     data["name"] = name
                 for entry in data.get("plugins", []):

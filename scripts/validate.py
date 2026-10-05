@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from plugin_release_history import load_history
+
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGINS = ROOT / "plugins"
@@ -575,6 +577,15 @@ for name in ("nestor", "nestor-beta"):
                 ), f"{where}: known needs null or a complete version/ETag pair")
             check(example.get("version_hash") == plugin_hash_prefixes[name] + published_hashes.get(name, ""),
                   f"{where}: get_item example version_hash does not match its plugin release")
+
+# --- Verified release history. --------------------------------------------
+
+try:
+    releases = [{"name": plugin.name, **read_json(plugin / "plugin-release.json")}
+                for plugin in plugin_dirs if (plugin / "plugin-release.json").is_file()]
+    load_history(ROOT, releases, BASELINE)
+except (OSError, ValueError, TypeError, KeyError) as error:
+    errors.append(f"release history: {error}")
 
 # --- Crude secret guard. ----------------------------------------------------
 
