@@ -1,17 +1,20 @@
 ---
 name: check-for-updates
-description: Check updates for the Nestor stable skill loaded in this client. Use when the user asks if Nestor stable is current, wants its latest changelog, or types /nestor:check-for-updates or /check-for-updates.
+description: Manually check updates for the Nestor stable skill loaded in this client. Run only on a direct user invocation of /nestor:check-for-updates or $nestor:check-for-updates.
+disable-model-invocation: true
 ---
 
 # Check for Nestor updates
 
-Call `probe_plugin_version` with `{ "version_hash": "1894079cc95c89fef" }`.
+Run only after a direct user invocation. Report the result in English.
+
+Call `probe_plugin_version` with `{ "version_hash": "14b7c420c34a66aaa" }`.
 Use this skill's declared hash exclusively, even when another plugin's skill is loaded.
 This checks the Nestor stable skill loaded in this client only.
 
-- `update_available`: say `Une mise à jour du plugin Nestor est disponible.` Only this status proves that an update is available. Report it on every manual check, including a second check after changelog acknowledgement.
-- `up_to_date`: say `Le plugin Nestor est à jour.`
-- `unknown`: say `La vérification du plugin Nestor est inconclusive.` When `diagnostic: hash_unrecognized` is present, explain that the server does not recognize this hash. A missing or unusable catalog (`catalog_unavailable`), or a catalog older than the known client (`catalog_behind`), also remains inconclusive. Never infer an update from an unknown hash or an unverified declared version.
+- `update_available`: say `An update for the Nestor plugin is available.` Only this status proves that an update is available. Report it on every manual check, including a second check after changelog acknowledgement.
+- `up_to_date`: say `The Nestor plugin is up to date.`
+- `unknown`: say `The Nestor update check is inconclusive.` When `diagnostic: hash_unrecognized` is present, explain that the server does not recognize this hash. A missing or unusable catalog (`catalog_unavailable`), or a catalog older than the known client (`catalog_behind`), also remains inconclusive. Never infer an update from an unknown hash or an unverified declared version.
 - `INVALID_ARGUMENT`: report that the server refused the Nestor hash; do not announce an update.
 
 If a returned `pluginName` differs from `nestor`, report an inconclusive Nestor check

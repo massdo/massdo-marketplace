@@ -1,5 +1,5 @@
 {
-  "version": "0.10.4",
-  "version_hash": "980c63164324e3bd",
-  "changelog": "A dedicated check-for-updates command verifies Nestor Beta in this client. Unknown hashes and unusable catalogs remain inconclusive, and every manual check repeats a proven update alert."
+  "version": "0.10.5",
+  "version_hash": "2f850ebd132088d2",
+  "changelog": "Nestor Beta update checks now require an explicit user invocation and report results in English."
 }
