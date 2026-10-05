@@ -2,3 +2,14 @@ interface:
   display_name: "Nestor Check for Updates"
   short_description: "Check updates for Nestor stable in this client"
   default_prompt: "Use $nestor:check-for-updates to check the Nestor stable skill loaded in this client."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: true
