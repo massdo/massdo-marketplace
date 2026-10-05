@@ -1,5 +1,5 @@
 {
-  "version": "0.7.11",
-  "version_hash": "894079cc95c89fef",
-  "changelog": "The manual update check identifies Nestor stable in this client and keeps unknown hashes and unusable catalogs inconclusive. Verified published release history accompanies server notifications."
+  "version": "0.7.12",
+  "version_hash": "4b7c420c34a66aaa",
+  "changelog": "Update checks now require an explicit user invocation and report results in English."
 }

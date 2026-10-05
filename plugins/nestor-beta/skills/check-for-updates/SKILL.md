@@ -1,17 +1,20 @@
 ---
 name: check-for-updates
-description: Check updates for the Nestor Beta skill loaded in this client. Use when the user asks if Nestor Beta is current, wants its latest changelog, or types /nestor-beta:check-for-updates.
+description: Manually check updates for the Nestor Beta skill loaded in this client. Run only on a direct user invocation of /nestor-beta:check-for-updates or $nestor-beta:check-for-updates.
+disable-model-invocation: true
 ---
 
 # Check for Nestor Beta updates
 
-Call `probe_plugin_version` with `{ "version_hash": "2980c63164324e3bd" }`.
+Run only after a direct user invocation. Report the result in English.
+
+Call `probe_plugin_version` with `{ "version_hash": "22f850ebd132088d2" }`.
 Use this skill's declared hash exclusively, even when another plugin's skill is loaded.
 This checks the Nestor Beta skill loaded in this client only.
 
-- `update_available`: say `Une mise à jour du plugin Nestor Beta est disponible.` Only this status proves that an update is available. Report it on every manual check, including a second check after changelog acknowledgement.
-- `up_to_date`: say `Le plugin Nestor Beta est à jour.`
-- `unknown`: say `La vérification du plugin Nestor Beta est inconclusive.` When `diagnostic: hash_unrecognized` is present, explain that the server does not recognize this hash. A missing or unusable catalog (`catalog_unavailable`), or a catalog older than the known client (`catalog_behind`), also remains inconclusive. Never infer an update from an unknown hash or an unverified declared version.
+- `update_available`: say `An update for the Nestor Beta plugin is available.` Only this status proves that an update is available. Report it on every manual check, including a second check after changelog acknowledgement.
+- `up_to_date`: say `The Nestor Beta plugin is up to date.`
+- `unknown`: say `The Nestor Beta update check is inconclusive.` When `diagnostic: hash_unrecognized` is present, explain that the server does not recognize this hash. A missing or unusable catalog (`catalog_unavailable`), or a catalog older than the known client (`catalog_behind`), also remains inconclusive. Never infer an update from an unknown hash or an unverified declared version.
 - `INVALID_ARGUMENT`: report that the server refused the Nestor Beta hash; do not announce an update.
 
 If a returned `pluginName` differs from `nestor-beta`, report an inconclusive Nestor Beta
