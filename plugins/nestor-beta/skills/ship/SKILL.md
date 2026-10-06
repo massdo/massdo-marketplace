@@ -18,7 +18,7 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "22f850ebd132088d2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2cd16c8c7446cc65b" }` on every Nestor MCP call.
 
 ## Modes
 

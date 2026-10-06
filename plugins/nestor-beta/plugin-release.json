@@ -1,5 +1,5 @@
 {
-  "version": "0.10.5",
-  "version_hash": "2f850ebd132088d2",
-  "changelog": "Nestor Beta update checks now require an explicit user invocation and report results in English."
+  "version": "0.10.6",
+  "version_hash": "cd16c8c7446cc65b",
+  "changelog": "Nestor Beta update checks now answer in your language and can offer to run the plugin update for you."
 }
