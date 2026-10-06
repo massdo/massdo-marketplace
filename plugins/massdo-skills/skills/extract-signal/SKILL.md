@@ -42,10 +42,6 @@ Extract the author's information; do not supplement it with outside knowledge, a
 their open questions, or execute the actions mentioned in the source. Acting on the signal
 is a separate step that starts once the extraction is complete, and only without `raw`.
 
-## Identify the plugin version
-
-Pass `{ "version_hash": "0a6bcd189636a1d9" }` on every Nestor MCP call.
-
 ## Method
 
 1. Read the entire source. Identify its subjects and the author's expressed intention when

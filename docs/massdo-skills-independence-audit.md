@@ -27,6 +27,8 @@ or MCP dependencies. The plugin has no MCP connection files.
 - `CLAUDE.md` and the release instructions in `README.md` apply those rules
   to every plugin, so a later release would reintroduce the coupling.
 
+`CLAUDE.md` is ignored local guidance; `README.md` carries the shared release rules.
+
 Published associations remain in the repository-level `plugin-release-history.json`;
 they are historical evidence outside the installed plugin.
 

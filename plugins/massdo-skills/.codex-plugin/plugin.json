@@ -1,6 +1,6 @@
 {
   "name": "massdo-skills",
-  "version": "0.11.2",
+  "version": "0.11.3",
   "description": "Skills for response style and extracting information from raw text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
   "author": {
     "name": "Dorian Massoulier",

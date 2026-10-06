@@ -66,7 +66,8 @@ def load_history(root: Path, releases: list[dict], baseline: str | None = None) 
             raise ValueError(f"release history disagrees with published source {source}")
 
     for release in releases:
-        associate(release)
+        if "version_hash" in release:
+            associate(release)
     if baseline is not None:
         files = set(git(root, "ls-tree", "-r", "--name-only", baseline).splitlines())
         if HISTORY_PATH in files:
@@ -81,7 +82,7 @@ def load_history(root: Path, releases: list[dict], baseline: str | None = None) 
                 continue
             previous = json.loads(git(root, "show", f"{baseline}:{path}"))
             if (previous.get("version"), previous.get("version_hash")) == (
-                    release["version"], release["version_hash"]):
+                    release["version"], release.get("version_hash")):
                 continue
             if not previous.get("version_hash"):
                 continue

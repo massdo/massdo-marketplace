@@ -447,6 +447,66 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("publishes no plugin-release.json", result.stderr)
 
+    def test_independent_plugin_stays_hashless_on_later_releases(self):
+        plugin = "plugins/massdo-skills"
+        shutil.copytree(ROOT / plugin, self.root / plugin)
+        self.check()
+        self.commit("independent plugin")
+        baseline = self.git("rev-parse", "HEAD").stdout.strip()
+        path = f"{plugin}/plugin-release.json"
+        release = json.loads((self.root / path).read_text())
+        self.assertEqual(set(release), {"version", "changelog"})
+        self.write(f"{plugin}/skills/answer-short/SKILL.md",
+                   (self.root / plugin / "skills/answer-short/SKILL.md").read_text() + "\nNew instructions.\n")
+        result = self.check("--baseline", baseline, "--require-release", ok=False)
+        self.assertIn("massdo-skills: plugin files changed but version must increase", result.stderr)
+        version_prefix, patch_version = release["version"].rsplit(".", 1)
+        next_version = f"{version_prefix}.{int(patch_version) + 1}"
+        for manifest in (self.root / plugin).glob(".*/plugin.json"):
+            data = json.loads(manifest.read_text())
+            data["version"] = next_version
+            self.json(manifest, data)
+        self.json(path, release | {"version": next_version})
+        result = self.check("--baseline", baseline, "--require-release", ok=False)
+        self.assertIn("changelog is unchanged", result.stderr)
+        self.json(path, {"version": next_version, "changelog": "Updated standalone instructions."})
+        self.check("--baseline", baseline, "--require-release")
+        self.assertEqual(json.loads((self.root / "plugin-release-history.json").read_text()), [])
+        (self.root / path).unlink()
+        result = self.check("--baseline", baseline, "--require-release", ok=False)
+        self.assertIn("massdo-skills: missing plugin-release.json", result.stderr)
+
+    def test_independent_plugin_rejects_reintroduced_references_in_all_resources(self):
+        plugin = "plugins/massdo-skills"
+        shutil.copytree(ROOT / plugin, self.root / plugin)
+        cases = (
+            (f"{plugin}/skills/answer-short/SKILL.md", "\nCall NeStOr.\n"),
+            (f"{plugin}/skills/articulate/agents/openai.yaml", "\n# nestor dependency\n"),
+            (f"{plugin}/skills/extract-signal/references/input.md", 'Send {"version_hash": "0123456789abcdef"}.\n'),
+            (f"{plugin}/mcp.json", '{"url":"https://journal.mcp-marketplace.org/mcp"}'),
+            (f"{plugin}/nestor.txt", "External service.\n"),
+        )
+        for path, content in cases:
+            with self.subTest(path=path):
+                target = self.root / path
+                original = target.read_text() if target.exists() else None
+                self.write(path, (original or "") + content)
+                result = self.check(ok=False)
+                self.assertIn("standalone plugin must not reference Nestor or version_hash", result.stderr)
+                if original is None:
+                    target.unlink()
+                else:
+                    self.write(path, original)
+        path = f"{plugin}/plugin-release.json"
+        release = json.loads((self.root / path).read_text())
+        for change in ({"version_hash": "0123456789abcdef"}, {"changelog": "Install nestor-beta."}):
+            with self.subTest(change=change):
+                self.json(path, release | change)
+                result = self.check(ok=False)
+                self.assertIn("standalone plugin must not reference Nestor or version_hash", result.stderr)
+        self.json(path, release)
+        self.check()
+
     def test_history_source_must_match_the_published_release(self):
         self.json("plugin-release-history.json", [{
             "name": "demo", "version": "1.0.0", "version_hash": "ffffffffffffffff",

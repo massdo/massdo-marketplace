@@ -204,10 +204,8 @@ for plugin in plugin_dirs:
         f"{name}: manifests disagree on the version: {versions}",
     )
 
-    # plugin-release.json is the public version-and-changelog document the
-    # journal server reads. Shipping one is what makes a plugin released, and
-    # the document must agree with the manifests, or a client reports it is
-    # current when it is not.
+    # Every release document agrees with its manifests. The independent style
+    # plugin keeps version and changelog without a journal identity hash.
     #
     # The document itself is the trigger, not a namesake skill: nestor-beta
     # publishes a release without shipping a skill named after it. A namesake
@@ -217,8 +215,8 @@ for plugin in plugin_dirs:
     release_path = plugin / "plugin-release.json"
     release: dict | None = None
     check(
-        release_path.is_file() or not namesake_skill.is_file(),
-        f"{name}: missing plugin-release.json next to the namesake skill",
+        release_path.is_file() or (name != "massdo-skills" and not namesake_skill.is_file()),
+        f"{name}: missing plugin-release.json",
     )
     if release_path.is_file():
         check(
@@ -231,25 +229,29 @@ for plugin in plugin_dirs:
             errors.append(f"{name}: plugin-release.json is not JSON: {error}")
             release = None
         if isinstance(release, dict):
+            release_keys = {"version", "changelog"}
+            if name != "massdo-skills":
+                release_keys.add("version_hash")
             check(
-                set(release) == {"version", "version_hash", "changelog"},
+                set(release) == release_keys,
                 f"{name}: plugin-release.json keys={sorted(release)}, "
-                "expected exactly version, version_hash and changelog",
+                f"expected exactly {', '.join(sorted(release_keys))}",
             )
             check(
                 release.get("version") == agreed,
                 f"{name}: plugin-release.json version={release.get('version')!r}, "
                 f"expected {agreed!r}",
             )
-            version_hash = release.get("version_hash")
-            check(
-                isinstance(version_hash, str)
-                and VERSION_HASH.fullmatch(version_hash) is not None,
-                f"{name}: plugin-release.json version_hash={version_hash!r}, "
-                "expected 16 lowercase hex characters",
-            )
-            if isinstance(version_hash, str):
-                published_hashes[name] = version_hash
+            if name != "massdo-skills":
+                version_hash = release.get("version_hash")
+                check(
+                    isinstance(version_hash, str)
+                    and VERSION_HASH.fullmatch(version_hash) is not None,
+                    f"{name}: plugin-release.json version_hash={version_hash!r}, "
+                    "expected 16 lowercase hex characters",
+                )
+                if isinstance(version_hash, str):
+                    published_hashes[name] = version_hash
             changelog = release.get("changelog")
             check(
                 isinstance(changelog, str) and changelog.strip() != "",
@@ -286,7 +288,7 @@ for plugin in plugin_dirs:
                         > tuple(map(int, previous_version.split("."))),
                         f"{name}: plugin files changed but version must increase "
                         f"from {previous_version!r} (found {current_version!r}); "
-                        "update the manifests, release hash and changelog",
+                        "update the manifests and release document",
                     )
                 check(
                     published.get("version") == release.get("version")
@@ -297,7 +299,8 @@ for plugin in plugin_dirs:
                 # The hash is what the server compares. A bump that keeps
                 # it tells outdated clients they are current.
                 check(
-                    published.get("version") == release.get("version")
+                    name == "massdo-skills"
+                    or published.get("version") == release.get("version")
                     or published.get("version_hash") != release.get("version_hash"),
                     f"{name}: version {published.get('version')!r} becomes "
                     f"{release.get('version')!r} but version_hash is unchanged "
@@ -507,13 +510,24 @@ for plugin in plugin_dirs:
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
 
-# --- Every skill hard-codes the hash of the plugin that ships it. -----------
+# --- Journal-integrated skills declare their plugin's identity. ------------
 
 # The prefix preserves plugin identity after the published hash changes.
 # Other plugins keep their existing unprefixed contract.
 plugin_hash_prefixes = {"nestor": "1", "nestor-beta": "2"}
 for plugin in plugin_dirs:
     name = plugin.name
+    if name == "massdo-skills":
+        for resource in sorted(plugin.rglob("*")):
+            if resource.is_file():
+                content = resource.read_text(encoding="utf-8", errors="ignore")
+                check(
+                    re.search(r"nestor|version_hash|journal\.mcp-marketplace\.org",
+                              str(resource.relative_to(plugin)) + "\n" + content, re.I) is None,
+                    f"{resource.relative_to(ROOT)}: standalone plugin must not "
+                    "reference Nestor or version_hash",
+                )
+        continue
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
         where = skill.relative_to(ROOT)
