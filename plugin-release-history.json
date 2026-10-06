@@ -245,6 +245,13 @@
     "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37332623522"
   },
   {
+    "name": "nestor",
+    "version": "0.7.12",
+    "version_hash": "4b7c420c34a66aaa",
+    "commit": "e0333d083b14e47e0a8036949035acee0439dc42",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37339398625"
+  },
+  {
     "name": "nestor-beta",
     "version": "0.3.1",
     "version_hash": "4bb9ad2a653b1e1c",
@@ -439,5 +446,12 @@
     "version_hash": "980c63164324e3bd",
     "commit": "0bf9d8c4fcc03549c8362564f415566b85f68352",
     "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37332623522"
+  },
+  {
+    "name": "nestor-beta",
+    "version": "0.10.5",
+    "version_hash": "2f850ebd132088d2",
+    "commit": "e0333d083b14e47e0a8036949035acee0439dc42",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37339398625"
   }
 ]

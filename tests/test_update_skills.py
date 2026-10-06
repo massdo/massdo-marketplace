@@ -36,3 +36,10 @@ class UpdateSkills(unittest.TestCase):
                 update = next(line for line in text.splitlines() if line.startswith("- `update_available`:"))
                 self.assertIn("every manual check", update)
                 self.assertIn("second check", update)
+
+    def test_every_update_skill_follows_the_server_action(self):
+        for skill in ("nestor/skills/check-for-updates", "nestor-beta/skills/check-for-updates",
+                      "nestor/skills/nestor"):
+            with self.subTest(skill=skill):
+                text = (ROOT / "plugins" / skill / "SKILL.md").read_text()
+                self.assertIn("action` is present, do what it asks", text)

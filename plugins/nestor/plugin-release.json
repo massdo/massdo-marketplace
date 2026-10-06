@@ -1,5 +1,5 @@
 {
-  "version": "0.7.12",
-  "version_hash": "4b7c420c34a66aaa",
-  "changelog": "Update checks now require an explicit user invocation and report results in English."
+  "version": "0.7.13",
+  "version_hash": "62fe115907744fe6",
+  "changelog": "Update notices and checks now answer in your language and can offer to run the plugin update for you."
 }
