@@ -13,10 +13,6 @@ The user passes the argument after the skill's name, and depending on the client
 
 Each invocation replaces the previous state instead of adding to it, so an invocation without a number, coming after one with a number, keeps the style and lifts the cap.
 
-## Identify the plugin version
-
-Pass `{ "version_hash": "0a6bcd189636a1d9" }` on every Nestor MCP call.
-
 ## Scope
 
 Apply the style only when the user has explicitly asked for it, by invoking this skill or through an equivalent instruction, and never adopt it on your own, since how a reply is written is otherwise a contextual choice. Once it is on, apply it to every reply until the user drops it. It covers everything you write to the user during a turn, the notes between tool calls included.

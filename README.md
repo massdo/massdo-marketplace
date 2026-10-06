@@ -193,15 +193,15 @@ workflow below is preserved.
 
 What a merge into `main` starts here is described in
 [Plugin release document](#plugin-release-document) and [Release tags](#release-tags): the
-`Validate` workflow's `notify-plugin-releases` job sends the `plugin-release.json` documents
-to the journal server. That is a version notification, not a GitHub Release, and tags stay
-informational.
+`Validate` workflow's `notify-plugin-releases` job sends the journal-integrated plugins'
+`plugin-release.json` documents to the journal server. That is a version notification,
+not a GitHub Release, and tags stay informational.
 
 ## Plugin release document
 
-`plugin-release.json` is a plugin's public version-and-changelog document. The journal server reads it without authentication. Every plugin that ships a skill publishes one — today `massdo-skills`, `nestor` and `nestor-beta` — and `scripts/publish_plugin_releases.py` sends every document it finds.
+`plugin-release.json` is a plugin's public version-and-changelog document. Every plugin that ships a skill publishes one — today `massdo-skills`, `nestor` and `nestor-beta`. The journal server reads the documents for its integrated plugins, and `scripts/publish_plugin_releases.py` excludes the independent `massdo-skills` current release.
 
-- Format: `{ "version": "X.Y.Z", "version_hash": "16 hex", "changelog": "1–3 user-facing lines" }`. No commit list. No internal ticket number.
+- Format for journal-integrated plugins: `{ "version": "X.Y.Z", "version_hash": "16 hex", "changelog": "1–3 user-facing lines" }`. `massdo-skills` uses only `version` and `changelog`, with no hash. No commit list. No internal ticket number.
 - Address: `https://raw.githubusercontent.com/massdo/massdo-marketplace/main/plugins/<name>/plugin-release.json`
 - Service: GitHub raw on `main`. Override the address with `JOURNAL_PLUGIN_RELEASE_URL` on the server.
 - Maximum size: 4096 bytes. A larger document is treated as unreadable.
@@ -214,8 +214,9 @@ Versions without a published hash and releases found only on work branches are e
 The validator checks the source tree, numeric version/hash uniqueness, and preservation
 of previous associations. Run URLs are review evidence; local checks do not query GitHub.
 
-Before replacing a published release, add its association to this file if it is absent.
-Use the commit actually published on `main`, read its `plugin-release.json` with `git show`,
+Before replacing a published release carrying a hash, add its association to this file
+if it is absent. Use the commit actually published on `main`, read its
+`plugin-release.json` with `git show`,
 and verify its successful push run with `gh run view <run> --json event,headSha,conclusion`.
 For a server notification, also check the notification job's checkout commit and successful
 publisher output: queued jobs check out the `main` revision current when they start.
@@ -227,6 +228,8 @@ and the raw `version_hash`; evidence stays in this repository and changelogs sta
 releases. The server merges history without deleting older associations. Local validation
 refuses a version/hash collision or a bump that omits the previous release from history.
 The notification checkout fetches full Git history to verify these sources.
+Historical `massdo-skills` associations remain as evidence; later independent releases
+have no hash and are not added to this journal history.
 
 Activate this publisher only after the server accepts the historical publication contract.
 An open PR and local checks do not prove publication or client activation. After publication,
@@ -243,13 +246,15 @@ can return its `pluginName`. Release documents keep the unprefixed 16-character 
 
 Two consequences:
 
-- Every skill of every plugin hard-codes the hash of the plugin that **ships** it,
+- Every journal-integrated skill hard-codes the hash of the plugin that **ships** it,
   whatever plugin declares the MCP server it calls — a skill that sends none leaves the
   server unable to tell an outdated install that it is outdated. `nestor-beta` declares no
   server and still publishes its own release, so each of its skills sends `nestor-beta`'s
   hash with prefix `2`. `scripts/validate.py` requires the correct prefix and release hash
-  in Nestor skills and executable read examples. Other plugins keep unprefixed hashes.
-- A version bump must regenerate `version_hash` with `openssl rand -hex 8`, and the new
+  in Nestor skills and executable read examples. `massdo-skills` contains no Nestor
+  references or hash instructions, and validation rejects their reintroduction.
+- A version bump of a journal-integrated plugin must regenerate `version_hash` with
+  `openssl rand -hex 8`, and the new
   value must collide with no other published release. Reusing a hash makes the server
   resolve the wrong plugin; keeping the old one makes it report an outdated client as
   current. `--baseline` refuses a bump that changes neither the hash nor the changelog.
@@ -434,16 +439,18 @@ Fast-forwards create no commit and invoke neither hook. Hooks must be activated 
 clone, are not server enforcement, and do not run for a merge made on GitHub. Direct pushes
 to `main` are checked by CI after the push. Never bypass hooks with `--no-verify`.
 
-`--baseline <ref>` requires a plugin whose version changed to also change its changelog and
-version hash. An unavailable baseline is an error; a new plugin absent from a valid baseline
-is allowed. CI fetches history and calls `check-ci.sh`: a PR's merge tree is compared against
+`--baseline <ref>` requires a plugin whose version changed to also change its changelog and,
+for journal-integrated plugins, its version hash. An unavailable baseline is an error;
+a new plugin absent from a valid baseline is allowed. CI fetches history and calls
+`check-ci.sh`: a PR's merge tree is compared against
 its base SHA, and a push against the SHA before the entire push, not just the last commit.
 Only a first push with no predecessor explicitly omits that comparison.
 
 For PRs targeting `main` and pushes to `main`, CI also enables `--require-release`:
 any file added, edited or deleted under an existing plugin requires a higher version
-in its manifests and `plugin-release.json`, with a new hash and changelog. New plugins
-need a valid initial release; changes outside `plugins/` need no plugin release.
+in its manifests and `plugin-release.json`, with a new changelog and, for journal-integrated
+plugins, a new hash. New plugins need a valid initial release; changes outside `plugins/`
+need no plugin release.
 Local commit hooks allow work in progress without a version bump, so the release can
 follow several implementation commits. Check the final branch before opening a PR:
 

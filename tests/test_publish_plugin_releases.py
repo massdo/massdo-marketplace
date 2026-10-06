@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -73,6 +74,44 @@ class PluginReleasePublication(unittest.TestCase):
         self.assertEqual(payload["history"], [
             {key: entry[key] for key in ("name", "version", "version_hash")} for entry in self.history])
         self.assertEqual(json.loads(publisher.release_payload()), payload)
+
+    def test_independent_releases_are_not_discovered_but_keep_published_history(self):
+        independent = {"name": "massdo-skills", "version": "0.11.2",
+                       "version_hash": "0a6bcd189636a1d9", "changelog": "Legacy release"}
+        self.releases.append(independent)
+        self.write_releases()
+        self.commit()
+        baseline = self.git("rev-parse", "HEAD")
+        self.git("update-ref", "refs/remotes/origin/main", baseline)
+        self.history.append({key: independent[key] for key in ("name", "version", "version_hash")}
+                            | {"commit": baseline,
+                               "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/2"})
+        self.write_history(self.history)
+        independent.pop("version_hash")
+        scripts = self.root / "scripts"
+        scripts.mkdir()
+        for name in ("publish_plugin_releases.py", "plugin_release_history.py"):
+            shutil.copy2(ROOT / "scripts" / name, scripts / name)
+        for version in ("0.11.3", "0.11.4"):
+            with self.subTest(version=version):
+                independent.update(version=version, changelog="Standalone skills " + version)
+                self.write_releases()
+                # Import in the fixture to exercise real discovery, not the patched names.
+                payload = json.loads(subprocess.check_output(
+                    [sys.executable, "-c", "import sys; sys.path.insert(0, 'scripts'); "
+                     "import publish_plugin_releases as p; print(p.release_payload().decode())"],
+                    cwd=self.root, env=self.env, text=True))
+                self.assertEqual(payload["releases"], self.releases[:2])
+                self.assertEqual(payload["history"], [
+                    {key: entry[key] for key in ("name", "version", "version_hash")}
+                    for entry in self.history])
+                load_history(self.root, self.releases, baseline=baseline)
+                self.commit()
+                baseline = self.git("rev-parse", "HEAD")
+                self.git("update-ref", "refs/remotes/origin/main", baseline)
+        self.write_history(self.history[:-1])
+        with self.assertRaisesRegex(ValueError, "preserve previous associations"):
+            load_history(self.root, self.releases, baseline=baseline)
 
     def test_invalid_evidence_stops_publication_before_http(self):
         for field, value, message in (

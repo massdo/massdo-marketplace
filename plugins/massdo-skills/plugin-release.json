@@ -1,5 +1,4 @@
 {
-  "version": "0.11.2",
-  "version_hash": "0a6bcd189636a1d9",
-  "changelog": "Ship moved to the nestor-beta plugin: install it and invoke /nestor-beta:ship [list] or $nestor-beta:ship [list]. massdo-skills no longer provides it."
+  "version": "0.11.3",
+  "changelog": "Response style and text extraction skills run independently, without external service calls or version identity requirements."
 }
