@@ -9,7 +9,7 @@ identifies this release and is independent of every item's `version`.
 No necessary content or matched pair is held:
 
 ```json
-{"ref":"brown_turtle","known":null,"scope":{"mode":"global"},"version_hash":"162fe115907744fe6"}
+{"ref":"brown_turtle","known":null,"scope":{"mode":"global"},"version_hash":"1c6176405895b2949"}
 ```
 
 The full response supplies the item, tags, relations and its matched pair. Suppose the
@@ -22,7 +22,7 @@ The user asks "Can this task be built now?" and its full plan and pair are still
 Check freshness with that pair:
 
 ```json
-{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"162fe115907744fe6"}
+{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"1c6176405895b2949"}
 ```
 
 If the item has not changed, the short response is:
@@ -41,7 +41,7 @@ The same held revision is sent; do not guess the next revision or replace the pa
 the plugin hash:
 
 ```json
-{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"162fe115907744fe6"}
+{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"1c6176405895b2949"}
 ```
 
 If the current revision is 4, the server returns full content with `item.version: 4` and
@@ -54,7 +54,7 @@ as `expectedVersion` and `expectedEtag`, without a preventive read or a read aft
 Some content is held, some is missing, and a reference is repeated:
 
 ```json
-{"ref":["brown_turtle","gray_xerinae","brown_turtle","missing_task"],"known":[{"version":3,"etag":"revision-3-etag"},null,{"version":3,"etag":"revision-3-etag"},null],"scope":{"mode":"global"},"version_hash":"162fe115907744fe6"}
+{"ref":["brown_turtle","gray_xerinae","brown_turtle","missing_task"],"known":[{"version":3,"etag":"revision-3-etag"},null,{"version":3,"etag":"revision-3-etag"},null],"scope":{"mode":"global"},"version_hash":"1c6176405895b2949"}
 ```
 
 Each `results[i]` belongs to `ref[i]` and `known[i]`. Preserve the duplicate and handle
