@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nestor Beta"
+  short_description: "Trace Nestor tasks in the pull request footer"
+  default_prompt: "Use $nestor-beta:nestor-beta to list the Nestor tasks this pull request implements in its footer."
+
+policy:
+  allow_implicit_invocation: true

@@ -207,8 +207,8 @@ for plugin in plugin_dirs:
     # Every release document agrees with its manifests. The independent style
     # plugin keeps version and changelog without a journal identity hash.
     #
-    # The document itself is the trigger, not a namesake skill: nestor-beta
-    # publishes a release without shipping a skill named after it. A namesake
+    # The document itself is the trigger, not a namesake skill: a plugin can
+    # publish a release without shipping a skill named after it. A namesake
     # skill still requires one, since that skill *is* the installable plugin.
     agreed = next(iter(set(versions.values())), None)
     namesake_skill = plugin / "skills" / name / "SKILL.md"
