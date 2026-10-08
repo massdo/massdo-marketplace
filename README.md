@@ -16,6 +16,7 @@ This repository is the canonical source for the Nestor journal skill and its Cod
 - `plugins/nestor/.mcp.json`: Claude Code and Codex public MCP connection.
 - `plugins/nestor/mcp.json`: Cursor public MCP connection.
 - `plugins/nestor-beta/`: staging plugin for skills under test, see [Beta staging plugin](#beta-staging-plugin).
+- `plugins/nestor-beta/skills/nestor-beta/`: extension of the journal skill that traces Nestor tasks in the pull request footer; see [Link tasks to pull requests](#link-tasks-to-pull-requests).
 - `plugins/nestor-beta/skills/ship/`: score a GitHub repository's open pull requests, return only their list with `ship list`, or merge the ready ones into `main` once you agree and follow its release procedure; see [Ship pending work](#ship-pending-work).
 - `plugins/massdo-skills/skills/extract-signal/`: clarify dictation transcripts, rough notes, and brainstorming while preserving their information and uncertainty, then act on the result; `raw` returns the result alone.
 - `.agents/plugins/marketplace.json`: Codex marketplace catalog.
@@ -114,7 +115,7 @@ ecosystems do not read the same one:
 
 | Skill | Model may invoke | Held by |
 |---|---|---|
-| `nestor`, `activity` | yes | nothing to set |
+| `nestor`, `activity`, `nestor-beta` | yes | nothing to set |
 | `check-for-updates` (stable and Beta), `tree`, `answer-short`, `articulate`, `chief-of-staff`, `extract-signal`, `ship`, `build`, `spec`, `doctor`, `clean-task`, `next-tasks` | no | `disable-model-invocation: true`, and `policy.allow_implicit_invocation: false` in `agents/openai.yaml` |
 
 Codex does not honour `disable-model-invocation`; `agents/openai.yaml` is what holds there,
@@ -321,7 +322,7 @@ cited the way the `nestor` skill prescribes.
 
 ### Link tasks to pull requests
 
-`build`, `ship` and `doctor` share one contract. A pull request that contributes to Nestor
+`build`, `ship`, `doctor` and `nestor-beta` share one contract. A pull request that contributes to Nestor
 tasks ends its description with one visible line, the last of the description:
 
 ```
@@ -343,6 +344,8 @@ and carry no Nestor id or slug, and titles are in English.
   conform, and keeps the slugs when a delivery groups several pull requests.
 - `doctor` reads the descriptions of merged pull requests and takes slugs from the footer
   alone.
+- `nestor-beta` states this contract for code written from Nestor tasks without `build`. It
+  extends the `nestor` skill and, like it, starts without an explicit invocation.
 
 That footer is the only link. Nothing reads a slug or an id from a branch name, a title or a
 commit message any more, and there is no fallback to the former references.

@@ -1,5 +1,5 @@
 {
-  "version": "0.10.6",
-  "version_hash": "cd16c8c7446cc65b",
-  "changelog": "Nestor Beta update checks now answer in your language and can offer to run the plugin update for you."
+  "version": "0.11.0",
+  "version_hash": "a2cc476ca4c165c2",
+  "changelog": "A new nestor-beta skill, loaded by the agent on its own as an extension of the Nestor skill, traces Nestor tasks in the pull request footer.\nCode written from tasks without Build now ends its pull request description with a line such as nestor tasks: brown_turtle, gray_xerinae, and keeps task ids and slugs out of branch names, commit subjects and pull request titles."
 }
