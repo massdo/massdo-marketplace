@@ -1,12 +1,29 @@
-# Massdo marketplace
+<p align="center">
+  <img src=".github/assets/hero.svg" width="100%" alt="massdo marketplace: Nestor, the wise old king with a laurel wreath, a staff and a scroll, inside a ring of neon lights over a synthwave grid. nestor is for everyone, nestor-beta is for coders.">
+</p>
 
-Trois plugins : `nestor`, `nestor-beta`, `massdo-skills`. Un seul serveur MCP, livré par `nestor`.
+<p align="center">
+  <b>Three plugins for your AI agent.</b><br>
+  One paste to install them, one command to run them.
+</p>
 
-`nestor-beta` s’installe en plus de `nestor`.
+<br>
 
-## Installer
+## 🏛️ Three plugins
 
-### Claude Code
+<p align="center">
+  <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
+</p>
+
+**nestor** is for everyone, no code needed. **nestor-beta** is for coders and goes on top of nestor. **massdo-skills** stands on its own.
+
+## 🕹️ Install
+
+Pick your agent, copy, paste. Done.
+Only want one plugin? Keep just its line.
+
+<details>
+<summary><b>Claude Code</b></summary>
 
 ```bash
 claude plugin marketplace add massdo/massdo-marketplace
@@ -15,7 +32,10 @@ claude plugin install nestor-beta@massdo-marketplace
 claude plugin install massdo-skills@massdo-marketplace
 ```
 
-### Codex
+</details>
+
+<details>
+<summary><b>Codex</b></summary>
 
 ```bash
 codex plugin marketplace add massdo/massdo-marketplace
@@ -24,7 +44,10 @@ codex plugin add nestor-beta@massdo-marketplace
 codex plugin add massdo-skills@massdo-marketplace
 ```
 
-### Cursor
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
 
 ```bash
 git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketplace"
@@ -34,97 +57,94 @@ ln -sfn "$HOME/massdo-marketplace/plugins/nestor-beta" "$HOME/.cursor/plugins/lo
 ln -sfn "$HOME/massdo-marketplace/plugins/massdo-skills" "$HOME/.cursor/plugins/local/massdo-skills"
 ```
 
-Puis **Developer: Reload Window**.
+Then run **Developer: Reload Window**.
 
-### Kimi Code
+</details>
+
+<details>
+<summary><b>Kimi Code</b></summary>
 
 ```bash
 git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketplace"
 ```
 
-Dans le TUI :
+Then, in the TUI:
 
-```
+```text
 /plugins install ~/massdo-marketplace/plugins/nestor
 /plugins install ~/massdo-marketplace/plugins/nestor-beta
 /plugins install ~/massdo-marketplace/plugins/massdo-skills
 /reload
 ```
 
-## MCP
+</details>
 
-| | Serveur | URL |
-|---|---|---|
-| 📓 | nestor | `https://journal.mcp-marketplace.org/mcp` |
+## 🪄 Use
 
-Branché par le plugin `nestor`. `nestor-beta` et `massdo-skills` n’en déclarent pas.
+Type the command in your agent. Each agent has its own accent:
 
-## Skills
-
-Même skill, quatre écritures :
-
-| Claude Code | Codex | Cursor | Kimi Code |
-|---|---|---|---|
-| `/nestor:tree` | `$nestor:tree` | `/tree` | `/skill:tree` |
-
-Les commandes ci-dessous sont la forme Claude Code.
-
-### 📓 nestor
-
-```
-/nestor:nestor
-/nestor:activity
-/nestor:tree
-/nestor:check-for-updates
+```text
+Claude Code   /nestor:tree
+Codex         $nestor:tree
+Cursor        /tree
+Kimi Code     /skill:tree
 ```
 
-| | Skill | |
-|---|---|---|
-| 📓 | `nestor` | Tâches, notes, projets, historique |
-| ⏱️ | `activity` | Chrono et rapports de temps |
-| 🌳 | `tree` | Arbre ASCII du projet |
-| 🔄 | `check-for-updates` | Version installée de nestor |
+Everything below is written in Claude Code’s accent.
 
-### 🧪 nestor-beta
+### 📜 nestor · for everyone
 
-```
-/nestor-beta:nestor-beta
-/nestor-beta:build
-/nestor-beta:ship
-/nestor-beta:ship list
-/nestor-beta:doctor
-/nestor-beta:clean-task
-/nestor-beta:next-tasks
-/nestor-beta:spec
-/nestor-beta:check-for-updates
-```
+Like the old king of Pylos, it remembers everything. Tasks, notes, projects and hours, in plain words. No code needed: mention a task and it shows up on its own.
 
-| | Skill | |
-|---|---|---|
-| 🔗 | `nestor-beta` | Footer `nestor tasks:` sur les pull requests |
-| 🏗️ | `build` | Une tâche vers une pull request |
-| 🚢 | `ship` | PR ouvertes, puis merge dans `main` |
-| 🩺 | `doctor` | Tâches livrées à clôturer |
-| 🧹 | `clean-task` | Nettoyer le corps d’une tâche |
-| 📋 | `next-tasks` | Tâches actives d’un projet |
-| 📐 | `spec` | Une idée vers un arbre de tâches |
-| 🔄 | `check-for-updates` | Version installée de nestor-beta |
+<p align="center">
+  <img src=".github/assets/nestor-cloud.svg" width="100%" alt="One memory for all your AI agents: Claude Code, Codex, Cursor and Kimi Code are wired to the Nestor cloud. Claude Code adds book hotel, Cursor asks what is next, Codex marks it done, Kimi Code finds the Lisbon notes.">
+</p>
 
-`ship list` ne fait que lister.
+A trip, a building site, a client project, a family move: your tasks live in the cloud, not in one agent. Add “book hotel” in Claude Code, Cursor tells you it is next, Codex ticks it off, Kimi Code finds your Lisbon notes.
 
-### ✨ massdo-skills
+<p align="center">
+  <img src=".github/assets/nestor-search.svg" width="100%" alt="Story: planning a trip to Lisbon. First, semantic search: where did I want to eat? finds dinner spots in Alfama, a table at Ramiro and a pastry list, with no word in common. Then deterministic search: the tag @@lisbon with the todo filter lists every task tagged lisbon, the same list every time.">
+</p>
 
-```
-/massdo-skills:answer-short
-/massdo-skills:articulate
-/massdo-skills:chief-of-staff
-/massdo-skills:extract-signal
-/massdo-skills:extract-signal raw
-```
+Two ways to find them. **Semantic** search understands what you mean, even with other words. **Deterministic** search sticks to exact words, tags and filters, like the tags in Apple Notes, and gives the same list every time. Ask in plain words and nestor mixes both.
 
-| | Skill | |
-|---|---|---|
-| ✂️ | `answer-short` | Réponses courtes. `reset` lève le style |
-| ✍️ | `articulate` | Phrases complètes. `reset` lève le style |
-| 🎯 | `chief-of-staff` | Décider, mener par le résultat. `reset` lève la posture |
-| 📡 | `extract-signal` | Clarifier un texte brut. `raw` renvoie le signal seul |
+- 📓 `/nestor:nestor` — tasks, notes, projects, history
+- ⏱️ `/nestor:activity` — start a timer, get your hours
+- 🌳 `/nestor:tree` — draws a project as a tree
+- 🔄 `/nestor:check-for-updates` — looks for an update
+
+> [!NOTE]
+> nestor plugs in the only MCP server in the house: `https://journal.mcp-marketplace.org/mcp`
+
+### 💾 nestor-beta · for coders
+
+Nestor learned to code. It takes you from an idea to merged pull requests. Install it **on top of** nestor.
+
+<p align="center">
+  <img src=".github/assets/parcours.svg" width="100%" alt="A board game: your idea, then spec turns it into tasks, build turns a task into a pull request, ship merges it into main, doctor closes the shipped tasks. Shortcut when you do not know what to do next: next-tasks finds the project through Git, or takes the one you name, and lists its tasks to do now.">
+</p>
+
+Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run `next-tasks`: in a repo it finds the project through Git, anywhere else you name it (`/nestor-beta:next-tasks lisbon-trip`), and it lists what to do now.
+
+- 📐 `/nestor-beta:spec` — turns your idea into a task tree, one question at a time
+- 📋 `/nestor-beta:next-tasks` — lists a project’s active tasks
+- 🏗️ `/nestor-beta:build` — turns a task into a pull request
+- 🚢 `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
+- 🩺 `/nestor-beta:doctor` — offers to close tasks that already shipped
+- 🧹 `/nestor-beta:clean-task` — tidies up a task
+- 🔄 `/nestor-beta:check-for-updates` — looks for an update
+
+Behind the scenes, 🔗 `nestor-beta` signs your pull requests with a `nestor tasks:` footer. Nothing to type.
+
+### 🎭 massdo-skills · for style
+
+Changes how your agent talks to you. A style stays on until `reset`.
+
+- ✂️ `/massdo-skills:answer-short` — short answers, 120 words max
+- ✍️ `/massdo-skills:articulate` — full sentences that connect
+- 🎯 `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
+- 📡 `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
+
+<br>
+
+<p align="center"><sub>🏛️ Made by massdo</sub></p>

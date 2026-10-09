@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 490" width="1200" height="490" role="img" aria-labelledby="title desc">
+  <title id="title">A task’s journey with nestor-beta</title>
+  <desc id="desc">A board game: your idea, then spec turns it into tasks, build turns a task into a pull request, ship merges it into main, and doctor closes the shipped tasks. A shortcut when you do not know what to do next: next-tasks finds the project through Git, or takes the project you name, lists its tasks to do now, and joins the path before build.</desc>
+  <style>
+    text { font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", Nunito, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .trail { stroke-dasharray: 2 18; animation: march 1.2s linear infinite; }
+    @keyframes march { to { stroke-dashoffset: -40; } }
+    @media (prefers-reduced-motion: reduce) { .trail { animation: none; } }
+  </style>
+
+  <defs>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#1E1B3A" opacity=".08"/>
+    </pattern>
+  </defs>
+
+  <!-- Card -->
+  <rect x="24" y="24" width="1166" height="456" rx="36" fill="#1E1B3A"/>
+  <rect x="10" y="10" width="1166" height="456" rx="36" fill="#FFF6E6"/>
+  <rect x="10" y="10" width="1166" height="456" rx="36" fill="url(#dots)"/>
+  <rect x="10" y="10" width="1166" height="456" rx="36" fill="none" stroke="#1E1B3A" stroke-width="5"/>
+
+  <!-- Trail -->
+  <path class="trail" d="M120 145 C200 75 280 75 360 145 S520 215 600 145 S760 75 840 145 S1000 215 1080 145" fill="none" stroke="#1E1B3A" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Shortcut: tasks that already exist -->
+  <path class="trail" d="M338 350 H424" fill="none" stroke="#1E1B3A" stroke-width="7" stroke-linecap="round"/>
+  <path class="trail" d="M480 296 V206" fill="none" stroke="#1E1B3A" stroke-width="7" stroke-linecap="round"/>
+  <rect x="62" y="335" width="270" height="30" rx="15" fill="#fff" stroke="#1E1B3A" stroke-width="3.5"/>
+  <text x="197" y="356" text-anchor="middle" font-size="16" font-weight="800" fill="#1E1B3A" letter-spacing="1.5">WHAT DO I DO NEXT?</text>
+  <circle cx="486" cy="356" r="46" fill="#1E1B3A" stroke="#1E1B3A" stroke-width="5"/>
+  <circle cx="480" cy="350" r="46" fill="#FF8FC7" stroke="#1E1B3A" stroke-width="5"/>
+  <text x="480" y="365" text-anchor="middle" font-size="42" font-weight="900" fill="#1E1B3A">2</text>
+  <text class="mono" x="548" y="330" font-size="26" font-weight="800" fill="#1E1B3A">next-tasks</text>
+  <g font-size="19" font-weight="700" fill="#1E1B3A" fill-opacity=".7">
+    <text x="548" y="362">in a repo, it finds your project through Git</text>
+    <text x="548" y="390">anywhere else, name it: lisbon-trip, kitchen-works…</text>
+    <text x="548" y="418">it lists the tasks to do now, then you build one</text>
+  </g>
+
+  <!-- Start sticker -->
+  <rect x="72" y="44" width="96" height="30" rx="15" fill="#fff" stroke="#1E1B3A" stroke-width="3.5"/>
+  <text x="120" y="65" text-anchor="middle" font-size="16" font-weight="800" fill="#1E1B3A" letter-spacing="1.5">START</text>
+
+  <!-- Finish flag -->
+  <path d="M1080 100 V34" stroke="#1E1B3A" stroke-width="5" stroke-linecap="round"/>
+  <rect x="1080" y="34" width="44" height="28" fill="#fff" stroke="#1E1B3A" stroke-width="3.5"/>
+  <g fill="#1E1B3A">
+    <rect x="1080" y="34" width="11" height="14"/>
+    <rect x="1102" y="34" width="11" height="14"/>
+    <rect x="1091" y="48" width="11" height="14"/>
+    <rect x="1113" y="48" width="11" height="14"/>
+  </g>
+
+  <!-- Squares -->
+  <g stroke="#1E1B3A" stroke-width="5">
+    <circle cx="126" cy="151" r="46" fill="#1E1B3A"/>
+    <circle cx="120" cy="145" r="46" fill="#FFC93C"/>
+    <circle cx="366" cy="151" r="46" fill="#1E1B3A"/>
+    <circle cx="360" cy="145" r="46" fill="#FF6B4A"/>
+    <circle cx="606" cy="151" r="46" fill="#1E1B3A"/>
+    <circle cx="600" cy="145" r="46" fill="#2FD3A7"/>
+    <circle cx="846" cy="151" r="46" fill="#1E1B3A"/>
+    <circle cx="840" cy="145" r="46" fill="#5CC8FF"/>
+    <circle cx="1086" cy="151" r="46" fill="#1E1B3A"/>
+    <circle cx="1080" cy="145" r="46" fill="#A88BFF"/>
+  </g>
+  <g font-size="42" font-weight="900" fill="#1E1B3A" text-anchor="middle">
+    <text x="120" y="160">1</text>
+    <text x="360" y="160">2</text>
+    <text x="600" y="160">3</text>
+    <text x="840" y="160">4</text>
+    <text x="1080" y="160">5</text>
+  </g>
+
+  <!-- Labels -->
+  <g text-anchor="middle" fill="#1E1B3A">
+    <text x="120" y="236" font-size="26" font-weight="800">your idea</text>
+    <text class="mono" x="360" y="236" font-size="26" font-weight="800">spec</text>
+    <text class="mono" x="600" y="236" font-size="26" font-weight="800">build</text>
+    <text class="mono" x="840" y="236" font-size="26" font-weight="800">ship</text>
+    <text class="mono" x="1080" y="236" font-size="26" font-weight="800">doctor</text>
+  </g>
+  <g text-anchor="middle" fill="#1E1B3A" fill-opacity=".7" font-size="19" font-weight="700">
+    <text x="120" y="266">you tell it</text>
+    <text x="360" y="266">it becomes tasks</text>
+    <text x="600" y="266">a task becomes a PR</text>
+    <text x="840" y="266">the PR lands in main</text>
+    <text x="1080" y="266">done tasks close</text>
+  </g>
+</svg>
