@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Resume"
+  short_description: "Explicitly restore and archive a project's handoff"
+  default_prompt: "Use $nestor:resume [project] only on my explicit request to restore this project's saved context and archive its handoff without starting work."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: false

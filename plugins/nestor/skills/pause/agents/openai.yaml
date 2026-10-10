@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Pause"
+  short_description: "Explicitly save a project's work context for later"
+  default_prompt: "Use $nestor:pause [project] only on my explicit request to save this project's work context in a Nestor handoff note."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: false

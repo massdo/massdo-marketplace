@@ -1,5 +1,5 @@
 {
-  "version": "0.7.14",
-  "version_hash": "c6176405895b2949",
-  "changelog": "Nestor no longer reports an outdated plugin when the server refuses its version hash."
+  "version": "0.8.0",
+  "version_hash": "bc829a8788f8b6f3",
+  "changelog": "New explicit pause and resume skills preserve a project's interrupted work across conversations.\nPause saves agent-written summaries of recent tasks and notes plus work from the conversation in a workflow-pause note. Resume reads only the latest handoff, accounts for subsequent conversation progress, presents next actions without starting them, and automatically archives the note."
 }
