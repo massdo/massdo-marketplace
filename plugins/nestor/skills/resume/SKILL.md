@@ -12,16 +12,16 @@ handoff note's body, prepare the response, then archive that note automatically.
 Do not start work or invoke another skill.
 
 The `nestor` skill governs shared MCP procedures, conditional reads, optimistic
-mutations and item citations. Its journal MCP server is provided by the nestor plugin.
+mutations and item citations.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2a2cc476ca4c165c2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1c6176405895b2949" }` on every Nestor MCP call.
 
 ## Invocation and project
 
-- Claude Code: `/nestor-beta:resume [project]`.
-- Codex: `$nestor-beta:resume [project]`.
+- Claude Code: `/nestor:resume [project]`.
+- Codex: `$nestor:resume [project]`.
 - Cursor: select the skill, then supply the project name.
 
 Run only after a direct user invocation. Read arguments after the skill name, including
@@ -79,7 +79,7 @@ Check that the result is an available note of the resolved project, still tagged
 
 | Field | Required value or type |
 | --- | --- |
-| `kind` | `"nestor-beta.pause"` |
+| `kind` | `"nestor.pause"` |
 | `schemaVersion` | `1` |
 | `projectId` | The resolved project's returned id |
 | `capturedAt` | Valid UTC ISO 8601 instant with milliseconds, identical to the title |

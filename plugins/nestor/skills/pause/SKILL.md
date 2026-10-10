@@ -17,12 +17,12 @@ handoff storage.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2a2cc476ca4c165c2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1c6176405895b2949" }` on every Nestor MCP call.
 
 ## Invocation and project
 
-- Claude Code: `/nestor-beta:pause [project]`.
-- Codex: `$nestor-beta:pause [project]`.
+- Claude Code: `/nestor:pause [project]`.
+- Codex: `$nestor:pause [project]`.
 - Cursor: select the skill, then supply the project name.
 
 Run only after a direct invocation by the user. Read the arguments after the skill name,
@@ -75,7 +75,7 @@ Start exactly two filtered `search_items` searches in the resolved project:
 Omit `query` and `dateTo`. Without text the search is deterministic, the date filter
 selects modification time, and pagination uses cursors. The lower bound is inclusive.
 Follow each search's cursor to its last page, using the short pagination request
-`{ "cursor": "<returned cursor>", "version_hash": "2a2cc476ca4c165c2" }`. Report
+`{ "cursor": "<returned cursor>", "version_hash": "1c6176405895b2949" }`. Report
 `hasMore` while pages remain; a missing page prevents a complete handoff.
 
 Keep modifications in the interval T minus 60 minutes through T; exclude results
@@ -124,7 +124,7 @@ The body contains one JSON code block, with no duplicate summary section:
 
 ```json
 {
-  "kind": "nestor-beta.pause",
+  "kind": "nestor.pause",
   "schemaVersion": 1,
   "projectId": "<id returned by Nestor>",
   "capturedAt": "2026-10-10T08:00:00.000Z",
