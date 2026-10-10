@@ -97,3 +97,40 @@ contains `modified`, `conversation` or both, without duplicates. The handoff nee
 no linked bodies, ids, versions or ETags. Do not fetch missing data from linked items.
 If the selected note is invalid or incompatible, explain the failure and leave it
 unarchived; do not silently consume an older note instead.
+
+## Prepare the response, then archive
+
+Prepare the entire response from the validated handoff and explicit facts already in
+this conversation. State the project and capture time, objective and known progress.
+Restore every linked task and note with its saved summary, citing each in one code
+span containing its slug and a short description, as Nestor requires. Include known
+decisions, blockers and proposed next actions without repeating the summaries.
+Empty `tasks` and `notes` mean the context alone is restored. Empty `nextActions`
+means none were recorded; invent no work to execute. Git details remain observations
+from the pause.
+
+Explain that saved information dates from `capturedAt` and does not verify current
+task or note state. When explicit conversation facts show progress since the pause,
+use them: an action already completed must not be proposed again. A newer explicit
+decision takes precedence over an older contradictory one; state the visible difference.
+This reconciliation adds no MCP reads and changes neither the handoff body nor tasks.
+
+Only once validation and response preparation are complete, archive the selected note
+with `update_item`, `operation: "patch"`, `patch: { "archived": true }`. Use the
+note's held pair directly as `expectedVersion` and `expectedEtag`; archive is the only
+patch field. Do not ask for an extra confirmation, make a preventive read or perform
+a post-success read. Change no other note or task. Archived handoffs remain in Nestor;
+never delete them.
+
+Present the prepared context and the confirmed archive result. Do not start the next
+actions automatically or claim that response delivery is guaranteed before a transport
+interruption.
+
+For an optimistic conflict, discard the refused pair and use `details.current` when
+present; it supplies the current selected note and its matched pair. Only when that
+field is absent may one conditional `get_item` of this same note resolve the conflict.
+Never read a linked task or note. If already archived, report that state with no
+unnecessary mutation. If trashed, moved, untagged or invalid, stop mutations and explain
+the change. If content changed, revalidate it and fully adapt the response before one
+retry with the new pair. Never mix a version and ETag from different responses or
+replay the old patch blindly. A second conflict ends the archive attempt.
