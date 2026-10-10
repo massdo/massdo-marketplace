@@ -111,3 +111,66 @@ Without any context worth keeping, explain that result and create nothing. If a 
 read fails or remains incomplete, report it and stop before creating a handoff that
 would imply a complete capture. Do not change any existing item's content, status,
 dates or tags.
+
+## Write and store one self-contained handoff
+
+Write each selected task's and note's summary yourself: one or two sentences, at most
+50 words, covering its subject, known progress and useful point of continuation. Make
+unknown information explicit. Write the overall objective, progress, decisions,
+blockers and proposed next actions in a useful order, without inventing any of them.
+
+The title is exactly `Pause — <capturedAt>`, with T in UTC ISO 8601 with milliseconds.
+The body contains one JSON code block, with no duplicate summary section:
+
+```json
+{
+  "kind": "nestor-beta.pause",
+  "schemaVersion": 1,
+  "projectId": "<id returned by Nestor>",
+  "capturedAt": "2026-10-10T08:00:00.000Z",
+  "windowMinutes": 60,
+  "objective": "<work objective>",
+  "progress": "<known overall progress>",
+  "decisions": [],
+  "blockers": [],
+  "nextActions": [],
+  "tasks": [
+    {
+      "slug": "<slug returned by Nestor>",
+      "summary": "<agent-written summary>",
+      "statusAtPause": "in_progress",
+      "sources": ["modified", "conversation"]
+    }
+  ],
+  "notes": [
+    {
+      "slug": "<slug returned by Nestor>",
+      "summary": "<agent-written summary>",
+      "sources": ["modified"]
+    }
+  ]
+}
+```
+
+`objective`, `progress` and each summary are strings. `decisions`, `blockers` and
+`nextActions` are arrays of strings; empty arrays mean nothing known to record.
+`tasks: []` and `notes: []` are valid. Each slug appears once, exactly as returned by
+Nestor. A task's `statusAtPause` is `todo`, `in_progress` or `need_review`.
+`sources` contains `modified`, `conversation` or both, matching the selection evidence.
+
+Only for code work with known Git observations, add an optional `git` object with any
+known `branch`, `commit` and `pullRequest` strings. Omit unknown fields. Copy no full
+task or note bodies, identifiers, versions or ETags into the handoff; `resume` needs
+only the slugs and summaries. The note's own version and ETag are assigned by Nestor.
+
+Call `create_item` once in the resolved project, with `type: "note"`, this title and
+body, and `tagNames: ["workflow-pause"]`. This is an ordinary tag, not a reserved
+system marker. Each pause creates a distinct note; do not rewrite or archive previous
+handoffs. There is no automatic expiration, so a handoff remains usable after eight
+hours or longer. `resume` archives the note it consumes; neither skill deletes it.
+
+Announce only an MCP-confirmed creation and cite the returned note using Nestor's
+slug-and-description format. An MCP failure produces no invented result or local
+fallback. If the creation response is lost, report an unknown outcome and do not
+automatically replay the call. Reuse a confirmed mutation's returned pair directly
+when needed; make no post-success `get_item` verification call.
