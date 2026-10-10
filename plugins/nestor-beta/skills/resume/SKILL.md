@@ -53,3 +53,47 @@ Never read a linked task or note, resolve its slug, verify its current status, c
 its versions or consult its history. Do not inventory tasks or search their contents.
 Do not use snapshots or `list_events` to enrich the response. These limits also apply
 to error and conflict handling: an inaccessible linked slug still has its saved summary.
+
+## Select and validate one handoff
+
+Call `list_items` in the resolved project's scope with `view: "notes"` and
+`filters: { "tagNames": ["workflow-pause"] }`. Use the server's normal compact
+projection, not full bodies. Only non-archived, non-trashed notes are candidates.
+
+Parse the exact structured titles `Pause — <capturedAt>`, where `capturedAt` is a
+valid UTC ISO 8601 instant with milliseconds. Traverse all metadata pages needed to
+establish the latest capture, following each returned cursor with `version_hash`.
+Never present a partial discovery as exhaustive. Choose the greatest title timestamp,
+not the most recently modified note: changing an old body does not make it the latest
+capture. Apply no recency cutoff; a note eight hours old or older remains eligible.
+Report incompatible titles without reading their bodies. Read no unselected body.
+
+Read the chosen note with `get_item`, using its returned reference in `ref` and the
+resolved project scope. Pass `known: null` when its necessary content or matched pair
+is absent; otherwise pass the held `{ "version": ..., "etag": ... }`. With
+`unchanged: true`, keep that content and pair and refresh the project name. Preserve
+the note's matched pair for archiving, with no preventive read before `update_item`.
+
+Check that the result is an available note of the resolved project, still tagged
+`workflow-pause`, and that its body contains one JSON block satisfying this contract:
+
+| Field | Required value or type |
+| --- | --- |
+| `kind` | `"nestor-beta.pause"` |
+| `schemaVersion` | `1` |
+| `projectId` | The resolved project's returned id |
+| `capturedAt` | Valid UTC ISO 8601 instant with milliseconds, identical to the title |
+| `windowMinutes` | `60` |
+| `objective`, `progress` | Strings |
+| `decisions`, `blockers`, `nextActions` | Arrays of strings; empty is valid |
+| `tasks` | Array of `slug`, `summary`, `statusAtPause`, `sources`; empty is valid |
+| `notes` | Array of `slug`, `summary`, `sources`; empty is valid |
+| `git` | Optional object of known `branch`, `commit`, `pullRequest` strings |
+
+Each linked entry has a non-empty slug and an agent-written summary of one or two
+sentences, at most 50 words. Slugs are unique within the saved entries.
+`statusAtPause` must be `todo`, `in_progress` or `need_review`. Each `sources` array
+contains `modified`, `conversation` or both, without duplicates. The handoff needs
+no linked bodies, ids, versions or ETags. Do not fetch missing data from linked items.
+If the selected note is invalid or incompatible, explain the failure and leave it
+unarchived; do not silently consume an older note instead.
