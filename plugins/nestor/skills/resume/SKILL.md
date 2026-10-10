@@ -16,7 +16,7 @@ mutations and item citations.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1c6176405895b2949" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1bc829a8788f8b6f3" }` on every Nestor MCP call.
 
 ## Invocation and project
 

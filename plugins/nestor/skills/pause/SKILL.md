@@ -17,7 +17,7 @@ handoff storage.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1c6176405895b2949" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1bc829a8788f8b6f3" }` on every Nestor MCP call.
 
 ## Invocation and project
 
@@ -75,7 +75,7 @@ Start exactly two filtered `search_items` searches in the resolved project:
 Omit `query` and `dateTo`. Without text the search is deterministic, the date filter
 selects modification time, and pagination uses cursors. The lower bound is inclusive.
 Follow each search's cursor to its last page, using the short pagination request
-`{ "cursor": "<returned cursor>", "version_hash": "1c6176405895b2949" }`. Report
+`{ "cursor": "<returned cursor>", "version_hash": "1bc829a8788f8b6f3" }`. Report
 `hasMore` while pages remain; a missing page prevents a complete handoff.
 
 Keep modifications in the interval T minus 60 minutes through T; exclude results
