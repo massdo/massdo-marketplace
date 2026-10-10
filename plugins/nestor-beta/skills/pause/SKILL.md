@@ -31,7 +31,7 @@ string is one project name: preserve internal spaces. Blank arguments mean no pr
 was supplied.
 
 An explicit project takes precedence over the workspace; do not read Git to replace it.
-Otherwise use the same resolution as `next-tasks`, without invoking that skill:
+Otherwise resolve it from the workspace:
 
 1. Find the workspace's Git root; a subdirectory or linked worktree must resolve as its
    root does.

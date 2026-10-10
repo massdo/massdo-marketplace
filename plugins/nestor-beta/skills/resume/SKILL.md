@@ -29,7 +29,7 @@ a final `ARGUMENTS: …` line when supplied by the client. The whole argument st
 one project name: preserve internal spaces. Blank arguments mean no explicit project.
 
 An explicit project takes precedence over the workspace; do not read Git to replace it.
-Otherwise use the resolution of `next-tasks`, without invoking it:
+Otherwise resolve it from the workspace:
 
 1. Find the workspace's Git root, including from a subdirectory or linked worktree.
 2. Take the last segment of `origin` without `.git`, recognizing HTTPS, SSH and SCP
