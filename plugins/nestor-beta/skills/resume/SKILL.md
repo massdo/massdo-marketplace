@@ -134,3 +134,21 @@ unnecessary mutation. If trashed, moved, untagged or invalid, stop mutations and
 the change. If content changed, revalidate it and fully adapt the response before one
 retry with the new pair. Never mix a version and ETag from different responses or
 replay the old patch blindly. A second conflict ends the archive attempt.
+
+## Errors and uncertain outcomes
+
+- An unknown or ambiguous project requires clarification before mutation.
+- A discovery or note-read MCP failure is reported without invented data or local
+  fallback. Missing metadata pages prevent a definitive selection.
+- With no available handoff, say so. Do not consult another project, search archives
+  or automatically reuse an archived note. A second resume with no other note has the
+  same empty result.
+- An incompatible selected note is reported and left unarchived. Do not use linked
+  items to repair its missing information.
+- If archiving fails, present the already prepared context and say that archiving was
+  not confirmed. A persistent conflict after the single adapted retry stops mutations.
+- A lost archive response means the outcome is unknown. Do not claim success, perform
+  a verification read or automatically replay the mutation.
+- Missing or inaccessible linked items retain their recorded summaries or explicit
+  unknowns. None of these paths authorizes reading their content or history, starting
+  work, or changing anything beyond the selected note's archive visibility.
