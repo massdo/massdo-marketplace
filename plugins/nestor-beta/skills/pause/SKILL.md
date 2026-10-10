@@ -46,3 +46,68 @@ Otherwise use the same resolution as `next-tasks`, without invoking that skill:
    automatically or fall back to all projects.
 
 Use `{ "mode": "project", "projectId": "<resolved id>" }` for every scoped call below.
+
+## Select the work to capture
+
+Read UTC with `date -u` immediately after resolving the project. Hold that instant T;
+do not substitute a guessed time or the conversation's date. Capture at whole-second
+precision and format `capturedAt` with `.000Z`. Calculate the lower bound from that
+same instant, including across midnight:
+
+```sh
+capturedSeconds=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+# macOS
+date -u -j -v-60M -f '%Y-%m-%dT%H:%M:%SZ' "$capturedSeconds" '+%Y-%m-%dT%H:%M:%S.000Z'
+# Linux: use this alternative instead of the macOS command
+date -u -d "$capturedSeconds - 60 minutes" '+%Y-%m-%dT%H:%M:%S.000Z'
+```
+
+Run the alternative appropriate to the host. If capture or calculation fails or yields
+an unreadable instant, explain the failure and stop without creating a note.
+
+Start exactly two filtered `search_items` searches in the resolved project:
+
+| Search | Arguments |
+| --- | --- |
+| Tasks | `filters: { "types": ["task"], "dateFrom": { "instant": "<T minus 60 minutes>" } }`, `limit: 50` |
+| Notes | The same lower bound and limit, `filters.types: ["note"]`, `includeTags: true` |
+
+Omit `query` and `dateTo`. Without text the search is deterministic, the date filter
+selects modification time, and pagination uses cursors. The lower bound is inclusive.
+Follow each search's cursor to its last page, using the short pagination request
+`{ "cursor": "<returned cursor>", "version_hash": "2a2cc476ca4c165c2" }`. Report
+`hasMore` while pages remain; a missing page prevents a complete handoff.
+
+Keep modifications in the interval T minus 60 minutes through T; exclude results
+modified after T from the `modified` source. The searches include subtasks and backlog
+tasks, and exclude archives, trash, completed and cancelled tasks. Do not add a roots-only
+filter or inventory the backlog separately. Exclude notes tagged `workflow-pause`.
+Never use `list_events` or `list_items` for this selection.
+
+Add tasks and notes actually worked on in this conversation, even when their Nestor
+modification is older. Useful consultation, diagnosis, decisions and implementation
+count as work; a passing mention does not. Invent no Nestor reference for unlinked work.
+Verify every worked item absent from the searches with `get_item`, in groups of at most
+five references in `ref`, with the corresponding `known` array. Send the matched
+version/ETag pair when the necessary content is held; otherwise send null. On
+`unchanged: true`, retain the held content and pair and refresh the project name.
+Inspect each grouped result, including its own `error`.
+
+Keep only items belonging to the resolved project: tasks in `todo`, `in_progress` or
+`need_review`, and ordinary notes. Exclude archived or trashed items and `workflow-pause`
+notes from both sources. Deduplicate by returned identity, including subtasks; combine
+the proven sources instead of creating a second entry.
+
+For each search result not worked on in the conversation, read its body with `get_item`
+before summarizing it. A search excerpt is insufficient evidence of progress. Group
+up to five references, using `known: null` per reference unless its necessary content
+and pair are already held. Recheck project, type, visibility and task status from the
+full or held unchanged result. Use `modified` only for a proven modification within
+the captured window; `conversation` only for proven work in this conversation.
+
+If no task or note survives but the conversation has an objective, decision, blocker
+or next action worth keeping, still create the handoff with `tasks: []` and `notes: []`.
+Without any context worth keeping, explain that result and create nothing. If a necessary
+read fails or remains incomplete, report it and stop before creating a handoff that
+would imply a complete capture. Do not change any existing item's content, status,
+dates or tags.
