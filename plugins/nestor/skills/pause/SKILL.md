@@ -1,176 +1,128 @@
 ---
 name: pause
-description: Save a project's work context and summaries in a Nestor handoff note for a later conversation. Use only when the user explicitly invokes pause; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
+description: Save only this chat's work context as its latest Nestor transmission. Use only when the user explicitly invokes pause; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
 argument-hint: "[project]"
 disable-model-invocation: true
 ---
 
 # Nestor Pause
 
-Capture the context of interrupted work in one project. The agent writes the summaries;
-Nestor stores them. The handoff describes the state at capture time and lets `resume`
-restore it without reading the linked tasks or notes.
+Capture only work from the current conversation. Nestor stores one latest transmission
+per authenticated tenant, effective project and exact technical chat identity. A new
+pause replaces that chat's capture atomically. Other chats keep their own captures.
 
-The `nestor` skill governs shared MCP procedures, conditional reads and item citations.
-This workflow creates one note; it changes no existing task or note and keeps no local
-handoff storage.
+The `nestor` skill governs shared MCP procedures and item citations. Change no task
+or note. Keep no local handoff storage and install no helper script.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1bc829a8788f8b6f3" }` on every Nestor MCP call.
+Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 
-## Invocation and project
+## Direct invocation and current chat identity
 
-- Claude Code: `/nestor:pause [project]`.
-- Codex: `$nestor:pause [project]`.
-- Cursor: select the skill, then supply the project name.
+Run only after the user's direct invocation: Claude Code `/nestor:pause [project]`,
+Codex `$nestor:pause [project]`, or the equivalent explicit skill action in another client.
+Read the whole argument string, including a final `ARGUMENTS: …` line when supplied.
+Preserve internal spaces. Blank arguments mean no explicit project.
 
-Run only after a direct invocation by the user. Read the arguments after the skill name,
-including a final `ARGUMENTS: …` line when the client supplies one. The whole argument
-string is one project name: preserve internal spaces. Blank arguments mean no project
-was supplied.
+Obtain the current chat's real technical ID again at every invocation:
 
-An explicit project takes precedence over the workspace; do not read Git to replace it.
-Otherwise resolve it from the workspace:
+- Codex: read the non-empty `CODEX_THREAD_ID` environment value through the client's
+  available shell; use the stable source `codex`.
+- Claude Code: use the skill substitution `${CLAUDE_SESSION_ID}`; use the stable
+  source `claude-code`. A literal, unsubstituted placeholder is unavailable.
+- Other clients: use only technical conversation metadata actually exposed by that
+  client, with its stable conversation-system namespace. Do not infer availability.
 
-1. Find the workspace's Git root; a subdirectory or linked worktree must resolve as its
-   root does.
-2. Read `origin` and take the last URL segment without `.git`, recognizing HTTPS, SSH
-   and SCP forms. With no `origin`, take the root directory's name.
-3. If no reliable name results, ask for a project and stop before any mutation.
-4. Read the exact name with `get_project`. Only a not-found result permits
-   `search_project` with that name as `query`; a transport or authentication error is
-   reported as a failure. A single result in total may be retained; several results or
-   an incomplete page require clarification. Announce a retained name that differs.
-5. Stop on an archived project: it cannot accept the handoff. Never create a project
-   automatically or fall back to all projects.
+Preserve both strings exactly. A name, model, directory, timestamp, OAuth client ID,
+MCP transport session ID, remembered ID or selected transmission's chatId is no
+substitute. Changing model or chat name keeps the identity. A new chat uses its own ID.
 
-Use `{ "mode": "project", "projectId": "<resolved id>" }` for every scoped call below.
+Without a non-blank real ID, stop before writing and explain the client's identity
+limit. Never generate an ID or use another chat's identity. This capture requires
+`journal:write`; a read-only connection cannot save it.
 
-## Select the work to capture
+## Resolve the effective project
 
-Read UTC with `date -u` immediately after resolving the project. Hold that instant T;
-do not substitute a guessed time or the conversation's date. Capture at whole-second
-precision and format `capturedAt` with `.000Z`. Calculate the lower bound from that
-same instant, including across midnight:
+An explicit project takes precedence. Resolve it by exact `get_project`. Only
+NOT_FOUND permits `search_project` with that name. Retain a single complete result;
+several results or an incomplete page require the user's choice. Announce a retained
+name that differs. Report authentication and transport failures as failures.
 
-```sh
-capturedSeconds=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-# macOS
-date -u -j -v-60M -f '%Y-%m-%dT%H:%M:%SZ' "$capturedSeconds" '+%Y-%m-%dT%H:%M:%S.000Z'
-# Linux: use this alternative instead of the macOS command
-date -u -d "$capturedSeconds - 60 minutes" '+%Y-%m-%dT%H:%M:%S.000Z'
-```
+With a workspace and no explicit project, inspect its Git root, including linked
+worktrees and subdirectories. With Git, derive the name from origin's last segment,
+without .git, recognizing HTTPS, SSH and SCP forms. With no origin, use the root
+directory name. Resolve that name as above. Do not silently switch projects after
+a failed lookup. An archived project refuses capture with ARCHIVED.
 
-Run the alternative appropriate to the host. If capture or calculation fails or yields
-an unreadable instant, explain the failure and stop without creating a note.
+Without Git and without an explicit project, use `{ "mode": "global" }`, without
+attachProjectId. Ask for no project and create none. A client without a workspace
+needs no shell or Git inspection. With a resolved project, use its returned ID in
+`{ "mode": "project", "projectId": "<resolved id>" }`.
 
-Start exactly two filtered `search_items` searches in the resolved project:
+## Capture this conversation
 
-| Search | Arguments |
-| --- | --- |
-| Tasks | `filters: { "types": ["task"], "dateFrom": { "instant": "<T minus 60 minutes>" } }`, `limit: 50` |
-| Notes | The same lower bound and limit, `filters.types: ["note"]`, `includeTags: true` |
+Write the objective, known progress, decisions, blockers and proposed next actions
+from this chat. Include only tasks and notes actually worked on here: useful
+consultation, diagnosis, decisions or implementation count; a passing mention does not.
+An empty task or note array is valid. Unlinked work needs no invented Nestor reference.
 
-Omit `query` and `dateTo`. Without text the search is deterministic, the date filter
-selects modification time, and pagination uses cursors. The lower bound is inclusive.
-Follow each search's cursor to its last page, using the short pagination request
-`{ "cursor": "<returned cursor>", "version_hash": "1bc829a8788f8b6f3" }`. Report
-`hasMore` while pages remain; a missing page prevents a complete handoff.
+Do not search recent modifications, inventory the project or account, or inspect
+another conversation. Other chats' activity is not capture evidence. Include no
+windowMinutes, sources or legacy kind field.
 
-Keep modifications in the interval T minus 60 minutes through T; exclude results
-modified after T from the `modified` source. The searches include subtasks and backlog
-tasks, and exclude archives, trash, completed and cancelled tasks. Do not add a roots-only
-filter or inventory the backlog separately. Exclude notes tagged `workflow-pause`.
-Never use `list_events` or `list_items` for this selection.
+Reuse verified slugs and observed task statuses held in this conversation. If a
+worked item's necessary information is missing, read only that worked item with
+get_item, grouping at most five refs and matching known values. A complete held
+content/version/ETag pair needs no new read. Never fetch unrelated items. A failed
+necessary read stops the capture; do not claim completeness.
 
-Add tasks and notes actually worked on in this conversation, even when their Nestor
-modification is older. Useful consultation, diagnosis, decisions and implementation
-count as work; a passing mention does not. Invent no Nestor reference for unlinked work.
-Verify every worked item absent from the searches with `get_item`, in groups of at most
-five references in `ref`, with the corresponding `known` array. Send the matched
-version/ETag pair when the necessary content is held; otherwise send null. On
-`unchanged: true`, retain the held content and pair and refresh the project name.
-Inspect each grouped result, including its own `error`.
-
-Keep only items belonging to the resolved project: tasks in `todo`, `in_progress` or
-`need_review`, and ordinary notes. Exclude archived or trashed items and `workflow-pause`
-notes from both sources. Deduplicate by returned identity, including subtasks; combine
-the proven sources instead of creating a second entry.
-
-For each search result not worked on in the conversation, read its body with `get_item`
-before summarizing it. A search excerpt is insufficient evidence of progress. Group
-up to five references, using `known: null` per reference unless its necessary content
-and pair are already held. Recheck project, type, visibility and task status from the
-full or held unchanged result. Use `modified` only for a proven modification within
-the captured window; `conversation` only for proven work in this conversation.
-
-If no task or note survives but the conversation has an objective, decision, blocker
-or next action worth keeping, still create the handoff with `tasks: []` and `notes: []`.
-Without any context worth keeping, explain that result and create nothing. If a necessary
-read fails or remains incomplete, report it and stop before creating a handoff that
-would imply a complete capture. Do not change any existing item's content, status,
-dates or tags.
-
-## Write and store one self-contained handoff
-
-Write each selected task's and note's summary yourself: one or two sentences, at most
-50 words, covering its subject, known progress and useful point of continuation. Make
-unknown information explicit. Write the overall objective, progress, decisions,
-blockers and proposed next actions in a useful order, without inventing any of them.
-
-The title is exactly `Pause — <capturedAt>`, with T in UTC ISO 8601 with milliseconds.
-The body contains one JSON code block, with no duplicate summary section:
+The body is a structured object, not Markdown or a JSON string:
 
 ```json
 {
-  "kind": "nestor.pause",
-  "schemaVersion": 1,
-  "projectId": "<id returned by Nestor>",
-  "capturedAt": "2026-10-10T08:00:00.000Z",
-  "windowMinutes": 60,
-  "objective": "<work objective>",
-  "progress": "<known overall progress>",
+  "objective": "<known objective or empty string>",
+  "progress": "<known progress or empty string>",
   "decisions": [],
   "blockers": [],
   "nextActions": [],
   "tasks": [
-    {
-      "slug": "<slug returned by Nestor>",
-      "summary": "<agent-written summary>",
-      "statusAtPause": "in_progress",
-      "sources": ["modified", "conversation"]
-    }
+    { "slug": "<real task slug>", "summary": "<this chat's work>", "statusAtPause": "in_progress" }
   ],
   "notes": [
-    {
-      "slug": "<slug returned by Nestor>",
-      "summary": "<agent-written summary>",
-      "sources": ["modified"]
-    }
+    { "slug": "<real note slug>", "summary": "<this chat's work>" }
   ]
 }
 ```
 
-`objective`, `progress` and each summary are strings. `decisions`, `blockers` and
-`nextActions` are arrays of strings; empty arrays mean nothing known to record.
-`tasks: []` and `notes: []` are valid. Each slug appears once, exactly as returned by
-Nestor. A task's `statusAtPause` is `todo`, `in_progress` or `need_review`.
-`sources` contains `modified`, `conversation` or both, matching the selection evidence.
+All seven fields are required. Empty objective or progress means unknown. Empty arrays
+mean nothing known. Every list string and summary is non-blank. Each slug appears once
+across tasks and notes. Task statusAtPause is the observed todo, in_progress, need_review,
+completed or cancelled value; do not invent its current state. Summaries have no separate
+word or sentence limit. Keep the whole validated compact JSON within 100,000 Unicode
+code points, including keys and separators; do not truncate it to force a write.
 
-Only for code work with known Git observations, add an optional `git` object with any
-known `branch`, `commit` and `pullRequest` strings. Omit unknown fields. Copy no full
-task or note bodies, identifiers, versions or ETags into the handoff; `resume` needs
-only the slugs and summaries. The note's own version and ETag are assigned by Nestor.
+Only when known, add git with at least one non-blank branch, commit or pullRequest.
+Omit unknown Git fields. No Git inspection is required without a workspace.
+Record at least one known piece of context. Otherwise explain that nothing needs
+capture and write nothing.
 
-Call `create_item` once in the resolved project, with `type: "note"`, this title and
-body, and `tagNames: ["workflow-pause"]`. This is an ordinary tag, not a reserved
-system marker. Each pause creates a distinct note; do not rewrite or archive previous
-handoffs. There is no automatic expiration, so a handoff remains usable after eight
-hours or longer. `resume` archives the note it consumes; neither skill deletes it.
+Write a separate non-blank preview of at most 200 Unicode code points to distinguish
+this chat's objective during discovery. Preserve useful information within the limit.
 
-Announce only an MCP-confirmed creation and cite the returned note using Nestor's
-slug-and-description format. An MCP failure produces no invented result or local
-fallback. If the creation response is lost, report an unknown outcome and do not
-automatically replay the call. Reuse a confirmed mutation's returned pair directly
-when needed; make no post-success `get_item` verification call.
+## Save once and report the confirmed result
+
+Call create_item once with the resolved scope, type transmission, the current chatSource
+and chatId, schemaVersion 1, preview and structured body. Send no title, status, tags,
+dates, parent, backlog or other task/note field, including explicit nulls.
+Send no expectedVersion or expectedEtag. The server supplies the capture time,
+canonical ref, reusable scope, ID, slug, version and ETag.
+
+A confirmed save creates or replaces only this exact tenant/project/chat key. Replacing
+identical content still increments version and changes ETag, while preserving ID and
+slug. No old transmission history is available. Captures do not expire.
+
+Announce only the MCP-confirmed result. Cite its returned slug and description, and
+report its technical chat identity and reusable reference. Make no post-success get_item
+call. On a failure, report it without local fallback. A lost response leaves an unknown
+outcome: claim neither success nor preservation, and do not automatically replay.

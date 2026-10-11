@@ -474,5 +474,12 @@
     "version_hash": "c6176405895b2949",
     "commit": "ce5b54ef078b8a15150d12db148d8aa646576431",
     "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37619316095"
+  },
+  {
+    "name": "nestor",
+    "version": "0.8.0",
+    "version_hash": "bc829a8788f8b6f3",
+    "commit": "95ade683d7375915032a6e3d9db3c8ce00891893",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/38057412378"
   }
 ]

@@ -1,154 +1,134 @@
 ---
 name: resume
-description: Restore a project's saved Nestor handoff and archive that note, without starting work. Use only when the user explicitly invokes resume; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
-argument-hint: "[project]"
+description: Restore this chat's latest Nestor transmission, or explicitly select one from compact discovery, without mutation or starting work. Use only when the user explicitly invokes resume; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
+argument-hint: "[project | list]"
 disable-model-invocation: true
 ---
 
 # Nestor Resume
 
-Restore the context and proposed next actions saved by `pause`. Read only the selected
-handoff note's body, prepare the response, then archive that note automatically.
-Do not start work or invoke another skill.
+Restore the selected transmission's saved context and proposed next actions. This
+workflow is read-only. Do not archive, delete, mark consumed, change versions, start
+work or invoke another skill. Repeated resume may restore the same capture.
 
-The `nestor` skill governs shared MCP procedures, conditional reads, optimistic
-mutations and item citations.
+The `nestor` skill governs shared MCP procedures, conditional reads and item citations.
+Read no linked task or note, its current status, version, content or history.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "1bc829a8788f8b6f3" }` on every Nestor MCP call.
+Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 
-## Invocation and project
+## Invocation and mode
 
-- Claude Code: `/nestor:resume [project]`.
-- Codex: `$nestor:resume [project]`.
-- Cursor: select the skill, then supply the project name.
+Run only after the user's direct invocation: Claude Code `/nestor:resume [project | list]`,
+Codex `$nestor:resume [project | list]`, or another client's explicit skill action.
+Read the whole argument string, including a final `ARGUMENTS: …` line when supplied.
+Preserve internal spaces. The exact argument `list` selects global compact discovery;
+it is not a project name. Blank arguments mean no explicit project.
 
-Run only after a direct user invocation. Read arguments after the skill name, including
-a final `ARGUMENTS: …` line when supplied by the client. The whole argument string is
-one project name: preserve internal spaces. Blank arguments mean no explicit project.
+With list, use `scope: { "mode": "global" }` and skip workspace, project and chat-identity
+lookup. Discover every available transmission of the authenticated tenant, including
+floating captures and captures in archived projects. Read no body before a choice.
 
-An explicit project takes precedence over the workspace; do not read Git to replace it.
-Otherwise resolve it from the workspace:
+## Ordinary resume: project and current identity
 
-1. Find the workspace's Git root, including from a subdirectory or linked worktree.
-2. Take the last segment of `origin` without `.git`, recognizing HTTPS, SSH and SCP
-   forms. With no `origin`, take the root directory's name.
-3. If no reliable name results, ask for the project and stop before any mutation.
-4. Read the exact name with `get_project`. Only a not-found result permits
-   `search_project` with that name as `query`. Report transport or authentication
-   failures instead of treating them as an absent project. Retain a single result in
-   total; several results or an incomplete page require clarification. Announce a
-   retained name that differs.
-5. Stop on an archived project: it cannot accept the required archive mutation. Never
-   create a project automatically or fall back to all projects.
+An explicit project takes precedence. Resolve it with exact get_project. Only NOT_FOUND
+permits search_project with that name. Retain a single complete result; ambiguous or
+incomplete results require the user's choice. Announce a differing retained name.
+Report authentication and transport failures. Do not create a project automatically.
 
-Use `{ "mode": "project", "projectId": "<resolved id>" }` for every scoped call below.
+With a workspace and no explicit project, inspect its Git root, including linked
+worktrees and subdirectories. If Git exists, derive the project from origin's final
+segment without .git, recognizing HTTPS, SSH and SCP forms. With no origin use the
+root directory name. Resolve it as above. Never fall back to another project.
+Archived projects remain readable; archive does not consume transmissions.
 
-## Reading budget
+Without Git and without an explicit project, use global scope outside projects.
+A client without a workspace needs no shell or Git inspection and no project choice.
 
-Discovery reads only handoff metadata. In the normal path, one `get_item` reads the
-selected handoff; a conditional unchanged response reuses its held content.
-Never read a linked task or note, resolve its slug, verify its current status, compare
-its versions or consult its history. Do not inventory tasks or search their contents.
-Do not use snapshots or `list_events` to enrich the response. These limits also apply
-to error and conflict handling: an inaccessible linked slug still has its saved summary.
+Obtain the current chat's real technical identity again, without relying on a remembered
+context value:
 
-## Select and validate one handoff
+- Codex: read non-empty CODEX_THREAD_ID from the available environment; chatSource is codex.
+- Claude Code: use the substituted `${CLAUDE_SESSION_ID}`; chatSource is claude-code.
+  An unsubstituted placeholder is unavailable.
+- Other clients: use only technical conversation metadata actually exposed, with a
+  stable conversation-system namespace. Do not infer access.
 
-Call `list_items` in the resolved project's scope with `view: "notes"` and
-`filters: { "tagNames": ["workflow-pause"] }`. Use the server's normal compact
-projection, not full bodies. Only non-archived, non-trashed notes are candidates.
+Preserve chatSource and chatId exactly. Names, models, directories, timestamps, MCP
+transport sessions and OAuth client IDs cannot replace them. Selecting another chat's
+transmission never adopts its identity. A later pause still saves under the current
+chat's own ID.
 
-Parse the exact structured titles `Pause — <capturedAt>`, where `capturedAt` is a
-valid UTC ISO 8601 instant with milliseconds. Traverse all metadata pages needed to
-establish the latest capture, following each returned cursor with `version_hash`.
-Never present a partial discovery as exhaustive. Choose the greatest title timestamp,
-not the most recently modified note: changing an old body does not make it the latest
-capture. Apply no recency cutoff; a note eight hours old or older remains eligible.
-Report incompatible titles without reading their bodies. Read no unselected body.
+With an accessible identity, call get_item using the resolved scope, type transmission,
+chatSource, chatId and known; omit ref. In a project, this selects only that project's
+exact key. Global identity lookup selects only a capture outside projects, never the
+same identity in another project.
 
-Read the chosen note with `get_item`, using its returned reference in `ref` and the
-resolved project scope. Pass `known: null` when its necessary content or matched pair
-is absent; otherwise pass the held `{ "version": ..., "etag": ... }`. With
-`unchanged: true`, keep that content and pair and refresh the project name. Preserve
-the note's matched pair for archiving, with no preventive read before `update_item`.
+Pass known null without complete held content and its matched pair; otherwise pass
+that content's version and ETag. With unchanged true, keep that content and pair and
+refresh the project name. A full response replaces the held content and pair.
 
-Check that the result is an available note of the resolved project, still tagged
-`workflow-pause`, and that its body contains one JSON block satisfying this contract:
+A successful direct read goes straight to restoration. Only NOT_FOUND in a resolved
+project starts compact discovery of that project. Without an accessible identity,
+a resolved project also starts that discovery. A storage, authentication, transport
+or validation error is a failure, never an absent capture and never a fallback.
 
-| Field | Required value or type |
-| --- | --- |
-| `kind` | `"nestor.pause"` |
-| `schemaVersion` | `1` |
-| `projectId` | The resolved project's returned id |
-| `capturedAt` | Valid UTC ISO 8601 instant with milliseconds, identical to the title |
-| `windowMinutes` | `60` |
-| `objective`, `progress` | Strings |
-| `decisions`, `blockers`, `nextActions` | Arrays of strings; empty is valid |
-| `tasks` | Array of `slug`, `summary`, `statusAtPause`, `sources`; empty is valid |
-| `notes` | Array of `slug`, `summary`, `sources`; empty is valid |
-| `git` | Optional object of known `branch`, `commit`, `pullRequest` strings |
+Outside projects, an identified chat with NOT_FOUND reports no capture for this chat.
+Outside projects without an accessible identity, explain the direct-resume limitation
+and indicate resume list. Do not claim no transmissions exist.
 
-Each linked entry has a non-empty slug and an agent-written summary of one or two
-sentences, at most 50 words. Slugs are unique within the saved entries.
-`statusAtPause` must be `todo`, `in_progress` or `need_review`. Each `sources` array
-contains `modified`, `conversation` or both, without duplicates. The handoff needs
-no linked bodies, ids, versions or ETags. Do not fetch missing data from linked items.
-If the selected note is invalid or incompatible, explain the failure and leave it
-unarchived; do not silently consume an older note instead.
+## Compact discovery and explicit choice
 
-## Prepare the response, then archive
+Call list_items with view transmissions, projection compact and the selected scope.
+Use no task, tag, date or backlog filters. Do not call search_items, list_events or
+get_item for candidates. One list page supplies all its previews directly.
 
-Prepare the entire response from the validated handoff and explicit facts already in
-this conversation. State the project and capture time, objective and known progress.
-Restore every linked task and note with its saved summary, citing each in one code
-span containing its slug and a short description, as Nestor requires. Include known
-decisions, blockers and proposed next actions without repeating the summaries.
-Empty `tasks` and `notes` mean the context alone is restored. Empty `nextActions`
-means none were recorded; invent no work to execute. Git details remain observations
-from the pause.
+Present each returned ref or slug, capturedAt, preview and project. Mark project null
+explicitly as outside projects. In project discovery, the project can be named once.
+Keep each entry's canonical complete ref, scope and scope.projectId for selection;
+display IDs are not substitute selectors. Several captures of the same project are valid.
 
-Explain that saved information dates from `capturedAt` and does not verify current
-task or note state. When explicit conversation facts show progress since the pause,
-use them: an action already completed must not be proposed again. A newer explicit
-decision takes precedence over an older contradictory one; state the visible difference.
-This reconciliation adds no MCP reads and changes neither the handoff body nor tasks.
+Follow pages with only the returned cursor and version_hash. Signal an incomplete
+list while hasMore is true. INVALID_CURSOR after a concurrent capture means discovery
+is incomplete; restart only compact discovery when useful. Never read bodies to
+repair an incomplete list.
 
-Only once validation and response preparation are complete, archive the selected note
-with `update_item`, `operation: "patch"`, `patch: { "archived": true }`. Use the
-note's held pair directly as `expectedVersion` and `expectedEtag`; archive is the only
-patch field. Do not ask for an extra confirmation, make a preventive read or perform
-a post-success read. Change no other note or task. Archived handoffs remain in Nestor;
-never delete them.
+Await an explicit user choice even with one candidate. Do not choose by date, preview,
+workspace or another chat's identity. An empty complete list reports no available
+transmissions in that discovery scope. A failed list reports the failure.
 
-Present the prepared context and the confirmed archive result. Do not start the next
-actions automatically or claim that response delivery is guaranteed before a transport
-interruption.
+After the choice, read exactly one selected transmission with get_item, its complete
+ref and exact returned scope. Do not send type or chat identity with ref. Use known null
+without complete held content and its matched pair; otherwise send that pair.
+Read no other candidate and no linked item. Failure or disappearance does not permit
+selecting an alternative. If capture changed after discovery, use the full version
+and capturedAt returned by this read and identify the newer capture.
 
-For an optimistic conflict, discard the refused pair and use `details.current` when
-present; it supplies the current selected note and its matched pair. Only when that
-field is absent may one conditional `get_item` of this same note resolve the conflict.
-Never read a linked task or note. If already archived, report that state with no
-unnecessary mutation. If trashed, moved, untagged or invalid, stop mutations and explain
-the change. If content changed, revalidate it and fully adapt the response before one
-retry with the new pair. Never mix a version and ETag from different responses or
-replay the old patch blindly. A second conflict ends the archive attempt.
+## Validate and restore without mutation
 
-## Errors and uncertain outcomes
+Validate the selected result as type transmission, schemaVersion 1, with the structured
+objective, progress, decisions, blockers, nextActions, tasks and notes contract.
+Only git is optional. Required strings and observations retain their saved meanings;
+empty strings and arrays mean unknown or nothing recorded. A malformed stored capture
+or unsupported schema is a failure. Do not repair it or fetch linked data.
 
-- An unknown or ambiguous project requires clarification before mutation.
-- A discovery or note-read MCP failure is reported without invented data or local
-  fallback. Missing metadata pages prevent a definitive selection.
-- With no available handoff, say so. Do not consult another project, search archives
-  or automatically reuse an archived note. A second resume with no other note has the
-  same empty result.
-- An incompatible selected note is reported and left unarchived. Do not use linked
-  items to repair its missing information.
-- If archiving fails, present the already prepared context and say that archiving was
-  not confirmed. A persistent conflict after the single adapted retry stops mutations.
-- A lost archive response means the outcome is unknown. Do not claim success, perform
-  a verification read or automatically replay the mutation.
-- Missing or inaccessible linked items retain their recorded summaries or explicit
-  unknowns. None of these paths authorizes reading their content or history, starting
-  work, or changing anything beyond the selected note's archive visibility.
+Prepare the response only from this saved body and explicit facts already in this
+conversation. State the project or absence of project, capture date and version.
+Restore the objective, progress, all saved task and note summaries, decisions, blockers
+and proposed next actions. Cite real saved slugs with descriptions as Nestor requires.
+Git fields remain capture-time observations. Saved statuses and summaries do not
+verify the current task or note state. Empty nextActions authorizes no invented work.
+
+Account for explicit newer conversation progress without extra reads. Do not propose
+an action already completed here. An explicit newer decision supersedes a contradictory
+saved decision; explain the visible difference.
+
+Return the prepared context. Leave every transmission available, including the chosen
+capture and all unselected captures. Issue no update_item or other mutation. A capture
+saved after this read remains available for the next resume.
+
+Ignore legacy workflow-pause notes and nestor.pause bodies. Do not discover, read,
+archive, migrate or use them as fallback transmissions. Do not install external scripts,
+keep local storage or invoke another skill. Errors and interrupted response delivery
+never authorize mutation, linked-item reads or starting work.
