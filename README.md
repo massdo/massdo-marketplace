@@ -111,12 +111,12 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 - 📓 `/nestor:nestor` — tasks, notes, projects, history
 - ⏱️ `/nestor:activity` — start a timer, get your hours
 - 🌳 `/nestor:tree` — draws a project as a tree
-- ⏸️ `/nestor:pause lisbon-trip` — saves the project’s work context for later
-- ▶️ `/nestor:resume lisbon-trip` — restores this chat's context without changing it
+- ⏸️ `/nestor:pause` — saves this chat's work context for later
+- ▶️ `/nestor:resume` — restores this chat's context without changing it
 - 📋 `/nestor:resume list` — lists compact previews across all projects for explicit selection
 - 🔄 `/nestor:check-for-updates` — looks for an update
 
-Invoke `pause` and `resume` explicitly. Omit the project to infer it from Git, or save outside projects when no Git workspace exists. Pause captures only this chat's work under its real technical identity. Another pause in the same chat and project replaces that capture atomically. Resume reads this chat's capture directly, or waits for your choice from compact previews. `resume list` lists every available capture in your account. Selecting another chat's capture keeps your current chat's identity. Reads preserve captures for repeated resume and present next actions without starting them. Old `workflow-pause` notes remain ordinary notes.
+Invoke `pause` and `resume` without a project argument. Both detect the project from Git; without Git, captures stay outside projects. Pause saves only this chat's work and replaces its previous capture. Resume restores that context or waits for your choice from compact previews. Use `resume list` to choose across all projects. Resume preserves captures and starts no work.
 
 > [!NOTE]
 > nestor plugs in the only MCP server in the house: `https://journal.mcp-marketplace.org/mcp`

@@ -1,128 +1,54 @@
 ---
 name: pause
-description: Save only this chat's work context as its latest Nestor transmission. Use only when the user explicitly invokes pause; an agent, subagent, plan, memory, Nestor task or other skill must never invoke it on their behalf.
-argument-hint: "[project]"
+description: Save this conversation as its latest Nestor transmission. Run only on the user's explicit pause invocation.
 disable-model-invocation: true
 ---
 
 # Nestor Pause
 
-Capture only work from the current conversation. Nestor stores one latest transmission
-per authenticated tenant, effective project and exact technical chat identity. A new
-pause replaces that chat's capture atomically. Other chats keep their own captures.
-
-The `nestor` skill governs shared MCP procedures and item citations. Change no task
-or note. Keep no local handoff storage and install no helper script.
-
-## Identify the plugin version
-
+Invoke `/nestor:pause` or `$nestor:pause` without arguments.
+Use the Nestor skill for shared MCP procedures and citations.
 Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 
-## Direct invocation and current chat identity
+## Detect the project and chat
 
-Run only after the user's direct invocation: Claude Code `/nestor:pause [project]`,
-Codex `$nestor:pause [project]`, or the equivalent explicit skill action in another client.
-Read the whole argument string, including a final `ARGUMENTS: …` line when supplied.
-Preserve internal spaces. Blank arguments mean no explicit project.
+- From the workspace's Git root, infer the project name from origin's final segment
+  without .git (HTTPS, SSH or SCP). Subdirectories and worktrees resolve the same
+  repository. Without origin, use the reference repository's root directory name.
+- Resolve that name with get_project. Only NOT_FOUND permits search_project.
+  Retain a single complete result; otherwise ask for a choice. Report other errors.
+  Use the returned ID in project scope. Create no project.
+- Without Git, use global scope without attachProjectId or a project question.
+  A client without a workspace needs no Git inspection.
+- Retrieve the real chat ID at each invocation: CODEX_THREAD_ID with source codex,
+  substituted `${CLAUDE_SESSION_ID}` with source claude-code, or exposed technical
+  conversation metadata with its stable source in another client.
+  Preserve both strings exactly. Never use a remembered or selected chat's identity.
+  Without a real non-blank ID, including an unsubstituted placeholder, stop before writing.
 
-Obtain the current chat's real technical ID again at every invocation:
+## Capture and save
 
-- Codex: read the non-empty `CODEX_THREAD_ID` environment value through the client's
-  available shell; use the stable source `codex`.
-- Claude Code: use the skill substitution `${CLAUDE_SESSION_ID}`; use the stable
-  source `claude-code`. A literal, unsubstituted placeholder is unavailable.
-- Other clients: use only technical conversation metadata actually exposed by that
-  client, with its stable conversation-system namespace. Do not infer availability.
+Capture only this conversation's work, not recent project activity or other chats.
+Use real slugs and observed statuses for tasks and notes actually worked on here.
+Read only a worked item whose necessary information is missing, using Nestor's
+conditional and grouped reads. A failed necessary read stops capture.
 
-Preserve both strings exactly. A name, model, directory, timestamp, OAuth client ID,
-MCP transport session ID, remembered ID or selected transmission's chatId is no
-substitute. Changing model or chat name keeps the identity. A new chat uses its own ID.
+Build the structured body using the MCP schema:
 
-Without a non-blank real ID, stop before writing and explain the client's identity
-limit. Never generate an ID or use another chat's identity. This capture requires
-`journal:write`; a read-only connection cannot save it.
+- objective and progress: known text, or empty strings;
+- decisions, blockers and nextActions: arrays of known observations;
+- tasks: entries with slug, summary and observed statusAtPause;
+- notes: entries with slug and summary;
+- optional git: only known branch, commit or pullRequest fields.
 
-## Resolve the effective project
+Empty arrays are valid. Keep slugs unique and summaries non-blank.
+If nothing needs capture, write nothing. Add a non-blank preview of at most
+200 Unicode code points. Respect the body's 100,000-code-point limit without truncation.
 
-An explicit project takes precedence. Resolve it by exact `get_project`. Only
-NOT_FOUND permits `search_project` with that name. Retain a single complete result;
-several results or an incomplete page require the user's choice. Announce a retained
-name that differs. Report authentication and transport failures as failures.
+Call create_item once with scope, type transmission, chatSource, chatId,
+schemaVersion 1, preview and structured body. Send no task/note fields or preconditions.
+This replaces only the current project/chat capture. Change no task or note.
 
-With a workspace and no explicit project, inspect its Git root, including linked
-worktrees and subdirectories. With Git, derive the name from origin's last segment,
-without .git, recognizing HTTPS, SSH and SCP forms. With no origin, use the root
-directory name. Resolve that name as above. Do not silently switch projects after
-a failed lookup. An archived project refuses capture with ARCHIVED.
-
-Without Git and without an explicit project, use `{ "mode": "global" }`, without
-attachProjectId. Ask for no project and create none. A client without a workspace
-needs no shell or Git inspection. With a resolved project, use its returned ID in
-`{ "mode": "project", "projectId": "<resolved id>" }`.
-
-## Capture this conversation
-
-Write the objective, known progress, decisions, blockers and proposed next actions
-from this chat. Include only tasks and notes actually worked on here: useful
-consultation, diagnosis, decisions or implementation count; a passing mention does not.
-An empty task or note array is valid. Unlinked work needs no invented Nestor reference.
-
-Do not search recent modifications, inventory the project or account, or inspect
-another conversation. Other chats' activity is not capture evidence. Include no
-windowMinutes, sources or legacy kind field.
-
-Reuse verified slugs and observed task statuses held in this conversation. If a
-worked item's necessary information is missing, read only that worked item with
-get_item, grouping at most five refs and matching known values. A complete held
-content/version/ETag pair needs no new read. Never fetch unrelated items. A failed
-necessary read stops the capture; do not claim completeness.
-
-The body is a structured object, not Markdown or a JSON string:
-
-```json
-{
-  "objective": "<known objective or empty string>",
-  "progress": "<known progress or empty string>",
-  "decisions": [],
-  "blockers": [],
-  "nextActions": [],
-  "tasks": [
-    { "slug": "<real task slug>", "summary": "<this chat's work>", "statusAtPause": "in_progress" }
-  ],
-  "notes": [
-    { "slug": "<real note slug>", "summary": "<this chat's work>" }
-  ]
-}
-```
-
-All seven fields are required. Empty objective or progress means unknown. Empty arrays
-mean nothing known. Every list string and summary is non-blank. Each slug appears once
-across tasks and notes. Task statusAtPause is the observed todo, in_progress, need_review,
-completed or cancelled value; do not invent its current state. Summaries have no separate
-word or sentence limit. Keep the whole validated compact JSON within 100,000 Unicode
-code points, including keys and separators; do not truncate it to force a write.
-
-Only when known, add git with at least one non-blank branch, commit or pullRequest.
-Omit unknown Git fields. No Git inspection is required without a workspace.
-Record at least one known piece of context. Otherwise explain that nothing needs
-capture and write nothing.
-
-Write a separate non-blank preview of at most 200 Unicode code points to distinguish
-this chat's objective during discovery. Preserve useful information within the limit.
-
-## Save once and report the confirmed result
-
-Call create_item once with the resolved scope, type transmission, the current chatSource
-and chatId, schemaVersion 1, preview and structured body. Send no title, status, tags,
-dates, parent, backlog or other task/note field, including explicit nulls.
-Send no expectedVersion or expectedEtag. The server supplies the capture time,
-canonical ref, reusable scope, ID, slug, version and ETag.
-
-A confirmed save creates or replaces only this exact tenant/project/chat key. Replacing
-identical content still increments version and changes ETag, while preserving ID and
-slug. No old transmission history is available. Captures do not expire.
-
-Announce only the MCP-confirmed result. Cite its returned slug and description, and
-report its technical chat identity and reusable reference. Make no post-success get_item
-call. On a failure, report it without local fallback. A lost response leaves an unknown
-outcome: claim neither success nor preservation, and do not automatically replay.
+Report the confirmed capture with its citation and reusable ref. Do not read it back.
+A lost response means unknown outcome; never replay automatically.
+Use no local storage, helper script or legacy workflow-pause note.

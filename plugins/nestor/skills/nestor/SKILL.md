@@ -128,5 +128,4 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Never turn a read request into a mutation.
 - Mutate only the requested records and fields.
 - Obtain explicit user confirmation before trashing an item or confirming deletion of a tag or project.
-- Before project deletion confirmation, present the `transmissionCount` returned by `prepare_delete` and include those captures in the user's confirmation. Follow [the project deletion procedure](references/project-deletion.md).
 - After each mutation, report the confirmed result, affected identifier, and any warning.

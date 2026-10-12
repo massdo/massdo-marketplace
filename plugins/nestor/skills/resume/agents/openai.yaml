@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Resume"
   short_description: "Explicitly restore a transmission without mutation"
-  default_prompt: "Use $nestor:resume [project] only on my explicit request to restore this chat's saved transmission, or explicitly choose one with list, without mutation or starting work."
+  default_prompt: "Use $nestor:resume to restore saved context without starting work. Detect the project automatically."
 
 dependencies:
   tools:
