@@ -27,7 +27,7 @@ Build the structured body using the MCP schema:
 - decisions, blockers and nextActions: arrays of known observations;
 - tasks: entries with slug, summary and observed statusAtPause;
 - notes: entries with slug and summary;
-- optional git: only known branch, commit or pullRequest fields.
+- optional git: only known branch, commit or pullRequest fields; omit git when none is known.
 
 Empty arrays are valid. Keep slugs unique and summaries non-blank.
 If nothing needs capture, write nothing. Add a preview: a short business summary of
