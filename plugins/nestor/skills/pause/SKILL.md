@@ -39,5 +39,6 @@ preview and structured body. Send no project, task/note fields or preconditions.
 This replaces only this chat's current transmission. Change no task or note.
 
 Report the confirmed transmission with its citation and reusable ref. Do not read it back.
+A validation rejection writes nothing: correct the reported fields and retry once.
 A lost response means unknown outcome; never replay automatically.
 Use no local storage, helper script or legacy workflow-pause note.
