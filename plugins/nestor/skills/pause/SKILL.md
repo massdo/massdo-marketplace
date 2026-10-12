@@ -16,7 +16,7 @@ Never reuse another chat's ID. If this ID is unavailable, stop before writing.
 
 ## Capture and save
 
-Capture only this conversation's work, not recent journal activity or other chats.
+Capture only this conversation's work, not recent journal activity.
 Use real slugs and observed statuses for tasks and notes actually worked on here.
 Read only a worked item whose necessary information is missing, using Nestor's
 conditional and grouped reads. A failed necessary read stops capture.
