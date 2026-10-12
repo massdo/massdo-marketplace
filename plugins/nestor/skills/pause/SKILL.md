@@ -6,7 +6,6 @@ disable-model-invocation: true
 
 # Nestor Pause
 
-Invoke `/nestor:pause` or `$nestor:pause` without arguments.
 Use the Nestor skill for shared MCP procedures and citations.
 Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 
@@ -20,11 +19,9 @@ Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
   Use the returned ID in project scope. Create no project.
 - Without Git, use global scope without attachProjectId or a project question.
   A client without a workspace needs no Git inspection.
-- Retrieve the real chat ID at each invocation: CODEX_THREAD_ID with source codex,
-  substituted `${CLAUDE_SESSION_ID}` with source claude-code, or exposed technical
-  conversation metadata with its stable source in another client.
-  Preserve both strings exactly. Never use a remembered or selected chat's identity.
-  Without a real non-blank ID, including an unsubstituted placeholder, stop before writing.
+- Use this chat's real technical identity for chatSource and chatId.
+  Preserve both strings exactly; never reuse another chat's identity.
+  If this identity is unavailable, stop before writing.
 
 ## Capture and save
 

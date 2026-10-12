@@ -7,7 +7,6 @@ disable-model-invocation: true
 
 # Nestor Resume
 
-Invoke `/nestor:resume` or `$nestor:resume`; the only optional argument is `list`.
 Use the Nestor skill for shared MCP procedures, conditional reads and citations.
 Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 This workflow is read-only. Start no work and invoke no other skill.
@@ -26,10 +25,8 @@ Otherwise:
   complete result; otherwise ask for a choice. Report other errors. Create no project.
   Use the returned ID in project scope; without Git, use global scope.
   A client without a workspace needs no Git inspection or project question.
-- Retrieve the real chat ID again: CODEX_THREAD_ID with source codex,
-  substituted `${CLAUDE_SESSION_ID}` with source claude-code, or exposed technical
-  conversation metadata with its stable source in another client.
-  Preserve the exact strings. Never adopt a selected transmission's chat identity.
+- Use this chat's real technical identity for chatSource and chatId.
+  Preserve both strings exactly; never adopt a selected transmission's chat identity.
 - With an accessible identity, call get_item with scope, type transmission,
   chatSource, chatId and known; omit ref. Follow Nestor's conditional-read rules.
   A successful read restores directly.
