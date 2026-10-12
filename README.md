@@ -113,10 +113,10 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 - 🌳 `/nestor:tree` — draws a project as a tree
 - ⏸️ `/nestor:pause` — saves this chat's work context for later
 - ▶️ `/nestor:resume` — restores this chat's context without changing it
-- 📋 `/nestor:resume list` — lists compact previews across all projects for explicit selection
+- 📋 `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
 - 🔄 `/nestor:check-for-updates` — looks for an update
 
-Invoke `pause` and `resume` without a project argument. Both detect the project from Git; without Git, captures stay outside projects. Pause saves only this chat's work and replaces its previous capture. Resume restores that context or waits for your choice from compact previews. Use `resume list` to choose across all projects. Resume preserves captures and starts no work.
+Invoke `pause` and `resume` without a project argument: transmissions belong to a chat, not to a project. Pause saves only this chat's work and replaces its previous transmission. Resume restores this chat's transmission; otherwise it lists every transmission, newest first, and waits for your choice. Resume preserves transmissions and starts no work. To delete one, ask for it like any item.
 
 > [!NOTE]
 > nestor plugs in the only MCP server in the house: `https://journal.mcp-marketplace.org/mcp`

@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Pause"
   short_description: "Save this chat's context for later"
-  default_prompt: "Use $nestor:pause to save this conversation's context. Detect the project automatically."
+  default_prompt: "Use $nestor:pause to save this conversation's context."
 
 dependencies:
   tools:

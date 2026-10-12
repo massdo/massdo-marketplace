@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Resume"
   short_description: "Explicitly restore a transmission without mutation"
-  default_prompt: "Use $nestor:resume to restore saved context without starting work. Detect the project automatically."
+  default_prompt: "Use $nestor:resume to restore saved context without starting work."
 
 dependencies:
   tools:

@@ -9,23 +9,14 @@ disable-model-invocation: true
 Use the Nestor skill for shared MCP procedures and citations.
 Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
 
-## Detect the project and chat
+## Identify the chat
 
-- From the workspace's Git root, infer the project name from origin's final segment
-  without .git (HTTPS, SSH or SCP). Subdirectories and worktrees resolve the same
-  repository. Without origin, use the reference repository's root directory name.
-- Resolve that name with get_project. Only NOT_FOUND permits search_project.
-  Retain a single complete result; otherwise ask for a choice. Report other errors.
-  Use the returned ID in project scope. Create no project.
-- Without Git, use global scope without attachProjectId or a project question.
-  A client without a workspace needs no Git inspection.
-- Use this chat's real technical identity for chatSource and chatId.
-  Preserve both strings exactly; never reuse another chat's identity.
-  If this identity is unavailable, stop before writing.
+Use this chat's real technical ID as chatId and preserve it exactly.
+Never reuse another chat's ID. If this ID is unavailable, stop before writing.
 
 ## Capture and save
 
-Capture only this conversation's work, not recent project activity or other chats.
+Capture only this conversation's work, not recent journal activity or other chats.
 Use real slugs and observed statuses for tasks and notes actually worked on here.
 Read only a worked item whose necessary information is missing, using Nestor's
 conditional and grouped reads. A failed necessary read stops capture.
@@ -39,13 +30,14 @@ Build the structured body using the MCP schema:
 - optional git: only known branch, commit or pullRequest fields.
 
 Empty arrays are valid. Keep slugs unique and summaries non-blank.
-If nothing needs capture, write nothing. Add a non-blank preview of at most
-200 Unicode code points. Respect the body's 100,000-code-point limit without truncation.
+If nothing needs capture, write nothing. Add a preview: a short business summary of
+this work, at most 200 Unicode code points. Respect the body's 100,000-code-point limit
+without truncation.
 
-Call create_item once with scope, type transmission, chatSource, chatId,
-schemaVersion 1, preview and structured body. Send no task/note fields or preconditions.
-This replaces only the current project/chat capture. Change no task or note.
+Call create_item once with global scope, type transmission, chatId, schemaVersion 1,
+preview and structured body. Send no project, task/note fields or preconditions.
+This replaces only this chat's current transmission. Change no task or note.
 
-Report the confirmed capture with its citation and reusable ref. Do not read it back.
+Report the confirmed transmission with its citation and reusable ref. Do not read it back.
 A lost response means unknown outcome; never replay automatically.
 Use no local storage, helper script or legacy workflow-pause note.
