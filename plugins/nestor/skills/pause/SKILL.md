@@ -1,6 +1,7 @@
 ---
 name: pause
 description: Save this conversation as its latest Nestor transmission. Run only on the user's explicit pause invocation.
+argument-hint: "[capture focus]"
 disable-model-invocation: true
 ---
 
@@ -17,6 +18,7 @@ Never reuse another chat's ID. If this ID is unavailable, stop before writing.
 ## Capture and save
 
 Capture only this conversation's work, not recent journal activity.
+An argument guides what the capture emphasizes, such as its objective, preview or next actions.
 Use real slugs and observed statuses for tasks and notes actually worked on here.
 Read only a worked item whose necessary information is missing, using Nestor's
 conditional and grouped reads. A failed necessary read stops capture.

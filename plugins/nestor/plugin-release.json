@@ -1,5 +1,5 @@
 {
   "version": "0.9.0",
   "version_hash": "05fb8a191ca6d900",
-  "changelog": "Pause now saves only the current chat's work as a dedicated transmission, outside projects, and atomically replaces that chat's previous transmission.\nResume directly reads this chat's transmission, or lists every transmission from newest to oldest and waits for an explicit choice. Resume list shows that list directly. Repeated reads preserve transmissions and never archive them; a transmission is deleted on request like any item. Legacy workflow-pause notes remain ordinary notes."
+  "changelog": "Pause now saves only the current chat's work as a dedicated transmission, outside projects, and atomically replaces that chat's previous transmission. Text given with pause tells it what to emphasize.\nResume directly reads this chat's transmission, or the transmission named by a slug, or lists every transmission from newest to oldest and waits for an explicit choice. Resume list shows that list directly. Repeated reads preserve transmissions and never archive them; a transmission is deleted on request like any item. Legacy workflow-pause notes remain ordinary notes."
 }

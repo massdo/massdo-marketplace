@@ -1,7 +1,7 @@
 ---
 name: resume
 description: Restore a Nestor transmission without mutation or starting work. Run only on the user's explicit resume invocation.
-argument-hint: "[list]"
+argument-hint: "[list | slug]"
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,11 @@ This workflow is read-only. Start no work and invoke no other skill.
 
 With `list`, go directly to the list.
 
-Otherwise, call get_item with global scope, type transmission, this chat's real
+Another argument names a transmission: call get_item with it as ref, global scope
+and known; omit type and chatId. A transmission restores directly. NOT_FOUND,
+AMBIGUOUS or another item type shows the list. Other errors stop the workflow.
+
+Without an argument, call get_item with global scope, type transmission, this chat's real
 technical ID as chatId, and known; omit ref. Preserve the ID exactly and follow
 Nestor's conditional-read rules. A successful read restores directly.
 NOT_FOUND, or an unavailable chat ID, shows the list. Other errors stop the workflow.
