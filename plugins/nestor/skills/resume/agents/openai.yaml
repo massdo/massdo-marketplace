@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Resume"
-  short_description: "Explicitly restore and archive a project's handoff"
-  default_prompt: "Use $nestor:resume [project] only on my explicit request to restore this project's saved context and archive its handoff without starting work."
+  short_description: "Explicitly restore a transmission without mutation"
+  default_prompt: "Use $nestor:resume to restore saved context without starting work."
 
 dependencies:
   tools:

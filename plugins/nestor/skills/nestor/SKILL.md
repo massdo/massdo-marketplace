@@ -1,17 +1,17 @@
 ---
 name: nestor
-description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
+description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, chat transmissions, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.8.0"
+  pluginVersion: "0.9.0"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.8.0, hashed as `bc829a8788f8b6f3`.
+This plugin version is 0.9.0, hashed as `05fb8a191ca6d900`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1bc829a8788f8b6f3", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "105fb8a191ca6d900", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, tell the user that an update is available for the Nestor plugin when `pluginName` is `nestor`, or for the Nestor Beta plugin when `pluginName` is `nestor-beta`. Without `pluginName`, tell the user that an update is available.
@@ -23,7 +23,7 @@ Never block the requested journal operation. Never write on disk, except to run 
 
 ## Cite items
 
-Whenever a reply cites a task or note, put the entire reference in one Markdown inline-code
+Whenever a reply cites a task, note or transmission, put the entire reference in one Markdown inline-code
 span: the slug followed by its short business description in parentheses. Apply this to
 lists, prose, conclusions, answers about code, repeated mentions, and slugs supplied by the user.
 

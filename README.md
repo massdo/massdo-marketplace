@@ -111,11 +111,13 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 - 📓 `/nestor:nestor` — tasks, notes, projects, history
 - ⏱️ `/nestor:activity` — start a timer, get your hours
 - 🌳 `/nestor:tree` — draws a project as a tree
-- ⏸️ `/nestor:pause lisbon-trip` — saves the project’s work context for later
-- ▶️ `/nestor:resume lisbon-trip` — restores that context and archives the handoff
+- ⏸️ `/nestor:pause` — saves this chat's work context for later
+- ▶️ `/nestor:resume` — restores this chat's context without changing it
+- 📋 `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
+- 🔖 `/nestor:resume <slug>` — restores that transmission directly
 - 🔄 `/nestor:check-for-updates` — looks for an update
 
-Invoke `pause` and `resume` explicitly. Omit the project to infer it from the current Git repository. Each pause saves a `workflow-pause` note with summaries of open tasks and notes modified in the last hour or worked on in the conversation. The summaries describe the state at the pause, even when you return eight hours later. Resume reads only the latest handoff, accounts for work already done in the current conversation, and archives that note automatically after preparing the response. It presents the next actions without starting them; archived handoffs remain in Nestor.
+Invoke `pause` and `resume` without a project argument: transmissions belong to a chat, not to a project. Pause saves only this chat's work and replaces its previous transmission; text after `pause` tells it what to emphasize. Resume restores this chat's transmission, or the one whose slug you give; otherwise it lists every transmission, newest first, and waits for your choice. Resume preserves transmissions and starts no work. To delete one, ask for it like any item.
 
 > [!NOTE]
 > nestor plugs in the only MCP server in the house: `https://journal.mcp-marketplace.org/mcp`
