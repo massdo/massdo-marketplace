@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Nestor Pause
 
 Use the Nestor skill for shared MCP procedures and citations.
-Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
+Pass `{ "version_hash": "133fa51871e394b96" }` on every Nestor MCP call.
 
 ## Identify the chat
 
