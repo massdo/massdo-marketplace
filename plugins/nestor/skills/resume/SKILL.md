@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Nestor Resume
 
 Use the Nestor skill for shared MCP procedures, conditional reads and citations.
-Pass `{ "version_hash": "105fb8a191ca6d900" }` on every Nestor MCP call.
+Pass `{ "version_hash": "133fa51871e394b96" }` on every Nestor MCP call.
 This workflow is read-only. Start no work and invoke no other skill.
 
 ## Find the transmission
@@ -34,6 +34,10 @@ conversation's language. For example:
 - `azd_azd (business summary)` - yesterday 20:23
 - `blue_charcoal (business summary)` - 3 days ago
 
+Capture dates are UTC. Convert them to local time and compare them with the current
+local time; get the current time and time zone first when they are unknown. Without
+them, show the UTC date and time and no relative label.
+
 Report hasMore. Read no body. An empty list means no transmission is saved.
 
 Wait for an explicit choice, even with one candidate. Then read exactly that
@@ -45,8 +49,9 @@ A failed read selects no alternative.
 
 Require type transmission and schemaVersion 1. Restore objective, progress, decisions,
 blockers, nextActions and all saved task/note summaries from its structured body.
-Show capture date and version. Saved statuses and Git fields are observations,
-not current state. Account for explicit newer facts already in this conversation.
+Show the capture date, converted the same way, and the version. Saved statuses and
+Git fields are observations, not current state. Account for explicit newer facts
+already in this conversation.
 
 Read no linked item. Change no transmission, task or note; repeated resume remains possible.
 Ignore legacy workflow-pause notes. Use no local storage or helper script.
