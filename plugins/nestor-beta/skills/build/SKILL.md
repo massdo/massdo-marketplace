@@ -88,11 +88,15 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
 3. Read the root Plan's shared `git.targetBranch`, `git.workBranch` and `git.pullRequestUrl`
    (or the autonomous Task's Git fields). An attached direct build reuses that context;
    it does not create an independent PR. Read open PR footers with
-   `gh pr list --state open --limit 1000 --json number,headRefName,baseRefName,body` and
+   `gh pr list --state open --limit 1000 --json number,url,headRefName,baseRefName,body` and
    compare the actual contributing family with those references. Conflicting references,
    several matching PRs or a different base stop the build. Never infer ownership from
-   a branch name. If the target is unset, save the validated `git.targetBranch` with
-   `update_item` on the context, using its held pair; inspect the selection again if the
+   a branch name. When exactly one PR matches, check its head and URL against any recorded
+   references, then adopt its `headRefName` and `url` as the shared work branch and PR,
+   including when those Git fields are missing in Nestor. Use these resolved references
+   in step 4; persist missing fields only after reservation succeeds. If the target is
+   unset, save the validated `git.targetBranch` with `update_item` on the context, using its
+   held pair; inspect the selection again if the
    saved state changed. A recorded different target requires explicit resolution.
 4. Resolve the intended checkout to the shared work branch when present, otherwise
    `origin/<targetBranch>`. Before switching, inspect that ref read-only with Git. Check
@@ -115,10 +119,13 @@ For an interrupted owned reservation, follow section 5 instead of calling reserv
 A foreign reservation stops the build; only an explicit owner-authorised transfer can
 replace its credential. Never fabricate an execution id or proof.
 
-Reuse the recorded work branch and PR. Otherwise create one descriptive branch from
-`origin/<targetBranch>`, such as `feat/csv-export`, for the entire root Plan. Record
-`git.workBranch` on its context through an owned `update_item` patch. A reserved Git patch
-may update workBranch and pullRequestUrl; repository, target, planned work, membership and
+Reuse the shared work branch and PR resolved in step 2.3, whether recorded or found through
+the footer. After reservation, save recovered `git.workBranch` and `git.pullRequestUrl`
+together on the context through an owned `update_item` patch before editing. Create one
+descriptive branch from `origin/<targetBranch>`, such as `feat/csv-export`, for the entire
+root Plan only when neither recorded references nor a matching PR supply a work branch;
+record `git.workBranch` on its context through an owned `update_item` patch. A reserved Git
+patch may update workBranch and pullRequestUrl; repository, target, planned work, membership and
 dependencies stay frozen. Revalidate the checkout and anchors before the first edit.
 
 For every MCP mutation, use the matched pair belonging to the addressed item. Keep each

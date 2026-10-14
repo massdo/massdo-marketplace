@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review open pull requests with a merge confidence percentage, check their English title and Nestor task footer, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests with a merge confidence percentage, check their English title and Nestor Task or Plan footer, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
 disable-model-invocation: true
 ---
@@ -9,8 +9,8 @@ disable-model-invocation: true
 
 Turn "what is open on this repository" into a diagnosis, then a proposal, and — only once the
 user agrees — into merges on `main`, followed by the release procedure the repository already
-has. Git and the GitHub CLI (`gh`) do the work; the Nestor MCP server confirms the tasks a
-pull request references.
+has. Git and the GitHub CLI (`gh`) do the work; the Nestor MCP server confirms the referenced
+Nestor Tasks and Plans.
 
 The user decides every action that cannot be undone. Your part is to make that decision easy
 and safe: look at everything there is to see, say what you found and what you could not see,
@@ -185,25 +185,25 @@ or a conflict is never a green light.
 
 ### Title and Nestor footer
 
-A pull request also has to say what it delivers and which Nestor tasks it serves. Check
-both on every open pull request, from the `title` and `body` read above.
+A pull request also has to say what it delivers and which Nestor Tasks or Plans it serves.
+Check both on every open pull request, from the `title` and `body` read above.
 
 **Title.** It is in English and carries no Nestor id or slug.
 
-**Footer.** A pull request that contributes to Nestor tasks ends its description with one
-visible line, the last of the description:
+**Footer.** A pull request that contributes to Nestor Tasks or Plans ends its description
+with one visible line, the last of the description:
 
 ```
 nestor tasks: brown_turtle, gray_xerinae, copper_manatee
 ```
 
-These are the tasks' slugs, exactly as Nestor returns them, never ids; a comma and a space
-separate them, and none appears twice.
+These are the referenced items' slugs, exactly as Nestor returns them, never ids; a comma
+and a space separate them, and none appears twice.
 
-**Project.** A slug is unique inside a project, not across the journal, so the tasks are
+**Project.** A slug is unique inside a project, not across the journal, so the items are
 read in the Nestor project of this repository: the one named after it. Read it once with
 `get_project`, passing the `REPO` of `OWNER/REPO` as `name`, and keep the id it returns for
-the scope of every task read. When no project carries that exact name, the tasks stay
+the scope of every item read. When no project carries that exact name, the references stay
 unverified: say so, and outside `list` ask which project the repository belongs to.
 
 Then check four things:
@@ -211,16 +211,18 @@ Then check four things:
 - **Format.** The footer is one line, the last of the description, written exactly this way.
 - **Existence.** Read the listed slugs with `get_item`, up to five per call in `ref`, with
   `scope: { mode: "project", projectId }` and a `known` array of the same length. At each
-  position, send the matched `{ version, etag }` pair when the task's content is already
-  held — another pull request lists the same task, or an earlier verification read it —
+  position, send the matched `{ version, etag }` pair when the item's content is already
+  held — another pull request lists the same item, or an earlier verification read it —
   and `null` only when that content is absent or incomplete. With `unchanged: true`, keep
   the held content and pair; a full answer replaces them. Every slug must resolve to one
-  task of that project.
-- **Correspondence.** The diff actually contributes to each listed task, the subtasks
-  concerned included. A partial contribution is enough: the footer links a task to the
-  code, it does not declare the task finished. A task that is only mentioned as a
-  dependency does not belong in the list. Decide from the task you read and from the diff;
-  never invent a correspondence from a resembling title.
+  Task (`type: "task"`) or Plan (`type: "plan"`) of that project; any other item type makes
+  the footer invalid.
+- **Correspondence.** The diff actually contributes to each listed Task or Plan. For a
+  Plan, verify a contribution to at least one code Task in its subtree, following `planId`
+  and `parentPlanId`; read the tree or ancestry as needed. A partial contribution is enough:
+  the footer links an item to the code, it does not declare the item or its subtree finished.
+  A Task or Plan listed only as a dependency does not belong. Compare the diff with the
+  items and subtree you read; never invent a correspondence from a resembling title.
 - **Grouped deliveries.** A pull request that brings other pull requests or an intermediate
   branch into `main` keeps every slug their footers carried. Read the footers of the pull
   requests merged into its head branch that `main` does not hold yet, and name each slug
@@ -229,9 +231,9 @@ Then check four things:
 A title that fails, or a footer that fails one of these checks, is non-conforming: the pull
 request is blocked until it is corrected, whatever its percentage. A missing or invalid
 footer is not validated traceability. A missing footer alone does not block, since a pull
-request may serve no Nestor task, but only the user can confirm that: say it is missing and
-never guess the tasks. When Nestor cannot be reached, the tasks stay unverified, which is a
-limit to state, not a pass.
+request may serve no Nestor Task or Plan; only the user can confirm that. Say it is missing
+and never guess the references. When Nestor cannot be reached, the references stay
+unverified: state that limit without treating it as a pass.
 
 ### Merge confidence and report
 
@@ -356,8 +358,8 @@ proposal instead of choosing.
 
 **Titles and footers.** Have non-conforming metadata corrected before the merge. Name each
 title or footer that fails and the correction it needs, using only slugs you verified; for a
-missing footer, ask whether the pull request serves Nestor tasks, and which ones. Editing a
-pull request is a write of its own — `gh pr edit N --repo OWNER/REPO --title … --body-file …`
+missing footer, ask whether the pull request serves Nestor Tasks or Plans, and which ones.
+Editing a pull request is a write of its own — `gh pr edit N --repo OWNER/REPO --title … --body-file …`
 — so it waits for its agreement, and the pull request is verified again afterwards.
 
 **The merges.** For each pull request, in the agreed order:
@@ -432,7 +434,7 @@ stop. A retry, a revert or a cleanup is a new action and needs its own agreement
 - It never merges every pull request, or publishes a release, on the strength of being
   invoked.
 - It never merges a pull request whose title or Nestor footer is non-conforming, and never
-  guesses the tasks a pull request serves.
+  guesses the Tasks or Plans a pull request serves.
 - It never puts a `nestor tasks:` footer in the release notes it prepares, and never triggers
   a merge or a release that would publish one.
 - It never stashes, discards, force-pushes, resolves a conflict or brings local commits into
