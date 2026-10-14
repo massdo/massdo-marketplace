@@ -116,10 +116,10 @@ Start from the evidence, not from the user's description of it.
    push state unknown in the affected row; do not fetch to resolve it.
 
 Keep this inventory for the scored report below. Lead the normal diagnosis with that report,
-then give the count, the baseline and a short local-work summary. In `list`, output only the
-scored report. You see this machine's clones and worktrees and GitHub's state. You do not see
-another agent's unsaved work, another machine, or a session that has not pushed; say so
-instead of implying complete coverage.
+then give the count, the baseline, whether `main` is ahead of its latest release, and a short
+local-work summary. In `list`, output only the scored report. You see this machine's clones
+and worktrees and GitHub's state. You do not see another agent's unsaved work, another
+machine, or a session that has not pushed; say so instead of implying complete coverage.
 
 ## 2. Verify each pull request
 
@@ -278,62 +278,15 @@ make clear that the percentage is the residual judgment. These examples share th
 | 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
 | 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
 
-### Normal-mode conclusion
+In normal mode, end each report with one block quote holding only the next action — a pull
+request edit, a merge (section 4) or a release step (section 5) — with its exact target, its
+effects and the agreement it needs. Having no pull request to merge does not mean everything
+is published: when `main` is ahead of its latest release, the next action is that release.
+When nothing remains, say so and ask nothing; when the next action is blocked, name what is
+missing or the decision it awaits instead of offering it.
 
-In normal mode, after the scored list, name the repository and distinguish open PRs, code
-already merged into `main`, and the latest published release. State missing evidence as
-unknown; zero open PRs alone establishes neither that code is merged nor that it is published.
-
-End with one visually distinct block quote for the **next useful action only**: proposed
-action, exact target, effects and expected choice — authorize that action or defer it.
-For a merge, identify the PRs and examined heads, `main` and its baseline, the merge method
-and automatic effects. For a release, show the version/tag, commit, documented command and
-automatic effects before requesting agreement. Keep supporting evidence above the block;
-do not turn the conclusion into a menu of later steps.
-
-If nothing needs doing, say so and stop without a question. If evidence or a prerequisite
-blocks progress, name exactly what is missing and any necessary human decision. Never offer
-the blocked action for authorization. These presentation rules add no consent and change
-no merge gate or release procedure. They do not apply to `ship list`.
-
-Illustrative conclusions below follow the report and its verified evidence. SHAs are
-abbreviated for display; commands and effects depend on the examined repository.
-
-**PR ready to merge**
-
-Repository: OWNER/REPO. One open PR; `main` examined at `b012345`.
-Latest published release: v1.2.0 at `d012345`.
-
-> **Proposed action: merge [#12 Add export](https://github.com/OWNER/REPO/pull/12)**
-> Target: head `a1b2c3d` into `main` at `b012345`, using squash.
-> Effects: update `main` and run validation; no automatic release or deployment.
-> **Choice: authorize this merge or defer it.**
-
-**Zero open PRs; merged code awaiting publication**
-
-Repository: massdo/journal. No open PRs; code already merged into `main` at `5ce8023`.
-Latest published release: v0.36.0 at `d012345`; the examined code is not published yet.
-
-> **Proposed action: publish v0.37.0**
-> Target: massdo/journal, commit `5ce8023`, tag `v0.37.0`.
-> Command: `npm run release minor`.
-> Effects: annotated tag, tag CI, then GitHub Release with MCP and Auth archives.
-> **Choice: authorize this release or defer it.**
-
-**Nothing to deliver**
-
-Repository: OWNER/REPO. No open PRs; `main` at `b012345` is already published as v1.2.0.
-Nothing remains to merge or publish. No action is needed.
-
-**Blocked or missing evidence**
-
-Repository: OWNER/REPO. No open PRs; `main` at `b012345` has unpublished changes since v1.2.0.
-Release blocked: the README and workflow describe contradictory publication procedures.
-**Decision needed: confirm which existing procedure is authoritative before preparing a release.**
-
-**`ship list`, with no open PRs — entire response**
-
-No open pull requests.
+> **Merge [#12 Add export](https://github.com/OWNER/REPO/pull/12)**: head `a1b2c3d` into `main` at `b012345`, by squash.
+> Effects: `validate` runs on `main`; no release or deployment. Merge it now?
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
 request without a separate authorization. In normal mode, when a check needs a checkout,
@@ -405,9 +358,6 @@ selected pull requests with the head commits you verified, the merge order and w
 validations done, the merge method, and the automatic effects each merge will have according
 to the release procedure you found. Then wait for the user's agreement, unless one already
 given in the session covers exactly this.
-
-Use the normal-mode conclusion above to make the next proposed action and its exact scope
-visible at the end of the report, before waiting for that agreement.
 
 The method is the one the repository allows and documents: its merge settings
 (`gh api repos/OWNER/REPO --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'`),
@@ -481,11 +431,6 @@ back through a proposal and needs a new agreement.
    to the user.
 5. **No release expected?** Report only the merges and the validations you actually
    confirmed.
-
-Close the normal report with the same presentation: make the observed merged and published
-states clear, then show the next useful action when one is needed. A completed merge is a
-fact, not a proposed merge; a prepared release is a proposal until publication is verified.
-When nothing remains to do, finish without an approval question or an artificial choice.
 
 When an action fails after an earlier one succeeded, say what is done and what is not, and
 stop. A retry, a revert or a cleanup is a new action and needs its own agreement.

@@ -1,5 +1,5 @@
 {
   "version": "0.12.1",
   "version_hash": "5e71faa2fe3ec161",
-  "changelog": "Ship ends normal reports with one clear next action, its exact target, effects and authorization choice.\nReports distinguish open pull requests, merged code and published releases; idle or blocked states never ask to authorize an unavailable action.\nScoring, merge gates, action-specific consent, release procedures and the read-only ship list mode remain unchanged."
+  "changelog": "Ship ends each report with the one next action and its effects, and proposes the release of merged code that is not yet published."
 }
