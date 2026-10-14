@@ -18,7 +18,7 @@ and ask when each action comes up rather than once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2b3d5870200f48e13" }` on every Nestor MCP call.
+Pass `{ "version_hash": "25e71faa2fe3ec161" }` on every Nestor MCP call.
 
 ## Modes
 
@@ -116,10 +116,10 @@ Start from the evidence, not from the user's description of it.
    push state unknown in the affected row; do not fetch to resolve it.
 
 Keep this inventory for the scored report below. Lead the normal diagnosis with that report,
-then give the count, the baseline and a short local-work summary. In `list`, output only the
-scored report. You see this machine's clones and worktrees and GitHub's state. You do not see
-another agent's unsaved work, another machine, or a session that has not pushed; say so
-instead of implying complete coverage.
+then give the count, the baseline, whether `main` is ahead of its latest release, and a short
+local-work summary. In `list`, output only the scored report. You see this machine's clones
+and worktrees and GitHub's state. You do not see another agent's unsaved work, another
+machine, or a session that has not pushed; say so instead of implying complete coverage.
 
 ## 2. Verify each pull request
 
@@ -277,6 +277,16 @@ make clear that the percentage is the residual judgment. These examples share th
 | 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read, no Nestor footer; unknown: automated validation coverage, tasks served; judgment: limited change, limited evidence |
 | 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
 | 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
+
+In normal mode, end each report with one block quote holding only the next action — a pull
+request edit, a merge (section 4) or a release step (section 5) — with its exact target, its
+effects and the agreement it needs. Having no pull request to merge does not mean everything
+is published: when `main` is ahead of its latest release, the next action is that release.
+When nothing remains, say so and ask nothing; when the next action is blocked, name what is
+missing or the decision it awaits instead of offering it.
+
+> **Merge [#12 Add export](https://github.com/OWNER/REPO/pull/12)**: head `a1b2c3d` into `main` at `b012345`, by squash.
+> Effects: `validate` runs on `main`; no release or deployment. Merge it now?
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
 request without a separate authorization. In normal mode, when a check needs a checkout,
