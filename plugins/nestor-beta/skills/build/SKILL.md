@@ -74,8 +74,7 @@ apply. Branch names, commit subjects and PR titles describe changes without Nest
 slugs. Commit subjects, PR titles and PR descriptions are in English.
 
 1. Check the actual repository root and origin against the effective repository. Confirm
-   a clean working tree; never stash or discard user changes. Check cited files and symbols
-   in the actual checkout, allowing harmless line-number drift.
+   a clean working tree; never stash or discard user changes.
 2. Run `git fetch --prune origin`, then
    `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`, excluding symbolic
    `HEAD`. Resolve the requested target exactly. Without one, show available branches and
@@ -91,15 +90,18 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    a branch name. If the target is unset, save the validated `git.targetBranch` with
    `update_item` on the context, using its held pair; inspect the selection again if the
    saved state changed. A recorded different target requires explicit resolution.
-4. For each external prerequisite, read its completion evidence and check that the required
-   result exists in this checkout: use its recorded commit where applicable and inspect the
-   actual files, symbols and relevant checks. A completed status or open PR alone is
+4. Resolve the intended checkout to the shared work branch when present, otherwise
+   `origin/<targetBranch>`. Before switching, inspect that ref read-only with Git. Check
+   cited files and symbols, allowing harmless line-number drift. For each external
+   prerequisite, read its completion evidence and verify the required result in this ref,
+   using its recorded commit where applicable. A completed status or open PR alone is
    insufficient. If a required result is absent, stop; never merge or cherry-pick it
-   automatically. Recheck these results on the chosen work checkout before editing.
+   automatically. After reservation and checkout, confirm the files, symbols and relevant
+   checks again in the actual working tree before editing.
 5. With no existing reservation, call `manage_build(operation: "reserve", id: selectionId)`
    with that item's latest held pair. It acquires the root context and starts the first
-   eligible Task in `building`. Only after success may you create or switch a work branch or edit
-   code. Read the first id in the returned `reservation.taskIds` and confirm its current
+   eligible Task in `building`. Only after success may you create or switch a work branch
+   or edit code. Read the first id in the returned `reservation.taskIds` and confirm its current
    status; do not guess a child. If it is in review, stop for review or authorised corrections.
 
 Retain returned `ownership: { executionId, proof }` privately for every reserved write.
@@ -175,8 +177,8 @@ For the active Task, before completion:
 Only after confirmed completion may a Plan build call `manage_build(operation: "next",
 id: selectionId)` with ownership and that item's current pair. It rechecks the selection
 and starts the next authorised Task. Its returned `item.id` identifies that Task; read its
-full content and repeat sections 3–4, without invoking a skill again. A direct Task build ends with its
-single Task, even when siblings remain.
+full content and repeat sections 3–4, without invoking a skill again. A direct Task build
+ends with its single Task, even when siblings remain.
 
 Any refusal, blockage or `need_review` stops the loop. Never try other children. The root
 Plan's completion is derived from all actionable Tasks, including those outside a directly
