@@ -28,7 +28,7 @@
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
       "Use $nestor-beta:spec to prepare a complete Plan subtree or one code Task for approval and build inspection.",
-      "Use $nestor-beta:build to build this Nestor task end to end."
+      "Use $nestor-beta:build to deliver an approved Plan subtree or one code Task into its shared pull request."
     ]
   }
 }
