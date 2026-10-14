@@ -1,8 +1,8 @@
 {
   "source": {
     "repository": "massdo/journal",
-    "commit": "5eafae4e9658bc59a0412aeaad2b9bc05e1f6499",
-    "method": "client.listTools() on the in-memory C1 server; only descriptions removed",
+    "commit": "349352dcce0e25d41b5b1a69487ae97e4f1784bb",
+    "method": "client.listTools() on the isolated in-memory Journal server; only descriptions removed",
     "pullRequest": "https://github.com/massdo/journal/pull/126"
   },
   "inputSchemas": {
