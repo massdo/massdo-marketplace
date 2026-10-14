@@ -24,7 +24,7 @@ Create an autonomous code Task in the backlog. Its repository belongs to the Tas
     "title": "Reject invalid export dates",
     "template": "code",
     "backlog": true,
-    "git": { "repository": "/workspace/project" },
+    "git": { "repository": "https://github.com/example/project" },
     "specification": {
       "context": "The CSV export accepts an invalid date; reject it before querying records.",
       "steps": [
@@ -39,8 +39,8 @@ Create an autonomous code Task in the backlog. Its repository belongs to the Tas
 ## Idea with several deliverables
 
 Create the root Plan first. Plans accept no `backlog`, `scheduledAt` or `template`.
-Create a sub-plan with `parentPlanId` when appropriate; its specification describes
-that group's objective and checks, and it inherits the root repository.
+Create a sub-plan with `parentPlanId` when appropriate; its specification fills the same
+six fields for that group, and it inherits the root repository.
 
 ```json
 {
@@ -50,7 +50,7 @@ that group's objective and checks, and it inherits the root repository.
     "scope": { "mode": "global" },
     "type": "plan",
     "title": "Export dated records",
-    "git": { "repository": "/workspace/project" },
+    "git": { "repository": "https://github.com/example/project" },
     "specification": {
       "objective": "Export the selected date's records to CSV.",
       "requirements": ["Reject invalid dates.", "Export only records on the selected date."],
@@ -125,7 +125,7 @@ and inherited repository instead of supplying the autonomous Git context below.
     "expectedEtag": "0123456789abcdef0123456789abcdef",
     "patch": {
       "template": "code",
-      "git": { "repository": "/workspace/project" },
+      "git": { "repository": "https://github.com/example/project" },
       "specification": {
         "context": "The CSV export accepts an invalid date; reject it before querying records.",
         "steps": [{ "action": "Validate the export date and test the rejection path.", "verification": "pnpm test -- export-date" }],
@@ -136,11 +136,35 @@ and inherited repository instead of supplying the autonomous Git context below.
 }
 ```
 
-A Task needing decomposition requires the user's explicit reorganisation instruction
-before writes. Do not patch `type`, manufacture a Plan alongside it, or migrate its
-historical Task children automatically.
 An ordinary Task with a parent, children or an incompatible status cannot be converted
 to code by this call. Report the domain restriction instead of clearing those fields.
+
+A standalone Task holding several deliverables keeps its type. Create the root Plan with
+the repository first, then attach the Task to it; an attached Task sends no `git`.
+Never patch `type` or migrate historical Task children automatically.
+
+```json
+{
+  "tool": "update_item",
+  "arguments": {
+    "version_hash": "2b3d5870200f48e13",
+    "scope": { "mode": "global" },
+    "id": "5X2T",
+    "operation": "patch",
+    "expectedVersion": 3,
+    "expectedEtag": "0123456789abcdef0123456789abcdef",
+    "patch": {
+      "template": "code",
+      "planId": "4W1R",
+      "specification": {
+        "context": "The CSV export accepts an invalid date; reject it before querying records.",
+        "steps": [{ "action": "Validate the export date and test the rejection path.", "verification": "pnpm test -- export-date" }],
+        "doneWhen": ["An invalid export date returns the documented validation error."]
+      }
+    }
+  }
+}
+```
 
 ## Explicit approval, then read-only inspection
 

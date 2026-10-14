@@ -493,7 +493,7 @@
     "name": "nestor-beta",
     "version": "0.11.0",
     "version_hash": "a2cc476ca4c165c2",
-    "commit": "3a0dfe2b0e0cc24a5b560a7527e65d9ad44db71b",
-    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/38340602198"
+    "commit": "3d07760ca70fa21c07bd2eacab4f39a6ff2ec36d",
+    "validation_run": "https://github.com/massdo/massdo-marketplace/actions/runs/37730405804"
   }
 ]

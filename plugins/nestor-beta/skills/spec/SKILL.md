@@ -40,17 +40,26 @@ entire current subtree, recursively, in this invocation. Read its mixed tree wit
 `get_tree` and every selected member with grouped `get_item` calls of at most five refs.
 If the tree reports `truncated` or `hiddenChildCount`, read the hidden subtrees as well;
 an incomplete read cannot justify declaring preparation complete. Preserve completed
-work and identify the remaining work to prepare.
+work and identify the remaining work to prepare. A cancelled, archived or trashed code
+Task in the subtree prevents its approval: report it before any write and ask the user
+for an explicit change of scope.
 
 An entry Task refines that one deliverable, preserving its id and scheduling. Its type
-cannot change into Plan. If it needs several deliverables, explain the required explicit
-reorganisation and obtain the user's instruction before any write; do not create a
-second root or silently reinterpret a historical task hierarchy as Plans. A code Task
-may remain attached to its existing Plan; read the ancestors to retain the root repository.
+cannot change into Plan, and a historical task hierarchy never becomes Plans implicitly.
 For an ordinary Task, read its status and historical hierarchy as well: the server permits
 conversion to code only for a `todo` Task with neither parent nor subtasks. If it is
 ineligible, report the restriction and obtain explicit reorganisation instructions before
 writes, without changing its status or detaching children to force the conversion.
+A code Task may remain attached to its existing Plan; read its ancestor Plans to retain
+the root repository and their approval state.
+
+When a standalone Task holds several deliverables, prepare a new root Plan in its project
+with the Task's repository, then attach the Task to it with `planId` as one of its code
+Tasks, converting it with `template: "code"` when it is ordinary. Present this
+reorganisation in the tree for confirmation; the new Plan then becomes the selection.
+Ask the user first when you are less than 95% sure the Task holds several deliverables.
+For an attached code Task or an ineligible Task, report the need and obtain explicit
+reorganisation instructions instead.
 
 ## 1. Interview
 
@@ -68,14 +77,15 @@ invoke this skill again for each child.
 Choose the domain objects by deliverable:
 
 - One deliverable from an idea produces one autonomous Task with `template: "code"`.
-- Several deliverables produce a `type: "plan"` root and code Tasks. Use sub-plans when
-  a group warrants its own objective and checks; avoid a level containing a single task.
+- Several deliverables produce a `type: "plan"` root and code Tasks. Use a sub-plan when
+  a group warrants its own specification; avoid a level containing a single task.
 - An existing Plan stays the selected Plan; an existing Task stays the selected Task.
 
 A Plan holds the objective, requirements, architecture and documented choices, data
-handling, error handling and verification plan in `specification`. A sub-plan describes
-its own group. Do not copy the whole tree into every Plan. There is no extra orchestrator
-Task: Plan progress is calculated by the domain.
+handling, error handling and verification plan in `specification`. Approval requires all
+six fields on every Plan, sub-plans included: a sub-plan fills them for its own group.
+Do not copy the whole tree into every Plan. There is no extra orchestrator Task: Plan
+progress is calculated by the domain.
 
 Every remaining code Task must stand alone for an executor who missed the interview:
 write its context, ordered steps with an executable verification for each, and observable
@@ -90,19 +100,22 @@ server does not prove their business relevance. Let the domain validate the grap
 build selection instead of inventing ordering or reservation rules in this skill.
 
 Keep one repository on the root Plan in `git.repository`; descendants inherit it. An
-autonomous code Task records its own repository. Read the actual Git root and retain
-existing Git references. Resolve an unknown repository before presenting work for
-approval. Do not introduce a different repository in a descendant.
+autonomous code Task records its own repository. Record the checkout's `origin` URL in
+HTTPS form without `.git`, such as `https://github.com/owner/repo`, never a local path,
+and retain existing Git references. Resolve an unknown repository before presenting work
+for approval. Do not introduce a different repository in a descendant.
 
 ## 3. Confirm, then save
 
 Show the specification, the complete tree with each node's kind (Plan, sub-plan or code
 Task), dependencies and content changes. Name the existing items being changed and the
-fields being replaced. Ask for confirmation before the final writes. Confirmation to
+fields being replaced. Ask for confirmation before any write. Confirmation to
 save is distinct from approval of the prepared work for a future build.
 
-Resolve the project after confirmation. Reuse the source item's project unless the user
-explicitly supplied another; reuse an already resolved project id. Otherwise ask for
+Resolve the project after confirmation. An existing item keeps its own project, since
+the server refuses writes from another one: when `project:` names a different project,
+say so and ask whether to continue in the item's project before any write. Reuse an
+already resolved project id. Otherwise ask for
 the project only when it is missing, accepting global scope when the user chooses none.
 Resolve an explicit name with `get_project(name)` and an id with `get_project(projectId)`.
 For an ambiguous `project:` value, try both exact selectors: proceed only when they
@@ -113,9 +126,10 @@ errors leave resolution incomplete. Never choose a fuzzy match to authorise a wr
 Write with the resolved scope and version hash:
 
 1. Patch an existing Plan or Task with its held matched pair, preserving its identity,
-   scheduling and unrelated content. An eligible ordinary Task becomes a code Task through
-   `template: "code"`; this does not change its Task type.
-   Create a new root only when starting from an idea.
+   scheduling and unrelated content. A patched `specification` or `dependencies` replaces
+   the stored value, so send it complete. An eligible ordinary Task becomes a code Task
+   through `template: "code"`; this does not change its Task type. Create a new root only
+   from an idea or for a reorganised standalone Task.
 2. Create new sub-plans top-down using `parentPlanId`, and code Tasks with `planId`.
    Use `backlog: true` on every new Task. Plans have no backlog or scheduling fields;
    omit those fields from Plan calls. Keep existing Tasks' planning unchanged.
@@ -144,6 +158,13 @@ Call `update_item` with `operation: "approve"`, the selected item's id and its h
 matched pair. For a Plan, this approves its current subtree atomically; do not approve
 each child separately to bypass an incomplete descendant. The domain makes eligible
 remaining Tasks `ready_to_build`; never patch that status or manufacture an approval.
+A refusal names the blocking item and field: report it and, when content is missing,
+complete it, show the change and request approval again.
+
+Refining a code Task attached to a Plan revokes the approval of its ancestor Plans. When
+an ancestor was approved before this invocation, offer to approve again the highest such
+Plan, which restores its subtree. Its conflict after your own Task change is expected and
+is not a concurrent edit.
 
 Then call `manage_build` with `operation: "inspect"` on the same selection. Announce
 “ready to build” only after it accepts. Internal pending dependencies are compatible
@@ -152,5 +173,4 @@ selection. Report the server's precise blocking item or prerequisite and the rem
 work. Do not acquire a reservation, execute the cascade, or invoke Build.
 
 Report the selected slug, saved Plan/Task counts, approval outcome and inspect outcome
-separately. An accepted contract check does not prove execution by every agent or that
-the build skill and deployed server already support the entire workflow.
+separately.

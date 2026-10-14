@@ -77,8 +77,8 @@ Read `CLAUDE.md`, `AGENTS.md` and `CONTRIBUTING.md` where present. Their workflo
 apply. Branch names, commit subjects and PR titles describe changes without Nestor ids or
 slugs. Commit subjects, PR titles and PR descriptions are in English.
 
-1. Check the actual repository root and origin against the effective repository. Confirm
-   a clean working tree; never stash or discard user changes.
+1. Check the checkout's `origin` URL, in HTTPS form without `.git`, against the effective
+   repository. Confirm a clean working tree; never stash or discard user changes.
 2. Run `git fetch --prune origin`, then
    `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`, excluding symbolic
    `HEAD`. Resolve the requested target exactly. Without one, show available branches and
