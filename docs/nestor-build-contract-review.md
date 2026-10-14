@@ -35,7 +35,7 @@ mutations can change other members' ETags; a stale pair follows the conflict con
 | Plan | Read the complete subtree; use inspect/reserve ordering, then complete/next sequentially without another skill invocation or an agent per child. An empty remaining selection stops before Git or reservation. |
 | Attached Task or sub-plan | Follow planId/parentPlanId to the root; reuse its repository, target, work branch and PR. A sibling is not implicitly selected. |
 | Missing external result | Inspect the intended work ref before reservation, then the actual checkout before editing. Refuse an absent result even for a completed dependency. Never merge or cherry-pick it automatically. |
-| Interruption | Keep the reservation and completed evidence. Resume only a blocked/reviewed Task after resolution; an unblocked building Task continues under its existing ownership. |
+| Interruption | Keep the reservation and completed evidence. A continuation after the last completion releases the retained owned reservation before Git. Otherwise inspect and resume only a blocked/reviewed Task after resolution; an unblocked building Task continues under its existing ownership. |
 | Transfer | A different execution needs an explicit handoff by the owner. Reads cannot recover the proof; the old proof cannot authorise continuation. |
 | Review or refusal | Stop the entire loop, including when inspect reports an existing need_review Task anywhere in the selection. Record requested review through complete; never set completed or choose another child to evade the stop. |
 | Completion | Verify pushed head and open shared PR before evidence. Release explicitly at the end of the selection. Root completion is derived from all actionable Tasks. |

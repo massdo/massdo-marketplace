@@ -50,6 +50,9 @@ truncated or hidden subtree until the read is complete. For an attached Task, fo
 `parentTaskId` relations do not establish a Plan. Refuse ordinary Tasks and other item
 types; do not convert, approve, or rewrite a specification to force a build.
 
+For an explicit continuation of an existing owned reservation, reconcile its state through
+section 5 first. Do not attempt a fresh reservation or restart already completed work.
+
 Call `manage_build(operation: "inspect", id: selectionId)` before any Git operation.
 Use its returned Tasks and externalDependencies; never calculate a competing selection.
 A Task needs its own current approval and completed dependencies; its parent Plans need
@@ -59,7 +62,8 @@ report its code, message, `details.id` and `details.dependencyId` when supplied.
 a refused child, reorder work, or patch status to bypass the core.
 
 With no remaining Tasks, report the completed selection and stop without reserving or
-performing Git operations. If any selected Task is `need_review`, suspend the build;
+performing Git operations. Release a retained owned reservation explicitly if present.
+If any selected Task is `need_review`, suspend the build;
 only explicit review acceptance or correction work may continue through section 5.
 
 Read each selected Task's full `specification`, dependencies and completion evidence.
@@ -200,7 +204,10 @@ persistent blockage. An interruption also retains the reservation; do not silent
 
 On an explicit continuation, read the selection, root context, remaining Tasks and shared
 Git references with conditional reads. Keep completed Tasks and their evidence; never
-rebuild them or recreate children. Check the current checkout, pushed head and PR again.
+rebuild them or recreate children. If the selected work is already completed, release its
+retained reservation with the current context pair and ownership, then stop before Git.
+Otherwise inspect the selection before Git, obey any refusal, and check the current
+checkout, pushed head and PR again.
 Use the retained private ownership. If another execution must take over, require explicit
 transfer by the current owner via `manage_build(operation: "transfer")`; it returns a new
 credential and revokes the old one immediately. Missing proof is not authority to recover
