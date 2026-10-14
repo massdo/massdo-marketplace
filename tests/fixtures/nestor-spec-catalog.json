@@ -1629,5 +1629,360 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "additionalProperties": false
     }
+  },
+  "outputSchemas": {
+    "manage_build": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "type": "string",
+              "const": "inspect"
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "task",
+                    "plan"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "todo",
+                      "ready_to_build",
+                      "building",
+                      "in_progress",
+                      "need_review",
+                      "completed",
+                      "cancelled"
+                    ]
+                  },
+                  "dependencies": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                        },
+                        "justification": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "taskId",
+                        "justification"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "externalDependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "dependentTaskId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                  },
+                  "justification": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "dependentTaskId",
+                  "taskId",
+                  "justification"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "pluginUpdate": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "const": "update_available"
+                },
+                "pluginName": {
+                  "type": "string"
+                },
+                "clientVersion": {
+                  "type": "string"
+                },
+                "publishedVersion": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "pluginDiagnostic": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "hash_unrecognized",
+                    "catalog_behind",
+                    "catalog_unavailable"
+                  ]
+                },
+                "pluginName": {
+                  "type": "string"
+                },
+                "clientVersion": {
+                  "type": "string"
+                },
+                "publishedVersion": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "operation",
+            "target",
+            "tasks",
+            "externalDependencies"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "type": "string",
+              "enum": [
+                "reserve",
+                "next",
+                "block",
+                "resume",
+                "complete",
+                "release",
+                "transfer"
+              ]
+            },
+            "item": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "task",
+                    "plan"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "todo",
+                    "ready_to_build",
+                    "building",
+                    "in_progress",
+                    "need_review",
+                    "completed",
+                    "cancelled"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "etag": {
+              "type": "string"
+            },
+            "reservation": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "contextId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                    },
+                    "executionId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{22}$"
+                    },
+                    "selectionId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                    },
+                    "taskIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{4,22}$"
+                      }
+                    },
+                    "acquiredAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "contextId",
+                    "executionId",
+                    "selectionId",
+                    "taskIds",
+                    "acquiredAt"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ownership": {
+              "type": "object",
+              "properties": {
+                "executionId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{22}$"
+                },
+                "proof": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                }
+              },
+              "required": [
+                "executionId",
+                "proof"
+              ],
+              "additionalProperties": false
+            },
+            "pluginUpdate": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "const": "update_available"
+                },
+                "pluginName": {
+                  "type": "string"
+                },
+                "clientVersion": {
+                  "type": "string"
+                },
+                "publishedVersion": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "pluginDiagnostic": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "hash_unrecognized",
+                    "catalog_behind",
+                    "catalog_unavailable"
+                  ]
+                },
+                "pluginName": {
+                  "type": "string"
+                },
+                "clientVersion": {
+                  "type": "string"
+                },
+                "publishedVersion": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "operation",
+            "item",
+            "etag",
+            "reservation"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
   }
 }
