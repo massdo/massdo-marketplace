@@ -1,5 +1,5 @@
 {
-  "version": "0.11.0",
-  "version_hash": "a2cc476ca4c165c2",
-  "changelog": "A new nestor-beta skill, loaded by the agent on its own as an extension of the Nestor skill, traces Nestor tasks in the pull request footer.\nCode written from tasks without Build now ends its pull request description with a line such as nestor tasks: brown_turtle, gray_xerinae, and keeps task ids and slugs out of branch names, commit subjects and pull request titles."
+  "version": "0.12.0",
+  "version_hash": "b3d5870200f48e13",
+  "changelog": "Spec prepares complete structured Plan subtrees or individual code Tasks in one explicit invocation, preserving identities and scheduling. Saving work and explicitly approving it remain distinct; readiness requires server inspection.\nBuild executes the server-selected work one Task at a time with private ownership, a shared branch and pull request, verified completion evidence, and explicit release. Interruption retains the reservation; blockage, review and transfer follow the server's decisions.\nThese skills require the Plan and manage_build server contracts. They do not merge, publish a release or tag, and local checks or an open pull request do not prove deployment."
 }

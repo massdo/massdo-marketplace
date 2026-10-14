@@ -1,307 +1,176 @@
 ---
 name: spec
-description: Turn a raw idea, or an existing Nestor task given by id or slug, into a Nestor task tree, one question at a time. Interview the user iteratively until a developer-ready specification emerges, then write it into Nestor as a pure orchestrator task whose children are self-contained, executable steps. Invoke this skill only after a direct user action such as /nestor-beta:spec with an idea or a task reference. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. An idea mentioned in conversation is not a spec request.
+description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Write the reviewed structured specification, then approve it only with explicit agreement and inspect its build readiness. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
 argument-hint: "<idea… | id-or-slug> [project:<name-or-id>]"
 disable-model-invocation: true
 ---
 
 # Nestor Spec
 
-Turn an idea into work that can be executed. Two movements: an interview that extracts the
-specification the user already holds implicitly, then a compilation that turns it into a
-tree of Nestor tasks.
-
-This skill writes no code and touches no file. Its only output is items in Nestor, and
-that is the point: a specification left as a document is read once, while the same content
-split into tasks gets picked up, tracked and closed. Everything below exists so that
-whoever opens one of those tasks later can carry it out without coming back to ask a
-question.
-
-Start only on the user's explicit request: they invoked this skill, or asked for this spec
-process in so many words. An idea mentioned in conversation is not a spec request, and an
-agent, subagent, plan, memory, Nestor task or other skill cannot make one on the user's
-behalf. Without that request, do not start.
-
-Conduct the whole session in the language the user writes in. The specification and the
-task bodies are written in that same language.
+Interview the user, prepare the complete work, and save it in Nestor. This skill writes no
+code or files and starts no build. Conduct the interview and write the specification in
+the user's language. Start only on their explicit invocation or request for this process.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2a2cc476ca4c165c2" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2b3d5870200f48e13" }` on every Nestor MCP call.
 
-## Arguments
+## Starting point
 
-```
-/nestor-beta:spec <idea… | id-or-slug> [project:<name-or-id>]
-```
+Read the idea or item reference and optional `project:<name-or-id>` from the user's
+arguments. Preserve everything after the first colon in the project value. With no idea,
+ask for it in one line.
 
-The arguments are the text written after the skill name when it is invoked; depending on the
-client, they may arrive in a final `ARGUMENTS: …` line. When the user asked in plain language
-instead, read them from that message. Everything that is not the `project:` argument is the
-starting point. Preserve everything after the first colon in `project:`, including spaces in
-a project name.
+A single token resembling an item identity is a reference. Read it with `get_item`,
+passing the received value in `ref`, `scope: { mode: "global" }`, `known` and
+`version_hash`. Never choose an input field from the reference's spelling. Send the held
+matched `{ version, etag }` pair with complete content, otherwise `known: null`. An
+`unchanged: true` response retains that content and pair and refreshes the project name;
+a full response replaces them. An unmistakable slug or full id that is not found ends
+the session. An ambiguous short word not found can instead be a one-word idea.
 
-An empty argument string is not an error. There is nothing to guess wrong here: the idea is
-whatever the user is about to say. Ask for it in one line, then start from the answer.
+Read the published MCP contracts before preparing writes: `create_item` and `update_item`
+must support Plans and structured code Tasks, `update_item` must expose `approve`, and
+`manage_build` must expose `inspect`. If a required capability is unavailable, report it
+and stop before writing. Read [the MCP fields and examples](references/mcp-examples.md)
+when preparing the calls; the server's current catalogue takes precedence.
 
-The project is resolved late, at Stage 4, not now. A session that ends early then costs
-nothing, and the user is not interrupted before the work has taken shape.
+Keep an existing item's identity and matched pair. An entry Plan prepares that Plan's
+entire current subtree, recursively, in this invocation. Read its mixed tree with
+`get_tree` and every selected member with grouped `get_item` calls of at most five refs.
+If the tree reports `truncated` or `hiddenChildCount`, read the hidden subtrees as well;
+an incomplete read cannot justify declaring preparation complete. Preserve completed
+work and identify the remaining work to prepare. A cancelled, archived or trashed code
+Task in the subtree prevents its approval: report it before any write and ask the user
+for an explicit change of scope.
 
-### The starting point is either prose or a Nestor task
+An entry Task refines that one deliverable, preserving its id and scheduling. Its type
+cannot change into Plan, and a historical task hierarchy never becomes Plans implicitly.
+For an ordinary Task, read its status and historical hierarchy as well: the server permits
+conversion to code only for a `todo` Task with neither parent nor subtasks. If it is
+ineligible, report the restriction and obtain explicit reorganisation instructions before
+writes, without changing its status or detaching children to force the conversion.
+A code Task may remain attached to its existing Plan; read its ancestor Plans to retain
+the root repository and their approval state.
 
-**Treat the argument as a task reference only when it is a single token with no whitespace**
-that looks like a Nestor identity: a `color_animal` slug, which an underscore gives away, or
-an id. Anything else is the idea itself, written as prose. One token is the whole test —
-a real idea, however short, arrives as a sentence, and a sentence is never mistaken for a
-slug.
+When a standalone Task holds several deliverables, prepare a new root Plan in its project
+with the Task's repository, then attach the Task to it with `planId` as one of its code
+Tasks, converting it with `template: "code"` when it is ordinary. Present this
+reorganisation in the tree for confirmation; the new Plan then becomes the selection.
+Ask the user first when you are less than 95% sure the Task holds several deliverables.
+For an attached code Task or an ineligible Task, report the need and obtain explicit
+reorganisation instructions instead.
 
-For a reference, read the task with `get_item`, passing the received value in `ref`, with
-`scope: { mode: "global" }`, `known` and `version_hash`. Send the matched `{ version, etag }`
-pair only when the necessary task content is held; otherwise send `known: null`. With
-`unchanged: true`, keep that content and pair and refresh the project name; a full response
-replaces them. Never omit `known` or use null to re-read held content with its pair.
-Do not select a field from its spelling:
-the server resolves IDs, prefixes and exact slugs. Its title and body become the starting
-material, in place of the prose the user would otherwise have typed.
+## 1. Interview
 
-**If an unmistakable reference resolves to nothing, stop and say so.** A `color_animal` slug
-and a full 22-character id can be nothing but references, so a failed read there is a typo
-worth surfacing: someone who typed `brown_turtle` wants that task, and opening an interview
-about the words "brown turtle" wastes a whole session before the mistake appears.
+Ask one real question at a time, starting with the largest unknown in the material
+already supplied. Follow the answers. Read repository facts instead of asking the user
+for them. State technical choices with their reasons; ask about decisions that belong
+to the user, including money, risk, priority and taste.
 
-A short bare word is the ambiguous case — `dashboard` is a plausible id prefix *and* a
-plausible one-word idea. Read it, and when the server finds nothing, take it for the idea it
-almost certainly was and carry on without comment. Guessing from the shape of the string
-cannot separate those two; a failed read can, and it costs one call.
+Finish when the requirements and checks are verifiable and no blocking decision remains.
+Offer to compile the complete work before doing so. Do not restart the interview or
+invoke this skill again for each child.
 
-Keep the task's identity: it is the root of the tree, and Stage 4 writes the specification
-into it rather than creating a second item beside it. Hold the `version` and `etag` that
-the opening read returned or confirmed — Stage 4 uses them.
+## 2. Prepare the complete work
 
-## Stage 1 — The interview
+Choose the domain objects by deliverable:
 
-Ask one question at a time. Only one, and it must be a real one — "and also, by the way"
-smuggles a second question into the first.
+- One deliverable from an idea produces one autonomous Task with `template: "code"`.
+- Several deliverables produce a `type: "plan"` root and code Tasks. Use a sub-plan when
+  a group warrants its own specification; avoid a level containing a single task.
+- An existing Plan stays the selected Plan; an existing Task stays the selected Task.
 
-Two reasons this matters more than it looks. The answer to question *n* determines what
-question *n+1* should be; asked together, the second question is aimed at a target that
-has not appeared yet. And a person answering six questions at once answers all six
-briefly, which is the opposite of what a specification needs.
+A Plan holds the objective, requirements, architecture and documented choices, data
+handling, error handling and verification plan in `specification`. Approval requires all
+six fields on every Plan, sub-plans included: a sub-plan fills them for its own group.
+Do not copy the whole tree into every Plan. There is no extra orchestrator Task: Plan
+progress is calculated by the domain.
 
-**Open where the risk is.** The first question shows you read the starting point: aim it at
-the largest unknown, not at a restatement of what the user just gave you. When the session
-started from a Nestor task, its body is often several paragraphs they already thought
-through — asking anything it already answers is the surest way to look like you never read
-it, and it spends the one thing the interview is trying to protect.
+Every remaining code Task must stand alone for an executor who missed the interview:
+write its context, ordered steps with an executable verification for each, and observable
+completion criteria in `specification.context`, `steps[{action, verification}]` and
+`doneWhen`. Include the relevant wiring and existing file/symbol anchors. Leave no open
+decision, title-only placeholder or child to specify in a later session.
 
-**Follow the answers, not a checklist.** Over the session the ground to cover is the
-problem and who has it, the expected behaviour and its edge cases, the data — shape,
-source, lifetime —, the architecture and the constraints already in place, what happens
-when things fail, and how anyone would know it works. That is the territory, not an order
-of march. Let each answer point at the next question.
+Record dependencies on each Task as `dependencies[{taskId, justification}]`. Explain
+the prerequisite result actually needed, with a non-empty justification, and show these
+edges with the specification. Review their usefulness; structural acceptance by the
+server does not prove their business relevance. Let the domain validate the graph and
+build selection instead of inventing ordering or reservation rules in this skill.
 
-**Never ask what the repository can answer.** When the session runs inside a codebase,
-read it. Asking the user which test runner the project uses spends their attention on
-something a single command settles.
+Keep one repository on the root Plan in `git.repository`; descendants inherit it. An
+autonomous code Task records its own repository. Record the checkout's `origin` URL in
+HTTPS form without `.git`, such as `https://github.com/owner/repo`, never a local path,
+and retain existing Git references. Resolve an unknown repository before presenting work
+for approval. Do not introduce a different repository in a descendant.
 
-**Prefer a decision to a blank question.** "What date format do you want?" makes the user
-design; "I'll store instants in UTC, ISO 8601 — any constraint against it?" makes them
-confirm in one word. Both are questions; the second respects the fact that their attention,
-not your tokens, is the scarce resource. Keep the open form for what genuinely belongs to
-them: money, risk, priority, taste.
+## 3. Confirm, then save
 
-**Recognise the natural end.** The interview is over when no blocking user decision remains
-and the requirements can be stated in verifiable terms. Verified facts and the documented
-technical choices allowed in Stage 2 do not need separate confirmation. Say so and offer to
-compile — do not compile unannounced. The user often has one last thing in mind, and it is
-cheaper to hear it now than to rewrite a tree.
+Show the specification, the complete tree with each node's kind (Plan, sub-plan or code
+Task), dependencies and content changes. Name the existing items being changed and the
+fields being replaced. Ask for confirmation before any write. Confirmation to
+save is distinct from approval of the prepared work for a future build.
 
-## Stage 2 — Compile the specification
+Resolve the project after confirmation. An existing item keeps its own project, since
+the server refuses writes from another one: when `project:` names a different project,
+say so and ask whether to continue in the item's project before any write. Reuse an
+already resolved project id. Otherwise ask for
+the project only when it is missing, accepting global scope when the user chooses none.
+Resolve an explicit name with `get_project(name)` and an id with `get_project(projectId)`.
+For an ambiguous `project:` value, try both exact selectors: proceed only when they
+identify the same project or exactly one succeeds and the other reports `NOT_FOUND` or
+invalid reference format. Ask one question for different matches or ambiguity. Other
+errors leave resolution incomplete. Never choose a fuzzy match to authorise a write.
 
-Write the specification and show it in the conversation. It must let a developer start
-immediately, so it covers:
+Write with the resolved scope and version hash:
 
-- **Requirements** — what the thing does, in verifiable statements. "Fast" is not a
-  requirement; "answers under 200 ms for 95% of reads" is.
-- **Architecture** — the components, their responsibilities, and how they talk. Include the
-  choices that were made *and rejected*, with the reason: that is what stops a future
-  reader from re-opening a settled question.
-- **Data handling** — the shapes, where they live, how they migrate, what is kept and for
-  how long.
-- **Error handling** — what fails, what the system does about it, and what the user sees.
-- **Testing plan** — how each requirement above is checked, and at which level.
+1. Patch an existing Plan or Task with its held matched pair, preserving its identity,
+   scheduling and unrelated content. A patched `specification` or `dependencies` replaces
+   the stored value, so send it complete. An eligible ordinary Task becomes a code Task
+   through `template: "code"`; this does not change its Task type. Create a new root only
+   from an idea or for a reorganised standalone Task.
+2. Create new sub-plans top-down using `parentPlanId`, and code Tasks with `planId`.
+   Use `backlog: true` on every new Task. Plans have no backlog or scheduling fields;
+   omit those fields from Plan calls. Keep existing Tasks' planning unchanged.
+3. Once all dependency ids exist, patch the concerned Tasks with their justified edges.
+   Finish every remaining descendant in this invocation before requesting approval.
 
-**A gap is a question only when the gap is the user's to fill.** The three cases the
-interview already draws still hold here: what the repository can answer, you read; a
-technical choice the user has shown no interest in owning, you make and you write down in
-the text, where it can be contradicted; what turns on money, risk, priority or taste, you go
-back and ask. Only that third kind is worth an interruption — and it is also the one where
-settling it silently costs the most, because an assumption written into a specification
-stops looking like an assumption within a day, once work has been built on top of it.
+For every mutation use the latest confirmed version/ETag pair. On `CONFLICT`, take
+`details.current`, reconcile intervening changes, and retry once with its fresh pair;
+do not replay a stale change unchanged. Only when that payload is missing, read once
+with the held pair in `known` (null only if content or pair is absent). A successful
+mutation returns the next pair: no preventive or post-success read is needed.
 
-## Stage 3 — Break the specification into a task tree
+If a write fails, stop and report the confirmed ids/slugs and the exact unfinished node
+or edge. A lost response has an unknown outcome; establish what exists before resuming.
+Keep confirmed identities and resume there without recreating the root or children.
 
-Do this thinking before writing anything into Nestor.
+## 4. Approve and inspect
 
-Draft the step-by-step blueprint. Break it into iterative chunks that build on one another.
-Then look at those chunks and break them again. Review the result and check the steps are
-small enough to be implemented safely, large enough to move the project forward. Iterate
-until the sizing is right for *this* project — a migration and a prototype do not have the
-same grain.
+After saving the complete work, request explicit approval of that prepared subtree or
+autonomous Task if the user has not already expressly approved it. Agreement to write
+alone is insufficient. If they decline or defer, report saved work without claiming it
+is ready. If concurrent edits change the reviewed work, present those changes for
+approval before retrying.
 
-### Right-sized
+Call `update_item` with `operation: "approve"`, the selected item's id and its held
+matched pair. For a Plan, this approves its current subtree atomically; do not approve
+each child separately to bypass an incomplete descendant. The domain makes eligible
+remaining Tasks `ready_to_build`; never patch that status or manufacture an approval.
+A refusal names the blocking item and field: report it and, when content is missing,
+complete it, show the change and request approval again.
 
-A step is right-sized when an executor can finish it and verify it without waiting for a
-later step to give it a purpose.
+Refining a code Task attached to a Plan revokes the approval of its ancestor Plans. When
+an ancestor was approved before this invocation, offer to approve again the highest such
+Plan, which restores its subtree. Its conflict after your own Task change is expected and
+is not a concurrent edit.
 
-- If a task delivers two things that could each stand on their own, it is two tasks. Count
-  deliverables, not sentences: several acceptance criteria describing one deliverable —
-  a route answering 200 here and 503 there — are one task.
-- If a task can only be verified after the next one lands, it is half a task — merge it.
-- Each task builds on the ones before it and **ends by wiring things together**. Nothing
-  written in a task may be left unreachable from the rest of the system: orphaned code is
-  the failure mode this whole decomposition exists to prevent.
+Then call `manage_build` with `operation: "inspect"` on the same selection. Announce
+“ready to build” only after it accepts. Internal pending dependencies are compatible
+with Plan preparation; external pending prerequisites or review can still block the
+selection. Report the server's precise blocking item or prerequisite and the remaining
+work. Do not acquire a reservation, execute the cascade, or invoke Build.
 
-### The shape of the tree
-
-The tree is fractal. Two kinds of task, and a parent may hold either kind.
-
-**A pure orchestrator task** implements nothing. It exists so that progress is visible at
-its level. Its body says what the group delivers, then lists its children in order with the
-milestone each one closes. State plainly in the body that this task is complete only when
-all of its children are — an orchestrator that gets closed on its own hides unfinished work.
-
-The root is always a pure orchestrator, and it carries the full specification from Stage 2
-in its body. That is what makes the tree readable a month later.
-
-**When the session started from a Nestor task, that task is the root.** It already holds the
-intent and the identity the user has been referring to; creating a second item beside it
-would split one chantier into two records, and leave the original as a stub nobody updates.
-
-Give a section its own intermediate orchestrator when it holds enough actionable steps to
-be followed on its own — roughly three or more. **Never create an orchestrator with a
-single child**: a level that organises one thing organises nothing.
-
-That rule holds at the root too. When the whole idea turns out to fit in one actionable
-task, write that single task and nothing above it — or, when a source task is the root,
-write the specification and the steps into it and give it no children at all. The
-specification then lives beside the steps. A tree is a way to make progress visible, not a
-formality to satisfy.
-
-**An actionable task** is the unit someone picks up and finishes. Its body is read by an
-executor who did not attend the interview and may have no way to ask a question — so it
-must stand alone:
-
-- The context it needs: what already exists at that point, what this step adds, and why.
-- The steps, in order.
-- No open decision. Not one. "Choose between X and Y" hands the user's own call to whoever
-  happens to run the task, and that choice then arrives as a surprise inside the result.
-- A runnable verification per section, and an explicit "done when" for the task.
-- The wiring: how what it produces connects to what is already there.
-
-Anchors — file paths, symbols — are worth including when they exist today. They turn the
-executor's first move into a read rather than a search.
-
-A parent and its children are one coherent deliverable, not unrelated work filed under a
-common heading. That is what makes closing the parent mean something.
-
-## Stage 4 — Confirm, then write it into Nestor
-
-**Show the tree before writing it.** Indented titles, one line each, with the kind of every
-node — orchestrator or actionable. Then ask for confirmation. Creating the tree is N
-writes; undoing it is N trash confirmations, each of which the user has to give by hand.
-
-When a source task is the root, say in that same line that the specification will replace
-its body, and name it by its slug. Overwriting is the one destructive act in this skill, so
-it has to be visible — but it belongs to the confirmation the user is already giving, not to
-a second question. Nestor keeps the previous body in the item's history, which is what makes
-one informed confirmation enough.
-
-### Resolve the project
-
-Only once the user has confirmed the tree.
-
-**Reuse the project already provided.** Use the `project:` argument or the project the user
-gave during the interview. Ask which project the work belongs to only when it is missing,
-in one line. If the user explicitly says the work belongs to no project, use
-`{ "mode": "global" }`.
-
-**A source task already answers this.** When the session started from a Nestor task, its
-project is the project of the whole tree, and `get_item` reported it — so ask nothing and
-resolve nothing. An explicit `project:` argument still wins, since the user typed it while
-knowing where the task lived.
-
-Reuse an id already resolved for the chosen project. Otherwise resolve the supplied value
-with `get_project` before creating any task:
-
-- For an explicit name, pass `name`; for an explicit id or prefix, pass `projectId`.
-  Use the returned id when that lookup resolves unambiguously.
-- When `project:<name-or-id>` leaves the interpretation open, make two separate reads,
-  one with `name` and one with `projectId`. An exact name can also be another project's
-  valid id prefix; the first successful lookup does not settle that ambiguity.
-- Proceed with the returned id when both reads identify the same project, or when exactly
-  one resolves and the other returns `NOT_FOUND` or rejects the reference format.
-- If the reads identify different projects, a lookup is ambiguous, or neither resolves,
-  ask one question to identify the intended project before any write. Other errors leave
-  resolution incomplete: report them and stop rather than treating them as no match.
-
-Resolve silently when the result is unambiguous. Call `search_project`, with no `query` so
-that no project is hidden, only when the user asks what projects exist; never list them to
-accompany the project question.
-
-### Write the tree
-
-Every call carries `version_hash` and the resolved `scope`. The root comes first either
-way, because every child needs its id.
-
-**With a source task**, write the specification into it with `update_item`, sending the
-`version` and `etag` held since the opening read. A whole interview stands between those two
-calls, so the server may well reject the pair as stale — that is the expected path, not an
-error: take the current item and pair from `details.current`, adapt the specification to
-any intervening changes and retry once. Only when the rejection has no `details.current`,
-call `get_item` once with the held content's matched pair in `known`, or null when content
-or pair is absent, and use the full or unchanged response under the rules above. Never
-refresh the pair preventively, reuse the rejected pair for a mutation or replay the
-rejected patch unchanged. Never send a `version` and an `etag` that came from different reads.
-
-**Without one**, create the root with `create_item`, `type: "task"`, no `parentTaskId`, and
-the specification as `body`.
-
-Then create each remaining task with the id its parent returned; a child needs its parent,
-so the tree is written top-down. Use `backlog: true` on every task you create — this is
-planned work, not work due today, and scheduling twenty tasks onto the current day buries
-the rest of the journal. Leave the source task's own scheduling alone: the user chose it,
-and this skill was not asked to reschedule anything.
-
-Titles are short and imperative, in the style of a commit subject.
-
-**If a write fails partway through, stop.** Report exactly which tasks exist, with their
-slugs, and which one failed. Never restart the tree from the root: that duplicates
-everything already written, and two parallel trees are far more expensive to untangle than
-one half-written one.
-
-A lost response is not a refusal. A timeout may well have applied the write, so report that
-node as unknown rather than failed, and check what exists before anyone resumes.
-
-### Report
-
-Give the root's identifier — its slug when a write returned one, its id otherwise — and the
-number of tasks created. When the root is a source task, say that its body now holds the
-specification, so the user knows the overwrite happened. Nothing more: the tree was shown
-before the write, so repeating it spends the user's attention on something they just
-approved.
-
-## What this skill never does
-
-- It never asks two questions in one turn. That is the whole method, not a stylistic
-  preference.
-- It never presents an unverified fact as established or silently settles a decision that
-  belongs to the user. Documented technical choices allowed in Stage 2 remain valid.
-- It never writes into Nestor before the user has confirmed the tree.
-- It never leaves an open decision in an actionable task.
-- It never creates an orchestrator with a single child.
-- It never creates a second root beside a source task, and never overwrites that task's body
-  without having named the overwrite in the confirmation.
-- It never falls back to prose when a task reference resolves to nothing.
-- It never writes code, edits a file, or creates a branch. It specifies; it does not
-  implement.
+Report the selected slug, saved Plan/Task counts, approval outcome and inspect outcome
+separately.

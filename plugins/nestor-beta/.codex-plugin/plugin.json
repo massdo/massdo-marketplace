@@ -1,6 +1,6 @@
 {
   "name": "nestor-beta",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Nestor skills under test, before they are promoted into the nestor plugin.",
   "author": {
     "name": "Dorian Massoulier",
@@ -27,8 +27,8 @@
     ],
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
-      "Use $nestor-beta:spec to turn this idea into a Nestor task tree.",
-      "Use $nestor-beta:build to build this Nestor task end to end."
+      "Use $nestor-beta:spec to prepare a complete Plan subtree or one code Task for approval and build inspection.",
+      "Use $nestor-beta:build to deliver an approved Plan subtree or one code Task into its shared pull request."
     ]
   }
 }
