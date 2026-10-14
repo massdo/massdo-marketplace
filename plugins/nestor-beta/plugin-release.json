@@ -1,5 +1,5 @@
 {
   "version": "0.12.0",
   "version_hash": "b3d5870200f48e13",
-  "changelog": "Spec prepares structured Plans, sub-plans and code Tasks, including every remaining descendant in one explicit invocation. Existing item identities and scheduling are preserved.\nSaving the reviewed work and approving it are distinct actions. Explicit approval uses the server's atomic approve operation, followed by read-only build inspection before reporting readiness. The server must support the Plan and code-work contracts; Spec starts no build."
+  "changelog": "Spec prepares complete structured Plan subtrees or individual code Tasks in one explicit invocation, preserving identities and scheduling. Saving work and explicitly approving it remain distinct; readiness requires server inspection.\nBuild executes the server-selected work one Task at a time with private ownership, a shared branch and pull request, verified completion evidence, and explicit release. Interruption retains the reservation; blockage, review and transfer follow the server's decisions.\nThese skills require the Plan and manage_build server contracts. They do not merge, publish a release or tag, and local checks or an open pull request do not prove deployment."
 }
