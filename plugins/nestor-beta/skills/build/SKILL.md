@@ -1,19 +1,16 @@
 ---
 name: build
-description: Build a specified Nestor task end to end into an open pull request against a validated target branch, implement its plan section by section, audit every commit, and close the task. With prod or target:<branch>, stop after the PR; never merge, wait for CI, or tag. Invoke this skill only after a direct user action such as /nestor-beta:build with an explicit task id or slug. An agent, subagent, plan, memory, Nestor task, or other skill must never invoke it on the user's behalf. A task mentioned in conversation is not a build request.
-argument-hint: "<id-or-slug> [prod] [target:<branch>]"
+description: Build one approved Nestor code Task or an approved Plan subtree into a shared open pull request, using the server's build reservation and progression decisions. Invoke only on the user's direct request with an explicit item id or slug; agents, plans, tasks and other skills cannot invoke it. Stop after verified delivery; never merge, wait for CI or deployment, publish a release, or tag.
+argument-hint: "<plan-or-task-id-or-slug> [prod] [target:<branch>]"
 disable-model-invocation: true
 ---
 
 # Nestor Build
 
-Turn a Nestor task into an open pull request. The task is the specification: this skill
-never invents the plan, it executes the one already written and then checks that the
-execution matches it.
-
-You run the whole build yourself: set the stage, write the code, audit what you wrote, and
-open the PR. Nothing is delegated, so nothing reaches the audit as a second-hand report;
-the diff in front of you is the only evidence it needs.
+Execute the saved specification yourself, one code Task at a time. One explicit Plan
+invocation authorises its server-selected subtree in this session; a Task invocation
+selects only that Task. Never reinvoke a skill or create an agent or branch per child.
+The server owns approval, selection, ordering, reservation and status transitions.
 
 ## Identify the plugin version
 
@@ -21,224 +18,197 @@ Pass `{ "version_hash": "2b3d5870200f48e13" }` on every Nestor MCP call.
 
 ## Arguments
 
-```
-/nestor-beta:build <id-or-slug> [prod] [target:<branch>]
-```
-
-Run only when the user invokes this skill directly: an agent, subagent, plan, memory, Nestor
-task or other skill never invokes it on the user's behalf. The arguments are the text written
-after the skill name in that invocation; depending on the client, they may arrive in a final
-`ARGUMENTS: …` line. When the invocation is phrased in prose instead, read the same arguments
-from the user's message.
-
-**An empty argument string ends the turn immediately.** Reply exactly:
+Accept `<id-or-slug> [prod] [target:<branch>]` only from a direct user invocation or an
+explicit request for this process. A task mentioned in conversation is insufficient.
+With an empty argument string, reply exactly and stop without searching:
 
 > id or task slug is needed to build ! :)
 
-Then stop. Do not list tasks, do not search Nestor for a plausible candidate, and do not
-reuse a task mentioned earlier in the conversation. The user always knows the id they mean,
-and a wrong guess here is only discovered after a branch and a full implementation run —
-the most expensive way to learn that the target was wrong.
+The first argument identifies a Plan or code Task. The literal `prod` defaults the target
+to `main`; a non-empty `target:<branch>` overrides it. Preserve everything after the first
+colon, including `/`. An empty `target:` leaves the target unspecified. Reject unknown
+arguments and multiple `target:` arguments, naming the invalid input. Without a resolved
+target, ask for `target:<branch>` during preparation and wait.
 
-The first argument is a Nestor item id or a `color_animal` slug. Pass the received value
-to `get_item` in `ref`, with `scope: { mode: "global" }`, `known` and `version_hash`. Send
-the matched `{ version, etag }` pair only when the necessary task content is held; otherwise
-send `known: null`. With `unchanged: true`, keep that content and pair and refresh the
-project name; a full response replaces them. Never omit `known` or use null to re-read
-held content with its pair. The server resolves the reference; do not select an input
-field from an underscore or another character.
+## 1. Read and inspect before Git
 
-After the first argument, parse these optional named arguments in any order:
+Read the reference with `get_item(ref, scope: { mode: "global" }, known, version_hash)`.
+Send the held matched `{ version, etag }` pair only with the necessary complete content;
+otherwise send `known: null`. An unchanged response retains that content and pair and
+refreshes the project name. A full response replaces them. Group known refs by up to five.
 
-- The literal flag `prod` selects `main` as the target when `target:` is absent.
-- One `target:<branch>` argument selects the remote branch the PR will target.
-  Preserve everything after the first colon, including `/` in branch names. An absent
-  argument or an empty `target:` leaves the target unspecified until Stage 2.
+Read the server's published contracts. Require `manage_build` operations `inspect`,
+`reserve`, `next`, `block`, `resume`, `complete`, `release` and `transfer`, plus the code-work
+fields of `get_item` and `update_item`. If unavailable, stop before Git or writes; never
+fall back to status patches. Read [the MCP call examples](references/mcp-examples.md) when
+preparing calls; the current catalogue takes precedence.
 
-Reject more than one `target:` argument or any unknown argument. Name the invalid argument
-and stop rather than guessing.
+Keep the selection id distinct from the shared context id and the active Task id. For a
+Plan, read its mixed tree with `get_tree` and the complete selected objects. Follow any
+truncated or hidden subtree until the read is complete. For an attached Task, follow
+`planId` and `parentPlanId` to the root Plan to read its inherited Git context. Historical
+`parentTaskId` relations do not establish a Plan. Refuse ordinary Tasks and other item
+types; do not convert, approve, or rewrite a specification to force a build.
 
-Without `prod` and without `target:<branch>`, Stage 2 asks for the target and waits. With
-either one, the skill stops after the branch, the commits, and the open pull request.
-Merging, waiting for CI, and tagging are not part of this skill.
+Call `manage_build(operation: "inspect", id: selectionId)` before any Git operation.
+Use its returned Tasks and externalDependencies; never calculate a competing selection.
+A Task needs its own current approval and completed dependencies; its parent Plans need
+no approval. A Plan selects its remaining subtree, allowing pending internal dependencies
+in the server's order. External dependencies must be completed. A refusal ends preparation:
+report its code, message, `details.id` and `details.dependencyId` when supplied. Never skip
+a refused child, reorder work, or patch status to bypass the core.
 
-## Stage 1 — Load the task and decide whether it can be built at all
+Read each selected Task's full `specification`, dependencies and completion evidence.
+Refuse open decisions, steps without executable verification, dead file/symbol anchors,
+and required actions the agent cannot perform. Resolve the effective repository from the
+root Plan, or from the autonomous Task. An incomplete plan is reported, never repaired here.
 
-Read the task with `get_item`. Then read its body as an executor would, and answer one
-question: could someone implement this without asking anything?
+## 2. Validate Git, then reserve
 
-Refuse and stop when you find any of these:
+Read `CLAUDE.md`, `AGENTS.md` and `CONTRIBUTING.md` where present. Their workflow and hooks
+apply. Branch names, commit subjects and PR titles describe changes without Nestor ids or
+slugs. Commit subjects, PR titles and PR descriptions are in English.
 
-- **An open decision.** A sentence like "decide whether X or Y" means the plan is not
-  finished. Executing it would make you choose on the user's behalf.
-- **A step with no verification.** A step that cannot be checked cannot be reported as
-  done — and by Stage 4 you will have no way of telling whether it was.
-- **A dead anchor.** The body cites files, symbols or line numbers. Check that the files
-  and symbols still exist — line numbers drift harmlessly, a missing file does not.
-- **An action no agent can perform.** Revoking a production secret, clicking a console,
-  confirming with a third party. Name it; the user does that part first.
+1. Check the actual repository root and origin against the effective repository. Confirm
+   a clean working tree; never stash or discard user changes. Check cited files and symbols
+   in the actual checkout, allowing harmless line-number drift.
+2. Run `git fetch --prune origin`, then
+   `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`, excluding symbolic
+   `HEAD`. Resolve the requested target exactly. Without one, show available branches and
+   ask for `target:<branch>`. For a missing name, propose only a case-insensitive exact or
+   unique one-edit match and wait for confirmation; otherwise request an available target.
+   An empty remote list ends preparation. Never silently substitute a branch.
+3. Read the root Plan's shared `git.targetBranch`, `git.workBranch` and `git.pullRequestUrl`
+   (or the autonomous Task's Git fields). An attached direct build reuses that context;
+   it does not create an independent PR. Read open PR footers with
+   `gh pr list --state open --limit 1000 --json number,headRefName,baseRefName,body` and
+   compare the actual contributing family with those references. Conflicting references,
+   several matching PRs or a different base stop the build. Never infer ownership from
+   a branch name. If the target is unset, save the validated `git.targetBranch` with
+   `update_item` on the context, using its held pair; inspect the selection again if the
+   saved state changed. A recorded different target requires explicit resolution.
+4. For each external prerequisite, read its completion evidence and check that the required
+   result exists in this checkout: use its recorded commit where applicable and inspect the
+   actual files, symbols and relevant checks. A completed status or open PR alone is
+   insufficient. If a required result is absent, stop; never merge or cherry-pick it
+   automatically. Recheck these results on the chosen work checkout before editing.
+5. With no existing reservation, call `manage_build(operation: "reserve", id: selectionId)`
+   with that item's latest held pair. It acquires the root context and starts the first
+   Task in `building`. Only after success may you create or switch a work branch or edit
+   code. Read the first id in the returned `reservation.taskIds` and confirm its current
+   status; do not guess a child. If it is in review, stop for review or authorised corrections.
 
-When you refuse, say precisely what is missing and stop. Create no branch and no commit.
-A half-built task on a stray branch costs more to clean up than a refusal costs to read.
+Retain returned `ownership: { executionId, proof }` privately for every reserved write.
+Never print the proof or put it in files committed to Git, item bodies, PRs, logs, errors
+or a transmission. Read APIs never return it. A reservation persists without expiry.
+For an interrupted owned reservation, follow section 5 instead of calling reserve again.
+A foreign reservation stops the build; only an explicit owner-authorised transfer can
+replace its credential. Never fabricate an execution id or proof.
 
-This gate is the reason the rest of the skill can be fast: everything after it assumes the
-plan is trustworthy.
+Reuse the recorded work branch and PR. Otherwise create one descriptive branch from
+`origin/<targetBranch>`, such as `feat/csv-export`, for the entire root Plan. Record
+`git.workBranch` on its context through an owned `update_item` patch. A reserved Git patch
+may update workBranch and pullRequestUrl; repository, target, planned work, membership and
+dependencies stay frozen. Revalidate the checkout and anchors before the first edit.
 
-## Stage 2 — Prepare the branch
+For every MCP mutation, use the matched pair belonging to the addressed item. Keep each
+successful response's item version and ETag together. If a needed object's content or pair
+is absent, read it once; never reuse a Task's pair for its context. On `CONFLICT` with
+`details.current`, reconcile that state and retry once with its fresh pair, without an
+extra read or blindly replaying the refused operation. Without that payload, conditionally
+read once with `known` and retry once. A second refusal stops execution. Never bypass an
+approval or ownership failure. A lost response has unknown outcome: reconcile confirmed
+state before repeating any mutation, especially reserve or transfer.
 
-Read the repository's own rules first — `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md` — for
-its branch naming, commit convention and Git workflow. They win over anything here, with
-one exception: a Nestor id or slug never goes in a branch name, a commit subject or a pull
-request title, and that title is in English. This skill orchestrates; the repository
-decides its own conventions.
+## 3. Implement and audit the active Task
 
-Then:
+Reread the active Task's full held specification before editing. Load installed
+`karpathy-guidelines` when available. Follow its sections in order and change only what
+the specification requires. Never edit French prose with string-rewriting shell tools;
+use file editing tools.
 
-1. Confirm the working tree is clean. Never stash or discard the user's changes; stop and
-   say so instead.
-2. Run `git fetch --prune origin`, then list the remote branches with
-   `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`. Exclude the
-   symbolic `HEAD` entry. Do this before resolving the requested target, even when the
-   argument omitted `target:`.
-   If the remote branch list is empty, report that no target branch was found and stop.
-3. Determine the requested target:
-   - When `target:<branch>` has a non-empty value, use that value.
-   - When the target is unspecified and `prod` is present, request `main`.
-   - When the target is unspecified and `prod` is absent, show the available branches and
-     ask the user to reply with `target:<branch>`. Stop and wait for that input.
-4. Resolve `targetBranch` to an exact name in the fetched remote branch list. Never silently
-   fall back to another branch.
-   - If the requested name does not exist, first look for a case-insensitive exact match;
-     otherwise look for a unique branch name one insertion, deletion, or substitution away.
-     If one exists, ask `Target branch is <closest>?` and stop for confirmation. An
-     affirmative reply sets `targetBranch` to that exact available branch.
-   - If there is no credible single match, say that no target branch was found, show the
-     available branches, ask for `target:<branch>`, and stop.
-5. Decide which work branch to use. **A parent task and its subtasks are one deliverable:
-   they ship together, in one pull request on one branch.** Read the task's family in
-   Nestor, whatever the status of its members: its parent and that parent's subtasks when
-   it has a `parentTaskId`, otherwise the task itself and its own subtasks. Then read the
-   footer of every open pull request — the `nestor tasks:` line that ends its description,
-   see Stage 5 — with
-   `gh pr list --state open --limit 1000 --json number,headRefName,baseRefName,body`. A
-   pull request whose footer lists a slug of that family is the family's: continue on its
-   head branch. Its base must be `targetBranch`; if it differs, or if several pull requests
-   match, say so and stop. The footer and Nestor's parent/child relations are the only
-   link: never infer it from a branch name.
-6. Otherwise create a fresh branch from `origin/<targetBranch>` with a descriptive name: the
-   commit type that fits the work, then a few words about the change — `feat/csv-export`,
-   `fix/login-redirect`.
+Implement one Task at a time on the common branch. Run each section's verification before
+committing that section, using the repository's convention. Keep one descriptive commit
+per section and report the command and real output. Diagnose and fix ordinary correctable
+failures without inventing a successful result. Run the Task's atomic checks and all
+required repository checks before recording completion.
 
-## Stage 3 — Implement the plan
+Audit the actual diffs yourself: run `git log origin/<targetBranch>..HEAD`, then `git show`
+for every commit. Check scope, unrelated files and weakened tests against the installed
+Karpathy checklist. Rerun every declared verification from the specification and check
+each `doneWhen` criterion against observations. Commit audit fixes separately, one concern
+per commit. If the specification itself is wrong, stop and report it without redesigning.
 
-Write the code yourself, in this session, working from the task body as it stands. Reread it
-**in full** from the held content before the first edit and keep it open: the mental summary
-you would otherwise work from is where the constraints get lost.
+## 4. Deliver, complete, then advance
 
-Hold yourself to these rules:
+For the active Task, before completion:
 
-- Load the `andrej-karpathy-skills:karpathy-guidelines` skill before writing any code, when
-  it is installed. It is the house style for exactly this situation: executing a plan
-  written earlier, where the failure modes are overcomplication, changes that drift past
-  the request, and success claimed without a check. Skip it silently when the skill is not
-  available — it is a quality lever, not a dependency.
-- Work only from the plan. Do not redesign it, do not widen its scope, do not add
-  speculative features.
-- Follow the plan's own sections in order. **Commit once per section**, so the history
-  matches the plan and a reviewer can read them side by side. Use the repository's commit
-  convention.
-- Keep every commit subject descriptive: it says what the commit changes and carries no
-  Nestor id or slug. The task is referenced in one place only, the pull request footer of
-  Stage 5.
-- Run that section's own verification **before** committing it. A section whose
-  verification fails is not committed; report the failure instead of working around it.
-- Never edit French prose with `sed`, `python` or any other string-rewriting shell tool.
-  Accented characters and typographic apostrophes get mangled silently. Use the file
-  editing tools.
-- Report, per section: what changed, the verification command run, and its real output.
-
-## Stage 4 — Audit what you wrote
-
-This stage is not optional, and it is not a re-reading of your own Stage 3 report.
-
-Having written the code is what makes this hard: you remember what you meant to do, and the
-memory reads like evidence that it is there. It is not evidence. The diff and the real
-output of each verification are.
-
-Measure the work against the `andrej-karpathy-skills:karpathy-guidelines` checklist loaded
-at Stage 3, when it is installed, rather than against a sense that the diff looks fine.
-
-Then:
-
-1. **Read every commit's diff.** Run `git log origin/<targetBranch>..HEAD`, then `git show`
-   each commit. Look for scope creep, files touched for no reason, tests weakened to pass,
-   comments that paraphrase the code.
-2. **Re-run every verification command yourself**, from the plan, not from the report.
-3. **Check the plan's own "done when" criteria** one by one against what you observe.
-
-Fix what is wrong and commit each fix separately, one commit per concern. If the audit shows
-the plan itself was wrong, stop and say so — do not quietly redesign it.
-
-Report honestly: what passed, what you fixed, what still fails. A failing check reported
-plainly is worth far more than a green summary that does not hold.
-
-## Stage 5 — Open the pull request and verify it
-
-Enter this stage once `targetBranch` is resolved: that happens when the arguments contain
-`prod` or `target:<branch>`, or when the user answered Stage 2 with a target. Follow the
-repository's own Git workflow.
-
-1. Push the branch. When Stage 2 found the family's pull request, keep working in it;
-   otherwise open one with `gh`, explicitly passing `targetBranch` as its base.
-2. Give it an English title that describes the change, without any Nestor id or slug.
-3. Describe the changes and their validation in the body, as for any pull request, and
-   keep Nestor references out of that text. They go in the footer: one visible line, the
-   last of the description, with nothing after it — a signature or attribution line goes
-   above.
+1. Push the common branch without force or history rewriting. Open or update its common PR
+   with `gh`, explicitly using `targetBranch` as base when creating it. Keep hooks enabled.
+   Adjust the English title and description to the complete current scope.
+2. End its description with one visible last line, nothing after it:
 
    ```
    nestor tasks: brown_turtle, gray_xerinae, copper_manatee
    ```
 
-   - Write each task's slug exactly as Nestor returns it, never an id: an id comes back
-     shortened to a length that varies from one response to the next, a slug does not.
-   - Separate them with a comma and a space, and write each slug once.
-   - List the tasks the changes actually contribute to, the subtasks concerned included. A
-     task that is only mentioned as a dependency stays out.
-   - A partial contribution may be listed: the footer links a task to the code, it does
-     not declare the task finished.
+   Use exact returned slugs, once each, comma-space separated. Keep existing contributors
+   and add the Tasks and Plans the changes actually contribute to; dependencies alone do
+   not belong. Keep all Nestor references in this footer.
+3. Read back `gh pr view --json url,state,title,body,baseRefName,headRefName,headRefOid`.
+   Verify OPEN, target base, common head branch, English descriptive title and footer.
+   Check the full local commit SHA against the pushed remote head and PR head. Correct
+   metadata and reread when needed. A failed push, missing PR or wrong reference stops
+   completion. Record the verified `git.pullRequestUrl` on the context with ownership.
+4. Call `manage_build(operation: "complete", id: activeTaskId)` with that Task's held pair,
+   ownership and `completionEvidence`: an observed result for every exact `doneWhen`
+   criterion and every exact step verification command, the full pushed commit SHA, and
+   the verified open PR. Use `review: "none"` only when every criterion passes. When work
+   stands but human review is required, record `review: "requested"`; the returned
+   `need_review` suspends the whole cascade. Never claim unexecuted checks passed or
+   manufacture evidence. A failing required check cannot complete the Task.
 
-   Keep the footer true as the pull request evolves: when a subtask joins a pull request,
-   keep every slug already listed and add the new ones, and adjust the title when the scope
-   changes.
-4. Read the pull request back with `gh pr view --json url,title,body,baseRefName` and
-   check what GitHub reports: the title, the footer, and the base branch, which must be
-   `targetBranch`. Correct a title or a footer that does not conform, then read again. If
-   the pull request could not be created, or if a check still fails — a base that differs
-   from `targetBranch` included — say what failed and stop: the task keeps its current
-   status.
+Only after confirmed completion may a Plan build call `manage_build(operation: "next",
+id: selectionId)` with ownership and that item's current pair. It rechecks the selection
+and starts the next authorised Task. Its returned `item.id` identifies that Task; read its
+full content and
+repeat sections 3–4, without invoking a skill again. A direct Task build ends with its
+single Task, even when siblings remain.
 
-Never force-push, never rewrite a published branch, and never bypass a commit hook with
-`--no-verify`. If a hook refuses the commit, its diagnostic is the work to do.
+Any refusal, blockage or `need_review` stops the loop. Never try other children. The root
+Plan's completion is derived from all actionable Tasks, including those outside a directly
+built Task or selected sub-plan; never patch the root completed yourself.
 
-## Stage 6 — Close the task in Nestor, then stop
+When the selected work is confirmed complete, call `manage_build(operation: "release")`
+explicitly on the context with its current pair and ownership. The last completion alone
+does not release it. Report the PR URL, verified results and confirmed Task/Plan progress,
+then stop. Never merge, wait for CI or deployment, publish a release, or create a tag.
+Local results and an open PR are delivery evidence, not production proof.
 
-The task takes its final status only once its pull request is open and verified. Set it
-with `update_item`, passing the held `{ version, etag }` pair as `expectedVersion` and
-`expectedEtag`.
+## 5. Block, interrupt and resume
 
-Use `completed` when every criterion passed. Use `need_review` when the work stands but
-something still needs a human eye, and say what.
+For a persistent obstacle on an active building Task, call `manage_build(operation:
+"block", id: activeTaskId)` with ownership, its held pair, and non-empty
+`blockage: { reason, resumeCondition }`. Report the exact obstacle and stop. It retains
+the reservation and suspends every remaining Task. Ordinary correctable errors need no
+persistent blockage. An interruption also retains the reservation; do not silently release.
 
-Report the PR URL and stop. Do not merge, do not wait for checks, do not tag.
+On an explicit continuation, read the selection, root context, remaining Tasks and shared
+Git references with conditional reads. Keep completed Tasks and their evidence; never
+rebuild them or recreate children. Check the current checkout, pushed head and PR again.
+Use the retained private ownership. If another execution must take over, require explicit
+transfer by the current owner via `manage_build(operation: "transfer")`; it returns a new
+credential and revokes the old one immediately. Missing proof is not authority to recover
+it through reads, reserve again, or remove the reservation.
 
-## What this skill never does
+After observing that a stored resumeCondition is resolved, call `manage_build(operation:
+"resume", id: activeTaskId, conditionResolved: true)` with ownership and its current pair.
+For review corrections without blockage, resume may use false. Continue the interrupted
+Task only after acceptance. An already building unblocked Task can continue with its owned
+reservation without an invalid resume call; if no Task is active and work remains, use
+next. Use `complete(review: "accepted")` only after actual acceptance of the reviewed work,
+with valid evidence; never grant that acceptance yourself to skip review.
 
-- It never runs without a target. No argument means one line back to the user, nothing else.
-- It never writes the plan. An incomplete task is refused at Stage 1, not repaired.
-- It never substitutes a missing target branch without the user's confirmation.
-- It never merges, waits for CI on `targetBranch`, or tags a release. The open PR is the end.
-- It never trusts its own recollection of the work in place of the diff.
-- It never writes a Nestor id or slug in a branch name, a commit subject or a pull request
-  title. The footer is the only reference.
-- It never gives the task its final status before its pull request is open and verified.
+If planned work must change, release explicitly before seeking revised specification and
+approval; do not edit frozen work. An explicit abandonment may also release the context:
+the server retains completed work and restores eligible unfinished Tasks to ready_to_build.
