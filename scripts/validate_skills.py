@@ -66,6 +66,12 @@ def validate_skill(path: Path) -> list[str]:
     for key in ("disable-model-invocation", "user-invocable"):
         if key in data and not isinstance(data[key], bool):
             errors.append(f"{key} must be a boolean")
+    for target in re.findall(r"\[[^\]]*\]\(([^\s)]+)\)", text):
+        if ":" in target or target.startswith(("#", "/")):
+            continue
+        reference = target.split("#", 1)[0]
+        if reference.endswith(".md") and not (path.parent / reference).is_file():
+            errors.append(f"reference does not exist: {reference}")
     return errors
 
 
