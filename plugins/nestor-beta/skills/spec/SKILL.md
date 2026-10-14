@@ -47,6 +47,10 @@ cannot change into Plan. If it needs several deliverables, explain the required 
 reorganisation and obtain the user's instruction before any write; do not create a
 second root or silently reinterpret a historical task hierarchy as Plans. A code Task
 may remain attached to its existing Plan; read the ancestors to retain the root repository.
+For an ordinary Task, read its status and historical hierarchy as well: the server permits
+conversion to code only for a `todo` Task with neither parent nor subtasks. If it is
+ineligible, report the restriction and obtain explicit reorganisation instructions before
+writes, without changing its status or detaching children to force the conversion.
 
 ## 1. Interview
 
@@ -109,8 +113,8 @@ errors leave resolution incomplete. Never choose a fuzzy match to authorise a wr
 Write with the resolved scope and version hash:
 
 1. Patch an existing Plan or Task with its held matched pair, preserving its identity,
-   scheduling and unrelated content. An ordinary Task can become a code Task through
-   `template: "code"`; this does not change its Task type or migrate its historical children.
+   scheduling and unrelated content. An eligible ordinary Task becomes a code Task through
+   `template: "code"`; this does not change its Task type.
    Create a new root only when starting from an idea.
 2. Create new sub-plans top-down using `parentPlanId`, and code Tasks with `planId`.
    Use `backlog: true` on every new Task. Plans have no backlog or scheduling fields;

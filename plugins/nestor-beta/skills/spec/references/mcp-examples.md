@@ -109,8 +109,8 @@ pair after all these writes; a child's change can invalidate its ancestor's appr
 
 ## Existing Task
 
-Refine the same deliverable. This example specialises an ordinary Task without changing
-its type, planning or historical children. For an attached code Task, keep its `planId`
+Refine the same deliverable. This example specialises a `todo` ordinary Task with no
+parent or subtasks, keeping its type and planning. For an attached code Task, keep its `planId`
 and inherited repository instead of supplying the autonomous Git context below.
 
 ```json
@@ -139,6 +139,8 @@ and inherited repository instead of supplying the autonomous Git context below.
 A Task needing decomposition requires the user's explicit reorganisation instruction
 before writes. Do not patch `type`, manufacture a Plan alongside it, or migrate its
 historical Task children automatically.
+An ordinary Task with a parent, children or an incompatible status cannot be converted
+to code by this call. Report the domain restriction instead of clearing those fields.
 
 ## Explicit approval, then read-only inspection
 
