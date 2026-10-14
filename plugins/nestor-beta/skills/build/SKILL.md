@@ -58,6 +58,10 @@ in the server's order. External dependencies must be completed. A refusal ends p
 report its code, message, `details.id` and `details.dependencyId` when supplied. Never skip
 a refused child, reorder work, or patch status to bypass the core.
 
+With no remaining Tasks, report the completed selection and stop without reserving or
+performing Git operations. If any selected Task is `need_review`, suspend the build;
+only explicit review acceptance or correction work may continue through section 5.
+
 Read each selected Task's full `specification`, dependencies and completion evidence.
 Refuse open decisions, steps without executable verification, dead file/symbol anchors,
 and required actions the agent cannot perform. Resolve the effective repository from the
@@ -94,7 +98,7 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    automatically. Recheck these results on the chosen work checkout before editing.
 5. With no existing reservation, call `manage_build(operation: "reserve", id: selectionId)`
    with that item's latest held pair. It acquires the root context and starts the first
-   Task in `building`. Only after success may you create or switch a work branch or edit
+   eligible Task in `building`. Only after success may you create or switch a work branch or edit
    code. Read the first id in the returned `reservation.taskIds` and confirm its current
    status; do not guess a child. If it is in review, stop for review or authorised corrections.
 
@@ -171,8 +175,7 @@ For the active Task, before completion:
 Only after confirmed completion may a Plan build call `manage_build(operation: "next",
 id: selectionId)` with ownership and that item's current pair. It rechecks the selection
 and starts the next authorised Task. Its returned `item.id` identifies that Task; read its
-full content and
-repeat sections 3–4, without invoking a skill again. A direct Task build ends with its
+full content and repeat sections 3–4, without invoking a skill again. A direct Task build ends with its
 single Task, even when siblings remain.
 
 Any refusal, blockage or `need_review` stops the loop. Never try other children. The root

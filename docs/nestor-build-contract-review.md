@@ -32,12 +32,12 @@ mutations can change other members' ETags; a stale pair follows the conflict con
 | --- | --- |
 | Direct invocation | Empty arguments stop; only the user starts Build. Both clients retain explicit invocation policy. |
 | Direct Task | Inspect and reserve only that Task. Parent approval is unnecessary. An unfinished prerequisite or foreign reservation cannot be bypassed. |
-| Plan | Read the complete subtree; use inspect/reserve ordering, then complete/next sequentially without another skill invocation or an agent per child. |
+| Plan | Read the complete subtree; use inspect/reserve ordering, then complete/next sequentially without another skill invocation or an agent per child. An empty remaining selection stops before Git or reservation. |
 | Attached Task or sub-plan | Follow planId/parentPlanId to the root; reuse its repository, target, work branch and PR. A sibling is not implicitly selected. |
 | Missing external result | Refuse when the required code is absent from the checkout, even for a completed dependency. Never merge or cherry-pick it automatically. |
 | Interruption | Keep the reservation and completed evidence. Resume only a blocked/reviewed Task after resolution; an unblocked building Task continues under its existing ownership. |
 | Transfer | A different execution needs an explicit handoff by the owner. Reads cannot recover the proof; the old proof cannot authorise continuation. |
-| Review or refusal | Stop the entire loop. Record requested review through complete; never set completed or choose another child to evade the stop. |
+| Review or refusal | Stop the entire loop, including when inspect reports an existing need_review Task anywhere in the selection. Record requested review through complete; never set completed or choose another child to evade the stop. |
 | Completion | Verify pushed head and open shared PR before evidence. Release explicitly at the end of the selection. Root completion is derived from all actionable Tasks. |
 
 Repository validation: `python3 scripts/validate_skills.py` passes for 18 skills;
