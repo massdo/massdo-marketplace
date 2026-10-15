@@ -1,5 +1,5 @@
 {
   "version": "0.12.5",
   "version_hash": "c78218b37686e602",
-  "changelog": "Spec messages focus on what the planned work brings to the user and the next useful choice, without narrating internal steps."
+  "changelog": "Spec and Build messages focus on what the work brings to the user and the next useful choice, without narrating internal steps. Failures remain actionable, and detailed verification evidence stays in Nestor and the pull request."
 }
