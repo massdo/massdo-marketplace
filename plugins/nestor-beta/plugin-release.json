@@ -1,5 +1,5 @@
 {
-  "version": "0.12.3",
-  "version_hash": "3dd484c7787e7cd8",
-  "changelog": "Build starts with one reserve after preparation, keeps inspect for requested readiness checks, and resumes owned reservations through conditional reads without reserving again."
+  "version": "0.12.4",
+  "version_hash": "10e5f031242f376f",
+  "changelog": "Spec saves and approves the complete work without a final confirmation, keeps its questions for business and technical decisions, honours an explicit draft, stop or later approval, and inspects build readiness only on request."
 }
