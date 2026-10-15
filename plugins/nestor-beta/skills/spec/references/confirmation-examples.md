@@ -26,10 +26,10 @@ The user invokes this skill with the idea "Reject invalid export dates".
 
 > A: Should an invalid date return an error, or fall back to today?
 > U: An error.
-> A: [specification and tree] Saved and approved: `brown_turtle`, one code Task.
+> A: [specification and tree] `brown_turtle (reject invalid export dates)` will reject invalid dates with an error. To implement it, run `/nestor-beta:build brown_turtle target:main`.
 
 The last answer settles the last decision. In the same turn, the agent compiles the work,
-shows it, creates the Task, approves it and reports the server's results.
+shows it, creates the Task, approves it and closes with the user outcome and next choice.
 
 ## Complete Plan
 
@@ -37,8 +37,7 @@ The user invokes this skill with the idea "Export dated records to CSV".
 
 > A: Should the export include archived records?
 > U: No.
-> A: [specifications, tree with each node's kind, dependencies] Saved and approved:
-> `gray_xerinae`, one Plan and three code Tasks.
+> A: [specifications, tree with each node's kind, dependencies] `gray_xerinae (dated CSV export)` will export dated records without archived records. To implement it, run `/nestor-beta:build gray_xerinae target:main`.
 
 The agent writes the Plan, its code Tasks and their dependency edges, then approves the
 Plan once: that approval covers its whole subtree.
@@ -50,31 +49,32 @@ Plan `gray_xerinae`, to also export ISO week dates.
 
 > A: Should a week date export the whole week or only its first day?
 > U: The whole week.
-> A: [changed fields] Saved and approved again: `copper_manatee`. The approval of
-> `gray_xerinae` was revoked by this change; its other Tasks are outside this request.
+> A: [changed fields] `copper_manatee (week-date export)` will export the whole ISO week. You can build this change with `/nestor-beta:build copper_manatee target:main`; to build the whole export instead, first revisit `gray_xerinae (dated CSV export)` with Spec.
 
 The agent starts from the stored Task and keeps its identity, planning, Git references
 and useful content. It resets no approval when the interview starts: the saved change
 lets the domain revoke it, then the agent approves the requested Task again. The Plan's
-subtree is not entirely within this request, so the agent reports its revoked approval
-instead of approving it. Run on `gray_xerinae` itself, the same change ends with the
+subtree is not entirely within this request, so the agent explains the next action needed
+for a whole-Plan build instead of approving it. Run on `gray_xerinae` itself, the same change ends with the
 whole Plan approved again.
 
 ## Explicit stop or later approval
 
 > U: Stop here, I'll come back to it later.
 
-No write follows. When writes were already confirmed, the agent lists them.
+No write follows. The closing describes only the work available for a later continuation:
+
+> A: The export work stops here. When you return, we can finish how invalid dates are handled.
 
 > U: Save it, but don't approve it yet.
-> A: [specification and tree] Saved, not approved: `brown_turtle`.
+> A: [specification and tree] `brown_turtle (reject invalid export dates)` describes the date-error behaviour for later review. It is not ready to build yet; return to Spec when you want to proceed.
 
 The agent does not ask for approval again later to get around that choice.
 
 ## Explicit draft
 
 > U: Keep it as a draft.
-> A: [specification and tree] Saved as a draft, not approved: `brown_turtle`.
+> A: [specification and tree] `brown_turtle (reject invalid export dates)` outlines the date-error behaviour. Return to Spec to finish it before building.
 
 ## Reconcilable conflict
 
@@ -83,30 +83,42 @@ meanwhile. The new title contradicts no decision of the interview, so the agent 
 reapplies its own changes to that state and retries once with the fresh pair, without a
 question:
 
-> A: Saved and approved: `gray_xerinae`, keeping the title changed meanwhile.
+> A: `gray_xerinae (dated CSV export)` will export dated records without archived records. To implement it, run `/nestor-beta:build gray_xerinae target:main`.
 
 ## Conflict that needs a decision
 
 `details.current` shows that someone switched the export of `copper_manatee` from CSV to
 JSON meanwhile, against an answer of the interview:
 
-> A: `copper_manatee` was switched to JSON meanwhile. Should it keep CSV or JSON?
+> A: `copper_manatee (week-date export)` now calls for JSON. Should the export use CSV or JSON?
 > U: CSV.
-> A: Saved and approved: `copper_manatee`.
+> A: `copper_manatee (week-date export)` will use CSV. To implement it, run `/nestor-beta:build copper_manatee target:main`.
 
 The agent asks only that question, then resumes saving and approving; it never asks for a
-general confirmation instead. A second refusal stops the save; the agent reports the
-confirmed ids and the exact unfinished node.
+general confirmation instead. A second refusal stops the save; the agent explains which
+part of the export still needs attention and the action needed to continue.
 
 ## Save or approval failure
 
-> A: Saved `gray_xerinae` and two of its code Tasks. The third creation failed:
-> <exact server error>. Nothing is approved.
+> A: `gray_xerinae (dated CSV export)` is not ready to build because the date-validation work could not be added. Retry Spec on this Plan to finish that part.
 
 Confirmed identities stay. A later attempt resumes from them without creating them again.
 
-> A: Approval refused: `copper_manatee` has a step without verification. I added the
-> repository's `pnpm test -- csv-export` to it: saved and approved.
+> A: `copper_manatee (week-date export)` now includes a way to check the CSV result. To implement it, run `/nestor-beta:build copper_manatee target:main`.
 
 When the missing content is a decision that belongs to the user, the agent asks only that
 question. A refusal never turns into a validation question or hides the blocking item.
+
+## Internal narration to avoid
+
+Do not write:
+
+> The export Task is completed, and its reservation is released.
+
+Write the user outcome and useful next choice instead:
+
+> The CSV export is available in [the pull request](https://github.com/example/repository/pull/42). Review and merge it when you are ready.
+
+When a prerequisite PR is still pending, explain the dependency in the same terms:
+
+> `gray_xerinae (dated CSV export)` will add CSV export. Merge [the date-parser PR](https://github.com/example/repository/pull/41) first, then run `/nestor-beta:build gray_xerinae target:main`.
