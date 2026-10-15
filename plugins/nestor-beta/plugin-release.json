@@ -1,5 +1,5 @@
 {
-  "version": "0.12.2",
-  "version_hash": "4c3b620b86bf880e",
-  "changelog": "Spec asks short, natural confirmations without citing its path or rules, does not ask again for an explicit authorisation of the same content, and keeps approval a separate question."
+  "version": "0.12.3",
+  "version_hash": "e59b9c3b7b47eb2b",
+  "changelog": "Spec saves and approves the complete work without a final confirmation, keeps its questions for business and technical decisions, honours an explicit draft, stop or later approval, and inspects build readiness only on request."
 }

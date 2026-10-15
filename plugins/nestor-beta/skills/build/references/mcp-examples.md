@@ -14,11 +14,11 @@ prerequisite or an external unfinished dependency refuses startup. Do not duplic
 policies as plugin text tests.
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"inspect","id":"7TxA"}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"inspect","id":"7TxA"}}
 ```
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"inspect","id":"4W1R"}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"inspect","id":"4W1R"}}
 ```
 
 Inspect has no mutation precondition or ownership. Its output contains `target`, `tasks`
@@ -28,13 +28,13 @@ not a `targetBranch` parameter invented for reserve. Only set an absent target b
 reservation; repository and target stay frozen while reserved.
 
 ```json
-{"tool":"update_item","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":3,"expectedEtag":"example-current-etag","patch":{"git":{"targetBranch":"main"}}}}
+{"tool":"update_item","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":3,"expectedEtag":"example-current-etag","patch":{"git":{"targetBranch":"main"}}}}
 ```
 
 ## Reserve and retain ownership
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"reserve","id":"4W1R","expectedVersion":4,"expectedEtag":"example-current-etag"}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"reserve","id":"4W1R","expectedVersion":4,"expectedEtag":"example-current-etag"}}
 ```
 
 Reserve returns `item`, `etag`, `reservation` and private `ownership`.
@@ -45,7 +45,7 @@ Do not call next before completing it. Once owned, create or reuse the common
 branch and record it on the root:
 
 ```json
-{"tool":"update_item","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":5,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"patch":{"git":{"workBranch":"feat/csv-export","pullRequestUrl":"https://github.com/example/repository/pull/42"}}}}
+{"tool":"update_item","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":5,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"patch":{"git":{"workBranch":"feat/csv-export","pullRequestUrl":"https://github.com/example/repository/pull/42"}}}}
 ```
 
 For a direct attached Task, reserve uses `id: "7TxA"`, while Git patches still address
@@ -60,7 +60,7 @@ verification, `pnpm test`. Actual evidence must cover every criterion and comman
 by the real Task. Verify the full pushed SHA and the open common PR before sending:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"complete","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"completionEvidence":{"criteria":[{"criterion":"CSV export is available","result":"Export check produced the expected CSV rows."}],"verifications":[{"command":"pnpm test","result":"12 tests passed; exit 0."}],"commit":{"sha":"0123456789abcdef0123456789abcdef01234567","pushed":true},"pullRequest":{"url":"https://github.com/example/repository/pull/42","state":"open","verified":true}},"review":"none"}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"complete","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"completionEvidence":{"criteria":[{"criterion":"CSV export is available","result":"Export check produced the expected CSV rows."}],"verifications":[{"command":"pnpm test","result":"12 tests passed; exit 0."}],"commit":{"sha":"0123456789abcdef0123456789abcdef01234567","pushed":true},"pullRequest":{"url":"https://github.com/example/repository/pull/42","state":"open","verified":true}},"review":"none"}}
 ```
 
 Use `review: "requested"` for required human review; it records need_review and stops the
@@ -68,7 +68,7 @@ cascade. `review: "accepted"` requires actual review acceptance, not a skill's a
 Completion results and a PR do not establish deployment.
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"next","id":"4W1R","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"next","id":"4W1R","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 For a Plan, next returns the started Task in `item.id` after server rechecks; read it and
@@ -77,7 +77,7 @@ selected by the invocation is complete, release explicitly. Root Plan completion
 derived from all its Tasks, even after a direct Task or sub-plan build ends.
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"release","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"release","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 ## Interruption, blockage and transfer alternatives
@@ -86,14 +86,14 @@ These calls describe alternatives while a reservation is held, not operations fo
 the release above. Persist an obstacle on the active Task only:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"block","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"blockage":{"reason":"Required fixture is unavailable.","resumeCondition":"The reviewed fixture is present in this checkout."}}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"block","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"blockage":{"reason":"Required fixture is unavailable.","resumeCondition":"The reviewed fixture is present in this checkout."}}}
 ```
 
 Interruption retains ownership and the reservation. Read current objects and Git state on
 continuation; preserve completed Tasks and evidence. When the condition is observed resolved:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"resume","id":"7TxA","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"conditionResolved":true}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"resume","id":"7TxA","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"conditionResolved":true}}
 ```
 
 Review corrections without blockage may use `conditionResolved: false`. Do not call resume
@@ -102,7 +102,7 @@ no right to resume or reserve again. For an explicitly authorised handoff, the c
 owner calls transfer; retain the new ownership privately and immediately discard the old:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"24c3b620b86bf880e","scope":{"mode":"global"},"operation":"transfer","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"2e59b9c3b7b47eb2b","scope":{"mode":"global"},"operation":"transfer","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 For stale preconditions, reconcile `CONFLICT.details.current` and retry once using its
