@@ -1,5 +1,5 @@
 {
-  "version": "0.12.1",
-  "version_hash": "5e71faa2fe3ec161",
-  "changelog": "Ship ends each report with the one next action and its effects, and proposes the release of merged code that is not yet published."
+  "version": "0.12.2",
+  "version_hash": "4c3b620b86bf880e",
+  "changelog": "Spec asks short, natural confirmations without citing its path or rules, does not ask again for an explicit authorisation of the same content, and keeps approval a separate question."
 }
