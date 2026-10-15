@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Spec"
-  short_description: "Interview, prepare code work, approve and inspect"
-  default_prompt: "Use $nestor-beta:spec <idea or existing Plan/Task reference> [project:<name-or-id>] to prepare complete code work for approval and build inspection."
+  short_description: "Interview, then save and approve code work"
+  default_prompt: "Use $nestor-beta:spec <idea or existing Plan/Task reference> [project:<name-or-id>] to prepare, save and approve complete code work."
 
 policy:
   allow_implicit_invocation: false
