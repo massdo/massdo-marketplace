@@ -119,11 +119,12 @@ Do not introduce a different repository in a descendant.
 
 ## 3. Show, then save
 
-Show the specification, the complete tree with each node's kind (Plan, sub-plan or code
-Task), dependencies and content changes. Name the existing items being changed and the
-fields being replaced. Then save the work without a confirmation question or a second
-agreement. Never invent a further consent requirement: a decision that does need the
-user belongs to the interview.
+Before the first write, write out for the user the specification, the complete tree with
+each node's kind (Plan, sub-plan or code Task), dependencies and content changes. Name
+the existing items being changed and the fields being replaced. This presentation comes
+first, never folded into the final report. Then save the work in the same turn, without
+a confirmation question or a second agreement. Never invent a further consent
+requirement: a decision that does need the user belongs to the interview.
 
 Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
