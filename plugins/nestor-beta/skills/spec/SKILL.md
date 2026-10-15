@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Once the work is complete, save its structured specification, approve it and inspect its build readiness without asking for a final confirmation, unless the user explicitly asks for a draft, a stop or a later approval. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
+description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Once the work is complete, save its structured specification and approve it without asking for a final confirmation, unless the user explicitly asks for a draft, a stop or a later approval. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
 argument-hint: "<idea… | id-or-slug> [project:<name-or-id>]"
 disable-model-invocation: true
 ---
@@ -34,10 +34,10 @@ a full response replaces them. An unmistakable slug or full id that is not found
 the session. An ambiguous short word not found can instead be a one-word idea.
 
 Read the published MCP contracts before preparing writes: `create_item` and `update_item`
-must support Plans and structured code Tasks, `update_item` must expose `approve`, and
-`manage_build` must expose `inspect`. If a required capability is unavailable, report it
-and stop before writing. Read [the MCP fields and examples](references/mcp-examples.md)
-when preparing the calls; the server's current catalogue takes precedence.
+must support Plans and structured code Tasks, and `update_item` must expose `approve`.
+If a required capability is unavailable, report it and stop before writing. Read
+[the MCP fields and examples](references/mcp-examples.md) when preparing the calls; the
+server's current catalogue takes precedence.
 
 Keep an existing item's identity and matched pair. An entry Plan prepares that Plan's
 entire current subtree, recursively, in this invocation. Read its mixed tree with
@@ -161,7 +161,7 @@ or edge. A lost response has an unknown outcome; establish what exists before re
 Keep confirmed identities and resume there without recreating the root or children.
 Report a blockage as it is; never turn it into a validation question.
 
-## 4. Approve and inspect
+## 4. Approve and report
 
 Once the complete work is saved, approve it without asking, unless the user asked for a
 draft or a later approval: then report it saved, not approved. Call `update_item` with
@@ -182,12 +182,15 @@ only when its complete subtree is already within the requested scope and prepare
 otherwise report that its approval was revoked, without widening the scope. Its conflict
 after your own change is expected and is not a concurrent edit.
 
-Then call `manage_build` with `operation: "inspect"` on the same selection. Announce
-“ready to build” only after it accepts. Internal pending dependencies are compatible
-with Plan preparation; external pending prerequisites or review can still block the
-selection. Report the server's precise blocking item or prerequisite and the remaining
-work. Do not acquire a reservation, execute the cascade, or invoke Build.
+Do not inspect or reserve the build afterwards. Pending external prerequisites belong to
+build selection and reservation, not to a new validation of the specification. Only when
+the user explicitly asks to check build readiness, confirm that the catalogue exposes
+`manage_build` with `operation: "inspect"`, call it on the selection and report its
+outcome; it writes nothing. Never acquire a reservation, execute the cascade, or invoke
+Build.
 
-Report the selected slug, saved Plan/Task counts, approval outcome and inspect outcome
-separately, in a few lines. Keep detailed diagnostics for a refusal, blockage, conflict or
-constraint that changes the user's decision; a short wording never hides one.
+Finish with the real server results, in a few lines: the selected slug, saved Plan/Task
+counts, then “saved and approved” in the user's language when the server confirmed both.
+Otherwise say what was saved and what was not approved. Never promise a reservation or a
+build start. Keep detailed diagnostics for a refusal, blockage, conflict or constraint
+that changes the user's decision; a short wording never hides one.
