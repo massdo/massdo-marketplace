@@ -14,7 +14,7 @@ The server owns approval, selection, ordering, reservation and status transition
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "24c3b620b86bf880e" }` on every Nestor MCP call.
+Pass `{ "version_hash": "23dd484c7787e7cd8" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -30,7 +30,7 @@ colon, including `/`. An empty `target:` leaves the target unspecified. Reject u
 arguments and multiple `target:` arguments, naming the invalid input. Without a resolved
 target, ask for `target:<branch>` during preparation and wait.
 
-## 1. Read and inspect before Git
+## 1. Read and prepare before Git
 
 Read the reference with `get_item(ref, scope: { mode: "global" }, known, version_hash)`.
 Send the held matched `{ version, etag }` pair only with the necessary complete content;
@@ -44,7 +44,7 @@ fall back to status patches. Read [the MCP call examples](references/mcp-example
 preparing calls; the current catalogue takes precedence.
 
 Keep the selection id distinct from the shared context id and the active Task id. For a
-Plan, read its mixed tree with `get_tree` and the complete selected objects. Follow any
+Plan, read its mixed tree with `get_tree` and the complete member objects. Follow any
 truncated or hidden subtree until the read is complete. For an attached Task, follow
 `planId` and `parentPlanId` to the root Plan to read its inherited Git context. Historical
 `parentTaskId` relations do not establish a Plan. Refuse ordinary Tasks and other item
@@ -52,24 +52,26 @@ types; do not convert, approve, or rewrite a specification to force a build.
 
 For an explicit continuation of an existing owned reservation, reconcile its state through
 section 5 first. Do not attempt a fresh reservation or restart already completed work.
+An existing foreign reservation stops preparation; reads cannot recover its private proof.
 
-Call `manage_build(operation: "inspect", id: selectionId)` before any Git operation.
-Use its returned Tasks and externalDependencies; never calculate a competing selection.
-A Task needs its own current approval and completed dependencies; its parent Plans need
-no approval. A Plan selects its remaining subtree, allowing pending internal dependencies
-in the server's order. External dependencies must be completed. A refusal ends preparation:
-report its code, message, `details.id` and `details.dependencyId` when supplied. Never skip
-a refused child, reorder work, or patch status to bypass the core.
+Prepare a new build from these reads, then call `reserve` directly in section 2. It owns
+eligibility, selection and dependency order; do not calculate a competing selection or use
+`inspect` as a prerequisite. Keep `inspect` for an explicitly requested read-only diagnosis
+or readiness check, including Spec; it is not an automatic response to a build refusal.
 
-With no remaining Tasks, report the completed selection and stop without reserving or
-performing Git operations. Release a retained owned reservation explicitly if present.
-If any selected Task is `need_review`, suspend the build;
-only explicit review acceptance or correction work may continue through section 5.
+If the full read shows the requested Task completed, or a Plan subtree with at least one
+code Task and all its code Tasks completed, report the completed selection and stop before
+reserve or Git. Release a retained owned reservation explicitly through section 5 if present. If any
+Task in the requested work is `need_review`, suspend the build; only explicit review
+acceptance or correction work may continue through section 5. These observations do not
+replace the server's eligibility decision for unfinished work.
 
-Read each selected Task's full `specification`, dependencies and completion evidence.
-Refuse open decisions, steps without executable verification, dead file/symbol anchors,
-and required actions the agent cannot perform. Resolve the effective repository from the
-root Plan, or from the autonomous Task. An incomplete plan is reported, never repaired here.
+Read the unfinished Tasks' full `specification`, declared dependency objects and completion
+evidence, reusing held content and grouped conditional reads. Read required prerequisites
+outside the requested subtree for their results, not to add them to the build. Refuse open
+decisions, steps without executable verification and required actions the agent cannot
+perform. Resolve the effective repository from the root Plan, or from the autonomous Task.
+An incomplete plan is reported, never repaired here.
 
 ## 2. Validate Git, then reserve
 
@@ -96,21 +98,37 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    including when those Git fields are missing in Nestor. Use these resolved references
    in step 4; persist missing fields only after reservation succeeds. If the target is
    unset, save the validated `git.targetBranch` with `update_item` on the context, using its
-   held pair; inspect the selection again if the
-   saved state changed. A recorded different target requires explicit resolution.
+   held pair. Use the resulting pair when the context is also the selection; otherwise
+   retain each object's own pair. Continue directly to reserve without an inspect call.
+   A recorded different target requires explicit resolution.
 4. Resolve the intended checkout to the shared work branch when present, otherwise
    `origin/<targetBranch>`. Before switching, inspect that ref read-only with Git. Check
-   cited files and symbols, allowing harmless line-number drift. For each external
+   applicable cited files and symbols, allowing harmless line-number drift. For each external
    prerequisite, read its completion evidence and verify the required result in this ref,
    using its recorded commit where applicable. A completed status or open PR alone is
    insufficient. If a required result is absent, stop; never merge or cherry-pick it
    automatically. After reservation and checkout, confirm the files, symbols and relevant
-   checks again in the actual working tree before editing.
+   checks again in the actual working tree before editing. Anchors or results that an
+   earlier internal Task must produce are checked when the dependent Task becomes active.
 5. With no existing reservation, call `manage_build(operation: "reserve", id: selectionId)`
    with that item's latest held pair. It acquires the root context and starts the first
-   eligible Task in `building`. Only after success may you create or switch a work branch
-   or edit code. Read the first id in the returned `reservation.taskIds` and confirm its current
-   status; do not guess a child. If it is in review, stop for review or authorised corrections.
+   eligible Task in `building`. A refusal ends preparation: report its code, message,
+   `details.id` and `details.dependencyId` when supplied, without an automatic inspect.
+   Never skip a refused child, reorder work or patch status to bypass the core. Only after
+   success may you create or switch a work branch or edit code.
+
+Retain ownership immediately on success. Use `reservation.contextId` for the shared Git
+context, `selectionId` for this invocation and `taskIds` as the server's ordered selection.
+Confirm the first id's current status with `get_item`; do not guess a child or call next
+before completing it. Reuse the held specifications, dependencies and evidence for those
+ids; read any missing content in groups of up to five. Reserve does not return the Tasks'
+content or an `externalDependencies` list: use their declared dependencies and the complete
+membership already read to find the required external results. Verify section 2.4 in the
+resolved ref and actual checkout before editing. If the active Task is in review, suspend
+for review or authorised corrections. If a persistent obstacle is discovered after reserve,
+block the active building Task through section 5, retaining ownership and a resume condition;
+never leave an acquired reservation without an explicit interruption, review or blockage
+state. Changes to planned work require release and revised approval, not edits while reserved.
 
 Retain returned `ownership: { executionId, proof }` privately for every reserved write.
 Never print the proof or put it in files committed to Git, item bodies, PRs, logs, errors
@@ -142,7 +160,8 @@ state before repeating any mutation, especially reserve or transfer.
 Reread the active Task's full held specification before editing. Load installed
 `karpathy-guidelines` when available. Follow its sections in order and change only what
 the specification requires. Never edit French prose with string-rewriting shell tools;
-use file editing tools.
+use file editing tools. For each Task started by next, repeat section 2.4's ref and checkout
+checks for its anchors and prerequisite results before editing.
 
 Implement one Task at a time on the common branch. Run each section's verification before
 committing that section, using the repository's convention. Keep one descriptive commit
@@ -213,8 +232,11 @@ On an explicit continuation, read the selection, root context, remaining Tasks a
 Git references with conditional reads. Keep completed Tasks and their evidence; never
 rebuild them or recreate children. If the selected work is already completed, release its
 retained reservation with the current context pair and ownership, then stop before Git.
-Otherwise inspect the selection before Git, obey any refusal, and check the current
-checkout, pushed head and PR again.
+Otherwise reconcile the held reservation's `contextId`, `selectionId` and ordered `taskIds`
+with those reads. Validate the repository, current checkout, pushed head and open PR against
+the shared Git references again, including section 2.4's prerequisite checks. Do not call
+reserve again or insert an automatic inspect into a continuation. Review still requires
+explicit acceptance or correction authorisation; otherwise keep the build suspended.
 Use the retained private ownership. If another execution must take over, require explicit
 transfer by the current owner via `manage_build(operation: "transfer")`; it returns a new
 credential and revokes the old one immediately. Missing proof is not authority to recover
@@ -224,9 +246,10 @@ After observing that a stored resumeCondition is resolved, call `manage_build(op
 "resume", id: activeTaskId, conditionResolved: true)` with ownership and its current pair.
 For review corrections without blockage, resume may use false. Continue the interrupted
 Task only after acceptance. An already building unblocked Task can continue with its owned
-reservation without an invalid resume call; if no Task is active and work remains, use
-next. Use `complete(review: "accepted")` only after actual acceptance of the reviewed work,
-with valid evidence; never grant that acceptance yourself to skip review.
+reservation without an invalid resume call; if no Task is active and work remains in a
+selected Plan, use next with the selection's current pair. Use `complete(review: "accepted")`
+only after actual acceptance of the reviewed work, with valid evidence; never grant that
+acceptance yourself to skip review.
 
 If planned work must change, release explicitly before seeking revised specification and
 approval; do not edit frozen work. An explicit abandonment may also release the context:
