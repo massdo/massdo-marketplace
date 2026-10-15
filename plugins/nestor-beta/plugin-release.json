@@ -1,5 +1,5 @@
 {
-  "version": "0.12.4",
-  "version_hash": "10e5f031242f376f",
-  "changelog": "Spec saves and approves the complete work without a final confirmation, keeps its questions for business and technical decisions, honours an explicit draft, stop or later approval, and inspects build readiness only on request."
+  "version": "0.12.5",
+  "version_hash": "c78218b37686e602",
+  "changelog": "Spec and Build messages focus on what the work brings to the user and the next useful choice, without narrating internal steps. Failures remain actionable, and detailed verification evidence stays in Nestor and the pull request."
 }

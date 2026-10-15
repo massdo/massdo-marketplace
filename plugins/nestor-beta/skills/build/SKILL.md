@@ -14,7 +14,7 @@ The server owns approval, selection, ordering, reservation and status transition
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "210e5f031242f376f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2c78218b37686e602" }` on every Nestor MCP call.
 
 ## Arguments
 
@@ -60,7 +60,7 @@ eligibility, selection and dependency order; do not calculate a competing select
 or readiness check, including Spec; it is not an automatic response to a build refusal.
 
 If the full read shows the requested Task completed, or a Plan subtree with at least one
-code Task and all its code Tasks completed, report the completed selection and stop before
+code Task and all its code Tasks completed, use the closing rule below and stop before
 reserve or Git. Release a retained owned reservation explicitly through section 5 if present. If any
 Task in the requested work is `need_review`, suspend the build; only explicit review
 acceptance or correction work may continue through section 5. These observations do not
@@ -71,7 +71,7 @@ evidence, reusing held content and grouped conditional reads. Read required prer
 outside the requested subtree for their results, not to add them to the build. Refuse open
 decisions, steps without executable verification and required actions the agent cannot
 perform. Resolve the effective repository from the root Plan, or from the autonomous Task.
-An incomplete plan is reported, never repaired here.
+For an incomplete plan, stop using the closing rule below; never repair it here.
 
 ## 2. Validate Git, then reserve
 
@@ -112,8 +112,9 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    earlier internal Task must produce are checked when the dependent Task becomes active.
 5. With no existing reservation, call `manage_build(operation: "reserve", id: selectionId)`
    with that item's latest held pair. It acquires the root context and starts the first
-   eligible Task in `building`. A refusal ends preparation: report its code, message,
-   `details.id` and `details.dependencyId` when supplied, without an automatic inspect.
+   eligible Task in `building`. A refusal ends preparation: retain its code, message,
+   `details.id` and `details.dependencyId` when supplied for recovery, and use the closing
+   rule below without an automatic inspect.
    Never skip a refused child, reorder work or patch status to bypass the core. Only after
    success may you create or switch a work branch or edit code.
 
@@ -165,7 +166,7 @@ checks for its anchors and prerequisite results before editing.
 
 Implement one Task at a time on the common branch. Run each section's verification before
 committing that section, using the repository's convention. Keep one descriptive commit
-per section and report the command and real output. Diagnose and fix ordinary correctable
+per section and retain the command and real output for completionEvidence and the PR. Diagnose and fix ordinary correctable
 failures without inventing a successful result. Run the Task's atomic checks and all
 required repository checks before recording completion.
 
@@ -173,7 +174,7 @@ Audit the actual diffs yourself: run `git log origin/<targetBranch>..HEAD`, then
 for every commit. Check scope, unrelated files and weakened tests against the installed
 Karpathy checklist. Rerun every declared verification from the specification and check
 each `doneWhen` criterion against observations. Commit audit fixes separately, one concern
-per commit. If the specification itself is wrong, stop and report it without redesigning.
+per commit. If the specification itself is wrong, stop using the closing rule below without redesigning.
 
 ## 4. Deliver, complete, then advance
 
@@ -216,15 +217,15 @@ built Task or selected sub-plan; never patch the root completed yourself.
 
 When the selected work is confirmed complete, call `manage_build(operation: "release")`
 explicitly on the context with its current pair and ownership. The last completion alone
-does not release it. Report the PR URL, verified results and confirmed Task/Plan progress,
-then stop. Never merge, wait for CI or deployment, publish a release, or create a tag.
+does not release it. Use the closing rule below, then stop. Never merge, wait for CI or
+deployment, publish a release, or create a tag.
 Local results and an open PR are delivery evidence, not production proof.
 
 ## 5. Block, interrupt and resume
 
 For a persistent obstacle on an active building Task, call `manage_build(operation:
 "block", id: activeTaskId)` with ownership, its held pair, and non-empty
-`blockage: { reason, resumeCondition }`. Report the exact obstacle and stop. It retains
+`blockage: { reason, resumeCondition }`. Use the closing rule below and stop. It retains
 the reservation and suspends every remaining Task. Ordinary correctable errors need no
 persistent blockage. An interruption also retains the reservation; do not silently release.
 
@@ -254,3 +255,22 @@ acceptance yourself to skip review.
 If planned work must change, release explicitly before seeking revised specification and
 approval; do not edit frozen work. An explicit abandonment may also release the context:
 the server retains completed work and restores eligible unfinished Tasks to ready_to_build.
+
+## User messages
+
+Keep the final message to one or two sentences: explain what the delivered work changes
+for the user, cite the contributing work using Nestor's item citation rule, give the PR
+link, then the next choice if one exists, such as reviewing and merging the PR. This
+closing replaces Nestor's per-mutation report.
+
+Apply the same rule to intermediate messages, already finished selections, refusals,
+incomplete plans, incorrect specifications, reviews, blockages and continuations: explain
+the effect on the user's goal, the affected item or PR and the action or decision needed.
+Do not hide a real problem or present undelivered work as delivered. Keep raw MCP
+diagnostics and recovery details in the held state and Nestor records; keep verification
+commands, real outputs and completion evidence in completionEvidence and the PR.
+
+Do not narrate reservation, release, transfer, approval, revocation, inspection, Nestor
+statuses, item counts, versions/ETags, ownership, proofs, commits or SHAs, branches,
+successful checks, CI not awaited or the local checkout. Execution and evidence rules
+above remain unchanged.

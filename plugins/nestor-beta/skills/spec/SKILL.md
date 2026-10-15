@@ -17,7 +17,7 @@ writes. Never ask for approval again to get around that choice.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "210e5f031242f376f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2c78218b37686e602" }` on every Nestor MCP call.
 
 ## Starting point
 
@@ -35,7 +35,7 @@ the session. An ambiguous short word not found can instead be a one-word idea.
 
 Read the published MCP contracts before preparing writes: `create_item` and `update_item`
 must support Plans and structured code Tasks, and `update_item` must expose `approve`.
-If a required capability is unavailable, report it and stop before writing. Read
+If a required capability is unavailable, stop before writing and use the closing rule below. Read
 [the MCP fields and examples](references/mcp-examples.md) when preparing the calls; the
 server's current catalogue takes precedence.
 
@@ -45,14 +45,14 @@ entire current subtree, recursively, in this invocation. Read its mixed tree wit
 If the tree reports `truncated` or `hiddenChildCount`, read the hidden subtrees as well;
 an incomplete read cannot justify declaring preparation complete. Preserve completed
 work and identify the remaining work to prepare. A cancelled, archived or trashed code
-Task in the subtree prevents its approval: report it before any write and ask the user
+Task in the subtree prevents its approval: explain the scope problem before any write and ask the user
 for an explicit change of scope.
 
 An entry Task refines that one deliverable, preserving its id and scheduling. Its type
 cannot change into Plan, and a historical task hierarchy never becomes Plans implicitly.
 For an ordinary Task, read its status and historical hierarchy as well: the server permits
 conversion to code only for a `todo` Task with neither parent nor subtasks. If it is
-ineligible, report the restriction and obtain explicit reorganisation instructions before
+ineligible, explain the reorganisation needed and obtain explicit instructions before
 writes, without changing its status or detaching children to force the conversion.
 A code Task may remain attached to its existing Plan; read its ancestor Plans to retain
 the root repository and their approval state.
@@ -62,7 +62,7 @@ with the Task's repository, then attach the Task to it with `planId` as one of i
 Tasks, converting it with `template: "code"` when it is ordinary. Show this reorganisation
 in the tree; the new Plan then becomes the selection.
 Ask the user first when you are less than 95% sure the Task holds several deliverables.
-For an attached code Task or an ineligible Task, report the need and obtain explicit
+For an attached code Task or an ineligible Task, explain the need and obtain explicit
 reorganisation instructions instead.
 
 ## 1. Interview
@@ -158,21 +158,21 @@ mutation returns the next pair: no preventive or post-success read is needed. Wh
 intervening change raises a decision the user has not settled, ask that one question,
 then resume saving and approving; never replace it with a general confirmation.
 
-If a write fails, stop and report the confirmed ids/slugs and the exact unfinished node
-or edge. A lost response has an unknown outcome; establish what exists before resuming.
+If a write fails, stop; retain the confirmed identities and exact unfinished node or edge
+for recovery, and use the closing rule below. A lost response has an unknown outcome; establish what exists before resuming.
 Keep confirmed identities and resume there without recreating the root or children.
-Report a blockage as it is; never turn it into a validation question.
+Never turn a blockage into a validation question.
 
-## 4. Approve and report
+## 4. Approve and close
 
 Once the complete work is saved, approve it without asking, unless the user asked for a
-draft or a later approval: then report it saved, not approved. Call `update_item` with
+draft or a later approval: then keep the work unapproved. Call `update_item` with
 `operation: "approve"`, the selected item's id and its held matched pair. For a Plan,
 this approves its current subtree atomically; do not approve each child separately to
 bypass an incomplete descendant. The domain makes eligible remaining Tasks
 `ready_to_build`; never patch that status or manufacture an approval.
 
-A refusal names the blocking item and field: report it with the saved, unapproved state.
+A refusal names the blocking item and field: retain them for recovery and use the closing rule below.
 When content is missing, ask only for a decision that belongs to the user, or read the
 missing fact from the repository; then save the completion and approve again without a
 validation question.
@@ -181,18 +181,29 @@ On approved work, never reset an approval at the start of the interview: a saved
 to planned work lets the domain revoke the approval of the changed item and of its
 ancestor Plans. Approve the requested scope again after saving. Approve an ancestor again
 only when its complete subtree is already within the requested scope and prepared;
-otherwise report that its approval was revoked, without widening the scope. Its conflict
+otherwise leave the ancestor unapproved, without widening the scope. Its conflict
 after your own change is expected and is not a concurrent edit.
 
 Do not inspect or reserve the build afterwards. Pending external prerequisites belong to
 build selection and reservation, not to a new validation of the specification. Only when
 the user explicitly asks to check build readiness, confirm that the catalogue exposes
-`manage_build` with `operation: "inspect"`, call it on the selection and report its
-outcome; it writes nothing. Never acquire a reservation, execute the cascade, or invoke
+`manage_build` with `operation: "inspect"`, call it on the selection and explain its
+effect using the closing rule below; it writes nothing. Never acquire a reservation, execute the cascade, or invoke
 Build.
 
-Finish with the real server results, in a few lines: the selected slug, saved Plan/Task
-counts, then “saved and approved” in the user's language when the server confirmed both.
-Otherwise say what was saved and what was not approved. Never promise a reservation or a
-build start. Keep detailed diagnostics for a refusal, blockage, conflict or constraint
-that changes the user's decision; a short wording never hides one.
+## User messages
+
+Keep the final message to one or two sentences: explain what the planned work will do
+for the user, cite the selection using Nestor's item citation rule, then give the next
+choice only if one exists, with the useful command or link. Suggest an explicit
+`/nestor-beta:build <slug> target:<branch>` only when the work is ready; do not promise
+that a build will start. This closing replaces Nestor's per-mutation report.
+
+Apply the same rule to intermediate messages, stops, drafts, refusals, conflicts and
+failures: explain the effect on the user's goal, the affected item and the action or
+decision needed, without raw MCP diagnostics or hiding a real problem. A draft remains
+work to finish; a refusal or failed write must not imply the work is ready to build.
+Do not narrate creation, saving, approval, revocation, inspection, reservation, statuses,
+item counts, versions/ETags or technical identifiers. Keep recovery details in the held
+state and MCP records. Interview questions and the compiled-work presentation above
+retain their existing rules.
