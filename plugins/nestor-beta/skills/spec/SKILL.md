@@ -72,6 +72,7 @@ Keep every question short and natural, one per decision the user must make. Do n
 justify it with this skill's local path, a quoted rule or an account of internal
 mechanics. When a higher-priority instruction requires citing the skill, follow it
 without expanding the question around it.
+[The confirmation examples](references/confirmation-examples.md) illustrate this tone.
 
 Finish when the requirements and checks are verifiable and no blocking decision remains.
 Offer in one line to compile the complete work before doing so. Do not restart the
