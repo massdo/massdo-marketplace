@@ -77,7 +77,8 @@ Keep every question short and natural, one per decision the user must make. Do n
 justify it with this skill's local path, a quoted rule or an account of internal
 mechanics. When a higher-priority instruction requires citing the skill, follow it
 without expanding the question around it.
-[The confirmation examples](references/confirmation-examples.md) illustrate this tone.
+[The exchange examples](references/confirmation-examples.md) illustrate this tone and
+each closing.
 
 Finish when the requirements and checks are verifiable and no blocking decision remains,
 then compile the complete work without asking. Do not restart the interview or invoke

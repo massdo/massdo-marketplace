@@ -36,6 +36,8 @@ Create an autonomous code Task in the backlog. Its repository belongs to the Tas
 }
 ```
 
+Approve it next, with the pair this creation returned.
+
 ## Idea with several deliverables
 
 Create the root Plan first. Plans accept no `backlog`, `scheduledAt` or `template`.
@@ -84,6 +86,8 @@ once all ids are known:
 }
 ```
 
+Approve the root Plan once its whole subtree is saved.
+
 ## Existing Plan
 
 Read the complete current subtree. `depth` is limited to six; read hidden subtrees until
@@ -106,6 +110,8 @@ for full member content and matched preconditions, including completed work to p
 Patch the existing Plan's structured `specification` without changing its id or parent.
 Prepare all remaining sub-plans and code Tasks before approval. Approval uses the latest
 pair after all these writes; a child's change can invalidate its ancestor's approval.
+An approved Plan keeps its approval until such a saved change: do not reset it first,
+and approve the Plan again after the writes.
 
 ## Existing Task
 
@@ -139,6 +145,11 @@ and inherited repository instead of supplying the autonomous Git context below.
 An ordinary Task with a parent, children or an incompatible status cannot be converted
 to code by this call. Report the domain restriction instead of clearing those fields.
 
+An approved code Task takes only its changed fields, such as this `specification`, without
+`template` or `git`. The saved change revokes its approval and that of its ancestor Plans:
+approve the Task again, and an ancestor only when its complete subtree is within the
+requested scope and prepared. Otherwise report the ancestor's revoked approval.
+
 A standalone Task holding several deliverables keeps its type. Create the root Plan with
 the repository first, then attach the Task to it; an attached Task sends no `git`.
 Never patch `type` or migrate historical Task children automatically.
@@ -166,10 +177,10 @@ Never patch `type` or migrate historical Task children automatically.
 }
 ```
 
-## Explicit approval, then read-only inspection
+## Approval after saving
 
-Confirming persistence alone does not authorise approval. With explicit agreement on
-the saved work, approve the selected Plan's current subtree or the autonomous Task:
+Once the complete work is saved, approve the selected Plan's current subtree or the
+autonomous Task without a question, using the latest pair:
 
 ```json
 {
@@ -186,9 +197,31 @@ the saved work, approve the selected Plan's current subtree or the autonomous Ta
 ```
 
 `approve` accepts no patch. It refuses incomplete work without partially approving the
-subtree. Use the confirmation's pair directly for another mutation; no verification read
-is required. This operation preserves completed work and makes eligible remaining Tasks
-`ready_to_build`. Other accepted states, such as `need_review`, can still prevent readiness.
+subtree and names the blocking item in `details.id`: report it with the saved, unapproved
+state, then approve again once the missing content is saved, without a validation
+question. Use the returned pair directly for another mutation; no verification read is
+required. This operation preserves completed work and makes eligible remaining Tasks
+`ready_to_build`; it reserves and starts no build.
+
+An explicit draft or later approval sends the same writes without `approve`. An explicit
+stop sends no further call.
+
+## Conflicts and failures
+
+A stale pair returns `CONFLICT` with `details.current`, the current item in the
+`get_item` format. Reapply the intended change to that state and retry the same operation
+once with its `item.version` and `etag`, never with the refused pair or the stale change
+as is. Without `details.current`, read the item once with `get_item` and the held pair in
+`known`, then retry once. Ask the user first only when the intervening change raises a
+decision they have not settled, then resume without a general confirmation. A second
+refusal stops: report the confirmed ids and the exact unfinished node or edge.
+
+A failed or lost write keeps the writes confirmed before it. Establish what exists, then
+resume from the confirmed identities without creating them again.
+
+## Requested readiness check
+
+Only when the user explicitly asks whether the saved work can be built, inspect it:
 
 ```json
 {
@@ -202,8 +235,6 @@ is required. This operation preserves completed work and makes eligible remainin
 }
 ```
 
-`inspect` writes nothing and needs no ownership proof or mutation precondition. Its
-acceptance is required before reporting build readiness. A pending internal dependency
-can be selected before its dependent Task in a Plan; an external prerequisite must already
-be completed. On refusal, report `details.id` and `details.dependencyId` when supplied.
-Spec stops at preparation: it never calls `reserve`, `next` or a build skill.
+`inspect` writes nothing and needs no ownership proof or mutation precondition. On
+refusal, report `details.id` and `details.dependencyId` when supplied. Spec stops at
+preparation: it never calls `reserve`, `next` or a build skill.
