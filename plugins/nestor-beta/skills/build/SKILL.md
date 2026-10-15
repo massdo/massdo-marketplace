@@ -59,9 +59,9 @@ eligibility, selection and dependency order; do not calculate a competing select
 `inspect` as a prerequisite. Keep `inspect` for an explicitly requested read-only diagnosis
 or readiness check, including Spec; it is not an automatic response to a build refusal.
 
-If the full read shows the requested Task completed, or a non-empty Plan subtree whose
-code Tasks are all completed, report the completed selection and stop before reserve or
-Git. Release a retained owned reservation explicitly through section 5 if present. If any
+If the full read shows the requested Task completed, or a Plan subtree with at least one
+code Task and all its code Tasks completed, report the completed selection and stop before
+reserve or Git. Release a retained owned reservation explicitly through section 5 if present. If any
 Task in the requested work is `need_review`, suspend the build; only explicit review
 acceptance or correction work may continue through section 5. These observations do not
 replace the server's eligibility decision for unfinished work.
