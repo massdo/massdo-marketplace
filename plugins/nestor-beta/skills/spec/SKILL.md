@@ -13,7 +13,7 @@ the user's language. Start only on their explicit invocation or request for this
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "25e71faa2fe3ec161" }` on every Nestor MCP call.
+Pass `{ "version_hash": "24c3b620b86bf880e" }` on every Nestor MCP call.
 
 ## Starting point
 
@@ -68,9 +68,15 @@ already supplied. Follow the answers. Read repository facts instead of asking th
 for them. State technical choices with their reasons; ask about decisions that belong
 to the user, including money, risk, priority and taste.
 
+Keep every question short and natural, one per decision the user must make. Do not
+justify it with this skill's local path, a quoted rule or an account of internal
+mechanics. When a higher-priority instruction requires citing the skill, follow it
+without expanding the question around it.
+[The confirmation examples](references/confirmation-examples.md) illustrate this tone.
+
 Finish when the requirements and checks are verifiable and no blocking decision remains.
-Offer to compile the complete work before doing so. Do not restart the interview or
-invoke this skill again for each child.
+Offer in one line to compile the complete work before doing so. Do not restart the
+interview or invoke this skill again for each child.
 
 ## 2. Prepare the complete work
 
@@ -109,7 +115,9 @@ for approval. Do not introduce a different repository in a descendant.
 
 Show the specification, the complete tree with each node's kind (Plan, sub-plan or code
 Task), dependencies and content changes. Name the existing items being changed and the
-fields being replaced. Ask for confirmation before any write. Confirmation to
+fields being replaced. Ask for confirmation before any write, in one short question.
+When the user has already explicitly authorised saving this same content, do not ask
+again; content changed since that authorisation needs a new confirmation. Confirmation to
 save is distinct from approval of the prepared work for a future build.
 
 Resolve the project after confirmation. An existing item keeps its own project, since
@@ -149,10 +157,10 @@ Keep confirmed identities and resume there without recreating the root or childr
 ## 4. Approve and inspect
 
 After saving the complete work, request explicit approval of that prepared subtree or
-autonomous Task if the user has not already expressly approved it. Agreement to write
-alone is insufficient. If they decline or defer, report saved work without claiming it
-is ready. If concurrent edits change the reviewed work, present those changes for
-approval before retrying.
+autonomous Task if the user has not already expressly approved it, in its own short
+question. Agreement to write alone is insufficient. If they decline or defer, report saved
+work without claiming it is ready. If concurrent edits change the reviewed work, present
+those changes for approval before retrying.
 
 Call `update_item` with `operation: "approve"`, the selected item's id and its held
 matched pair. For a Plan, this approves its current subtree atomically; do not approve
@@ -173,4 +181,5 @@ selection. Report the server's precise blocking item or prerequisite and the rem
 work. Do not acquire a reservation, execute the cascade, or invoke Build.
 
 Report the selected slug, saved Plan/Task counts, approval outcome and inspect outcome
-separately.
+separately, in a few lines. Keep detailed diagnostics for a refusal, blockage, conflict or
+constraint that changes the user's decision; a short wording never hides one.
