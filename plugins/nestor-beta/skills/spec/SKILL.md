@@ -13,7 +13,7 @@ the user's language. Start only on their explicit invocation or request for this
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "24c3b620b86bf880e" }` on every Nestor MCP call.
+Pass `{ "version_hash": "23dd484c7787e7cd8" }` on every Nestor MCP call.
 
 ## Starting point
 

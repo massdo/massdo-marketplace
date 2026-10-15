@@ -1,5 +1,5 @@
 {
-  "version": "0.12.2",
-  "version_hash": "4c3b620b86bf880e",
-  "changelog": "Spec asks short, natural confirmations without citing its path or rules, does not ask again for an explicit authorisation of the same content, and keeps approval a separate question."
+  "version": "0.12.3",
+  "version_hash": "3dd484c7787e7cd8",
+  "changelog": "Build starts with one reserve after preparation, keeps inspect for requested readiness checks, and resumes owned reservations through conditional reads without reserving again."
 }

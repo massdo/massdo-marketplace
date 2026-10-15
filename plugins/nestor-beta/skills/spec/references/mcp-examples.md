@@ -18,7 +18,7 @@ Create an autonomous code Task in the backlog. Its repository belongs to the Tas
 {
   "tool": "create_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "type": "task",
     "title": "Reject invalid export dates",
@@ -46,7 +46,7 @@ six fields for that group, and it inherits the root repository.
 {
   "tool": "create_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "type": "plan",
     "title": "Export dated records",
@@ -71,7 +71,7 @@ once all ids are known:
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -94,7 +94,7 @@ for full member content and matched preconditions, including completed work to p
 {
   "tool": "get_tree",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "rootItemId": "4W1R",
     "depth": 6,
@@ -117,7 +117,7 @@ and inherited repository instead of supplying the autonomous Git context below.
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -147,7 +147,7 @@ Never patch `type` or migrate historical Task children automatically.
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -175,7 +175,7 @@ the saved work, approve the selected Plan's current subtree or the autonomous Ta
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "id": "4W1R",
     "operation": "approve",
@@ -194,7 +194,7 @@ is required. This operation preserves completed work and makes eligible remainin
 {
   "tool": "manage_build",
   "arguments": {
-    "version_hash": "24c3b620b86bf880e",
+    "version_hash": "23dd484c7787e7cd8",
     "scope": { "mode": "global" },
     "id": "4W1R",
     "operation": "inspect"
