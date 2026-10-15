@@ -39,9 +39,9 @@ shape but owns its own context. For example, an attached Task reserve and respon
 {"tool":"manage_build","result":{"operation":"reserve","item":{"id":"7TxA","type":"task","version":6,"status":"building"},"etag":"example-task-reserved-etag","reservation":{"contextId":"4W1R","selectionId":"7TxA","taskIds":["7TxA"],"executionId":"abcdefghijklmnopqrstuv","acquiredAt":"2026-10-14T10:00:00.000Z"},"ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
-A Plan reserves its remaining subtree. The server orders pending internal dependencies;
-never compute an alternative order or skip a refused member. Use the root id for a root
-request or the sub-plan id and its own pair for a sub-plan:
+A Plan reserves its remaining subtree. In this example, `8TyB` needs `7TxA`'s result. The
+server orders that pending internal dependency; never compute an alternative order or skip
+a refused member. Use the root id for a root request or the sub-plan id and its own pair:
 
 ```json
 {"tool":"manage_build","arguments":{"version_hash":"23dd484c7787e7cd8","scope":{"mode":"global"},"operation":"reserve","id":"4W1R","expectedVersion":4,"expectedEtag":"example-current-etag"}}
@@ -159,3 +159,34 @@ pair. These calls are independent diagnostics, not a fresh-build or continuation
 ```json
 {"tool":"manage_build","arguments":{"version_hash":"23dd484c7787e7cd8","scope":{"mode":"global"},"operation":"inspect","id":"4W1R"}}
 ```
+
+## Expected flow matrix and evidence limits
+
+Here, prepare includes full reads, Git/ref checks and saving an absent target; recheck
+confirms the active Task, anchors and prerequisite results in the actual checkout. Deliver
+means implementation, required checks, push and a verified open shared PR before complete.
+Every reserved write uses private ownership and the addressed object's current pair.
+
+| Case | Expected sequence |
+| --- | --- |
+| New autonomous Task | prepare -> reserve(Task) -> recheck -> deliver -> complete(Task) -> release(Task) |
+| New attached Task | prepare root context -> reserve(Task) -> recheck -> deliver to root PR -> complete(Task) -> release(root) |
+| Root Plan or sub-plan with internal dependency | prepare -> reserve(selection) -> recheck first server id -> deliver -> complete -> next(selection) -> recheck dependent result -> deliver -> complete -> release(root) |
+| Target saved during preparation | update_item(context target) -> reserve(selection), without inspect between them |
+| Reserve refusal | report code, message and supplied blocking ids -> stop, without automatic inspect or another child |
+| Selection already completed | full reads -> release if retained and owned -> stop before Git; an empty Plan is not a completed selection |
+| Review without authorisation | reads -> suspend; an owned reservation remains held |
+| Missing external result before reserve | ref check -> stop before acquisition |
+| Persistent obstacle after reserve | retain ownership -> block(active building Task, reason, resumeCondition) -> stop |
+| Foreign reservation | reads -> stop; only the current owner's authorised transfer can grant ownership |
+| Owned building Task, no blockage | conditional reads -> Git/head/PR and prerequisite checks -> continue, without reserve or resume |
+| Owned blocked Task | conditional reads -> observe resumeCondition resolved -> Git checks -> resume(Task, true) -> continue |
+| Authorised review corrections | conditional reads -> Git checks -> resume(Task, false) -> correct and verify; acceptance is never self-granted |
+| Owned Plan with no active Task | conditional reads and Git checks -> next(selection) -> recheck returned Task -> continue |
+
+These are expected sequences checked by static review, not recorded runtime traces. The
+new startup removes one mandatory inspect before reserve; saving a target no longer adds
+another inspect. Necessary item reads and Git checks remain, so this is not a claim of a
+fixed total call count. Schema tests validate documented payloads, not server policy or an
+agent's runtime decisions. No token saving has been measured; any token benefit is an
+estimate until a separate before/after runtime comparison records calls and token usage.
