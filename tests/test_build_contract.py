@@ -17,9 +17,13 @@ from test_spec_contract import CATALOG, ROOT, skills, validate_example
 BUILD = ROOT / "plugins/nestor-beta/skills/build"
 
 
-def examples():
-    return [json.loads(block) for path in BUILD.rglob("*.md")
-            for block in re.findall(r"```json\n(.*?)\n```", path.read_text(), re.DOTALL)]
+def examples(field="arguments"):
+    documented = [json.loads(block) for path in BUILD.rglob("*.md")
+                  for block in re.findall(r"```json\n(.*?)\n```", path.read_text(), re.DOTALL)]
+    for example in documented:
+        if set(example) not in ({"tool", "arguments"}, {"tool", "result"}):
+            raise ValueError("Example must name its tool and arguments or result")
+    return [example for example in documented if field in example]
 
 
 class BuildContract(unittest.TestCase):
@@ -66,7 +70,34 @@ class BuildContract(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_example(block)
 
-    def test_mutation_response_identifies_items_without_an_active_task_field(self):
+    def test_reserve_response_shapes_and_consumed_fields_match_the_catalogue(self):
+        documented = examples("result")
+        self.assertTrue(documented)
+        for example in documented:
+            validator = Draft202012Validator(CATALOG["outputSchemas"][example["tool"]])
+            response = example["result"]
+            with self.subTest(item=response["item"]["type"]):
+                validator.validate(response)
+                for field in ("contextId", "selectionId", "taskIds"):
+                    malformed = copy.deepcopy(response)
+                    del malformed["reservation"][field]
+                    with self.subTest(missing=field), self.assertRaises(ValidationError):
+                        validator.validate(malformed)
+                for field in ("executionId", "proof"):
+                    malformed = copy.deepcopy(response)
+                    del malformed["ownership"][field]
+                    with self.subTest(credential=field), self.assertRaises(ValidationError):
+                        validator.validate(malformed)
+                for patch in ({"activeTaskId": "7TxA"}, {"tasks": []},
+                              {"externalDependencies": []}, {"proof": "example-private-proof"}):
+                    with self.subTest(patch=patch), self.assertRaises(ValidationError):
+                        validator.validate(response | patch)
+                malformed = copy.deepcopy(response)
+                malformed["reservation"]["activeTaskId"] = "7TxA"
+                with self.assertRaises(ValidationError):
+                    validator.validate(malformed)
+
+    def test_next_response_identifies_items_without_an_active_task_field(self):
         schema = CATALOG["outputSchemas"]["manage_build"]
         validator = Draft202012Validator(schema)
         response = {"operation": "next", "item": {"id": "7TxA", "type": "task",

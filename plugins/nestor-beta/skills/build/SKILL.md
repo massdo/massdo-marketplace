@@ -232,8 +232,11 @@ On an explicit continuation, read the selection, root context, remaining Tasks a
 Git references with conditional reads. Keep completed Tasks and their evidence; never
 rebuild them or recreate children. If the selected work is already completed, release its
 retained reservation with the current context pair and ownership, then stop before Git.
-Otherwise inspect the selection before Git, obey any refusal, and check the current
-checkout, pushed head and PR again.
+Otherwise reconcile the held reservation's `contextId`, `selectionId` and ordered `taskIds`
+with those reads. Validate the repository, current checkout, pushed head and open PR against
+the shared Git references again, including section 2.4's prerequisite checks. Do not call
+reserve again or insert an automatic inspect into a continuation. Review still requires
+explicit acceptance or correction authorisation; otherwise keep the build suspended.
 Use the retained private ownership. If another execution must take over, require explicit
 transfer by the current owner via `manage_build(operation: "transfer")`; it returns a new
 credential and revokes the old one immediately. Missing proof is not authority to recover
@@ -243,9 +246,10 @@ After observing that a stored resumeCondition is resolved, call `manage_build(op
 "resume", id: activeTaskId, conditionResolved: true)` with ownership and its current pair.
 For review corrections without blockage, resume may use false. Continue the interrupted
 Task only after acceptance. An already building unblocked Task can continue with its owned
-reservation without an invalid resume call; if no Task is active and work remains, use
-next. Use `complete(review: "accepted")` only after actual acceptance of the reviewed work,
-with valid evidence; never grant that acceptance yourself to skip review.
+reservation without an invalid resume call; if no Task is active and work remains in a
+selected Plan, use next with the selection's current pair. Use `complete(review: "accepted")`
+only after actual acceptance of the reviewed work, with valid evidence; never grant that
+acceptance yourself to skip review.
 
 If planned work must change, release explicitly before seeking revised specification and
 approval; do not edit frozen work. An explicit abandonment may also release the context:
