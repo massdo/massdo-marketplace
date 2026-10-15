@@ -1,15 +1,19 @@
 ---
 name: spec
-description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Write the reviewed structured specification, then approve it only with explicit agreement and inspect its build readiness. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
+description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Once the work is complete, save its structured specification, approve it and inspect its build readiness without asking for a final confirmation, unless the user explicitly asks for a draft, a stop or a later approval. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
 argument-hint: "<idea… | id-or-slug> [project:<name-or-id>]"
 disable-model-invocation: true
 ---
 
 # Nestor Spec
 
-Interview the user, prepare the complete work, and save it in Nestor. This skill writes no
-code or files and starts no build. Conduct the interview and write the specification in
-the user's language. Start only on their explicit invocation or request for this process.
+Interview the user, prepare the complete work, then save and approve it in Nestor. This
+skill writes no code or files and starts no build. Conduct the interview and write the
+specification in the user's language. Start only on their explicit invocation or request
+for this process. That invocation authorises, by default, saving and approving the
+requested scope as soon as the interview is complete. An explicit request for a draft or
+a later approval limits this to saving; an explicit stop ends the session without further
+writes. Never ask for approval again to get around that choice.
 
 ## Identify the plugin version
 
@@ -55,8 +59,8 @@ the root repository and their approval state.
 
 When a standalone Task holds several deliverables, prepare a new root Plan in its project
 with the Task's repository, then attach the Task to it with `planId` as one of its code
-Tasks, converting it with `template: "code"` when it is ordinary. Present this
-reorganisation in the tree for confirmation; the new Plan then becomes the selection.
+Tasks, converting it with `template: "code"` when it is ordinary. Show this reorganisation
+in the tree; the new Plan then becomes the selection.
 Ask the user first when you are less than 95% sure the Task holds several deliverables.
 For an attached code Task or an ineligible Task, report the need and obtain explicit
 reorganisation instructions instead.
@@ -66,7 +70,8 @@ reorganisation instructions instead.
 Ask one real question at a time, starting with the largest unknown in the material
 already supplied. Follow the answers. Read repository facts instead of asking the user
 for them. State technical choices with their reasons; ask about decisions that belong
-to the user, including money, risk, priority and taste.
+to the user, including money, risk, priority and taste. Questions serve business and
+technical decisions only: never ask for permission to compile, save or approve.
 
 Keep every question short and natural, one per decision the user must make. Do not
 justify it with this skill's local path, a quoted rule or an account of internal
@@ -74,9 +79,9 @@ mechanics. When a higher-priority instruction requires citing the skill, follow 
 without expanding the question around it.
 [The confirmation examples](references/confirmation-examples.md) illustrate this tone.
 
-Finish when the requirements and checks are verifiable and no blocking decision remains.
-Offer in one line to compile the complete work before doing so. Do not restart the
-interview or invoke this skill again for each child.
+Finish when the requirements and checks are verifiable and no blocking decision remains,
+then compile the complete work without asking. Do not restart the interview or invoke
+this skill again for each child.
 
 ## 2. Prepare the complete work
 
@@ -108,19 +113,18 @@ build selection instead of inventing ordering or reservation rules in this skill
 Keep one repository on the root Plan in `git.repository`; descendants inherit it. An
 autonomous code Task records its own repository. Record the checkout's `origin` URL in
 HTTPS form without `.git`, such as `https://github.com/owner/repo`, never a local path,
-and retain existing Git references. Resolve an unknown repository before presenting work
-for approval. Do not introduce a different repository in a descendant.
+and retain existing Git references. Resolve an unknown repository during the interview.
+Do not introduce a different repository in a descendant.
 
-## 3. Confirm, then save
+## 3. Show, then save
 
 Show the specification, the complete tree with each node's kind (Plan, sub-plan or code
 Task), dependencies and content changes. Name the existing items being changed and the
-fields being replaced. Ask for confirmation before any write, in one short question.
-When the user has already explicitly authorised saving this same content, do not ask
-again; content changed since that authorisation needs a new confirmation. Confirmation to
-save is distinct from approval of the prepared work for a future build.
+fields being replaced. Then save the work without a confirmation question or a second
+agreement. Never invent a further consent requirement: a decision that does need the
+user belongs to the interview.
 
-Resolve the project after confirmation. An existing item keeps its own project, since
+Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
 say so and ask whether to continue in the item's project before any write. Reuse an
 already resolved project id. Otherwise ask for
@@ -142,37 +146,41 @@ Write with the resolved scope and version hash:
    Use `backlog: true` on every new Task. Plans have no backlog or scheduling fields;
    omit those fields from Plan calls. Keep existing Tasks' planning unchanged.
 3. Once all dependency ids exist, patch the concerned Tasks with their justified edges.
-   Finish every remaining descendant in this invocation before requesting approval.
+   Finish every remaining descendant in this invocation before approving.
 
 For every mutation use the latest confirmed version/ETag pair. On `CONFLICT`, take
 `details.current`, reconcile intervening changes, and retry once with its fresh pair;
 do not replay a stale change unchanged. Only when that payload is missing, read once
 with the held pair in `known` (null only if content or pair is absent). A successful
-mutation returns the next pair: no preventive or post-success read is needed.
+mutation returns the next pair: no preventive or post-success read is needed. When an
+intervening change raises a decision the user has not settled, ask that one question,
+then resume saving and approving; never replace it with a general confirmation.
 
 If a write fails, stop and report the confirmed ids/slugs and the exact unfinished node
 or edge. A lost response has an unknown outcome; establish what exists before resuming.
 Keep confirmed identities and resume there without recreating the root or children.
+Report a blockage as it is; never turn it into a validation question.
 
 ## 4. Approve and inspect
 
-After saving the complete work, request explicit approval of that prepared subtree or
-autonomous Task if the user has not already expressly approved it, in its own short
-question. Agreement to write alone is insufficient. If they decline or defer, report saved
-work without claiming it is ready. If concurrent edits change the reviewed work, present
-those changes for approval before retrying.
+Once the complete work is saved, approve it without asking, unless the user asked for a
+draft or a later approval: then report it saved, not approved. Call `update_item` with
+`operation: "approve"`, the selected item's id and its held matched pair. For a Plan,
+this approves its current subtree atomically; do not approve each child separately to
+bypass an incomplete descendant. The domain makes eligible remaining Tasks
+`ready_to_build`; never patch that status or manufacture an approval.
 
-Call `update_item` with `operation: "approve"`, the selected item's id and its held
-matched pair. For a Plan, this approves its current subtree atomically; do not approve
-each child separately to bypass an incomplete descendant. The domain makes eligible
-remaining Tasks `ready_to_build`; never patch that status or manufacture an approval.
-A refusal names the blocking item and field: report it and, when content is missing,
-complete it, show the change and request approval again.
+A refusal names the blocking item and field: report it with the saved, unapproved state.
+When content is missing, ask only for a decision that belongs to the user, or read the
+missing fact from the repository; then save the completion and approve again without a
+validation question.
 
-Refining a code Task attached to a Plan revokes the approval of its ancestor Plans. When
-an ancestor was approved before this invocation, offer to approve again the highest such
-Plan, which restores its subtree. Its conflict after your own Task change is expected and
-is not a concurrent edit.
+On approved work, never reset an approval at the start of the interview: a saved change
+to planned work lets the domain revoke the approval of the changed item and of its
+ancestor Plans. Approve the requested scope again after saving. Approve an ancestor again
+only when its complete subtree is already within the requested scope and prepared;
+otherwise report that its approval was revoked, without widening the scope. Its conflict
+after your own change is expected and is not a concurrent edit.
 
 Then call `manage_build` with `operation: "inspect"` on the same selection. Announce
 “ready to build” only after it accepts. Internal pending dependencies are compatible
