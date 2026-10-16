@@ -143,6 +143,8 @@ After presenting the work at the chosen level, save and approve it in the same t
 without another confirmation. The answer selects detail only; the invocation already
 authorises saving and approval. Preserve any explicit draft, stop or later-approval
 instruction. This presentation comes before writes, never folded into the final report.
+See [the review examples](references/review-examples.md) for the three entry points and
+their detail choices.
 
 Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
