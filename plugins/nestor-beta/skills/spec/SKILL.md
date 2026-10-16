@@ -11,7 +11,7 @@ Interview the user, prepare the complete work, then save and approve it in Nesto
 skill writes no code or files and starts no build. Conduct the interview and write the
 specification in the user's language. Start only on their explicit invocation or request
 for this process. That invocation authorises, by default, saving and approving the
-requested scope as soon as the interview is complete. An explicit request for a draft or
+requested scope after presenting it at the user's chosen level of detail. An explicit request for a draft or
 a later approval limits this to saving; an explicit stop ends the session without further
 writes. Never ask for approval again to get around that choice.
 
@@ -71,7 +71,8 @@ Ask one real question at a time, starting with the largest unknown in the materi
 already supplied. Follow the answers. Read repository facts instead of asking the user
 for them. State technical choices with their reasons; ask about decisions that belong
 to the user, including money, risk, priority and taste. Questions serve business and
-technical decisions only: never ask for permission to compile, save or approve.
+technical decisions; the detail question in section 3 selects presentation only. Never
+ask for permission to compile, save or approve.
 
 Keep every question short and natural, one per decision the user must make. Do not
 justify it with this skill's local path, a quoted rule or an account of internal
@@ -117,14 +118,31 @@ HTTPS form without `.git`, such as `https://github.com/owner/repo`, never a loca
 and retain existing Git references. Resolve an unknown repository during the interview.
 Do not introduce a different repository in a descendant.
 
-## 3. Show, then save
+Compile all of this internally before presenting the result. A short presentation never
+means a shortened specification: every Plan, sub-plan, code Task and dependency must be
+fully prepared and saved, whatever level of detail the user chooses.
 
-Before the first write, write out for the user the specification, the complete tree with
-each node's kind (Plan, sub-plan or code Task), dependencies and content changes. Name
-the existing items being changed and the fields being replaced. This presentation comes
-first, never folded into the final report. Then save the work in the same turn, without
-a confirmation question or a second agreement. Never invent a further consent
-requirement: a decision that does need the user belongs to the interview.
+## 3. Show the summary, then the chosen detail
+
+First present a short business summary of the compiled work: its objective, useful result,
+scope, main deliverables and concrete impacts. Do not start with full specifications or
+a long list of files, symbols, commands, MCP fields or technical steps. Then ask once:
+« Veux-tu voir le plan complet ? » Use the equivalent in the user's language.
+
+Wait for the answer before any write. If the user explicitly requested the full detail
+already, show it directly without repeating a settled question.
+
+- Yes: show every specification, the complete tree with each node's kind (Plan, sub-plan
+  or code Task), justified dependencies and all content changes. Name the existing items
+  being changed and the fields being replaced.
+- No: keep the review in business terms. Explain which items will be created or changed,
+  any reorganisation and which stored content will be replaced, including its effect.
+  Make these essential changes understandable without imposing the full specification.
+
+After presenting the work at the chosen level, save and approve it in the same turn,
+without another confirmation. The answer selects detail only; the invocation already
+authorises saving and approval. Preserve any explicit draft, stop or later-approval
+instruction. This presentation comes before writes, never folded into the final report.
 
 Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
