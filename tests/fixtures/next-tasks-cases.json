@@ -1,0 +1,1463 @@
+[
+  {
+    "name": "skyline_plan_core",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "Efb1",
+              "type": "task",
+              "title": "Core and public API migration",
+              "slug": "scarlet_tiglon",
+              "excerpt": "Existing Task reduced to core/API; the Plan owns the wider architecture refactoring.",
+              "version": 1,
+              "status": "ready_to_build",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            },
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "Architecture refactoring",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            }
+          ],
+          "totalCount": 2,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 1,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "Efb1",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "ready_to_build"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "autonomous_tasks",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "A001",
+              "type": "task",
+              "title": "brown turtle",
+              "slug": "brown_turtle",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "todo",
+              "priority": "normal",
+              "backlog": false
+            },
+            {
+              "id": "B001",
+              "type": "task",
+              "title": "copper manatee",
+              "slug": "copper_manatee",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "normal",
+              "backlog": false,
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 2,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 2,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "A001",
+          "parent": null,
+          "context": false,
+          "kind": "Task",
+          "status": "todo"
+        },
+        {
+          "id": "B001",
+          "parent": null,
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "plan_with_tasks",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "silver whitefish",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "Efb1",
+              "type": "task",
+              "title": "scarlet tiglon",
+              "slug": "scarlet_tiglon",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "ready_to_build",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            },
+            {
+              "id": "T002",
+              "type": "task",
+              "title": "tan owl",
+              "slug": "tan_owl",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 3,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 2,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "Efb1",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "ready_to_build"
+        },
+        {
+          "id": "T002",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "nested_subplan",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "silver whitefish",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "S001",
+              "type": "plan",
+              "title": "gray xerinae",
+              "slug": "gray_xerinae",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "blocked",
+              "parentPlanId": "5snR",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "N001",
+              "type": "task",
+              "title": "teal finch",
+              "slug": "teal_finch",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "S001",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 3,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 1,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "S001",
+          "parent": "5snR",
+          "context": false,
+          "kind": "sub-plan",
+          "progress": "blocked",
+          "approval": "current"
+        },
+        {
+          "id": "N001",
+          "parent": "S001",
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "historical_task_parent",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "L002",
+              "type": "task",
+              "title": "red fox",
+              "slug": "red_fox",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "need_review",
+              "priority": "normal",
+              "backlog": false,
+              "parentTaskId": "L001"
+            },
+            {
+              "id": "L001",
+              "type": "task",
+              "title": "purple muskox",
+              "slug": "purple_muskox",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "in_progress",
+              "priority": "normal",
+              "backlog": false
+            }
+          ],
+          "totalCount": 2,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 2,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "L001",
+          "parent": null,
+          "context": false,
+          "kind": "Task",
+          "status": "in_progress"
+        },
+        {
+          "id": "L002",
+          "parent": "L001",
+          "context": false,
+          "kind": "Task",
+          "status": "need_review"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "ancestors_outside_view",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "N001",
+              "type": "task",
+              "title": "teal finch",
+              "slug": "teal_finch",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "S001",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 1,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 1,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      },
+      {
+        "tool": "get_item",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "ref": [
+            "S001"
+          ],
+          "known": [
+            null
+          ]
+        },
+        "result": {
+          "results": [
+            {
+              "ref": "S001",
+              "item": {
+                "id": "S001",
+                "type": "plan",
+                "title": "gray xerinae",
+                "slug": "gray_xerinae",
+                "version": 1,
+                "workRevision": 1,
+                "progress": "blocked",
+                "parentPlanId": "5snR",
+                "approval": {
+                  "workRevision": 1,
+                  "approvedAt": "2026-10-16T04:00:00.000Z"
+                },
+                "createdAt": "2026-10-16T04:00:00.000Z",
+                "updatedAt": "2026-10-16T04:00:00.000Z",
+                "specification": {
+                  "objective": "Synthetic context ancestor.",
+                  "requirements": [],
+                  "architecture": "Existing grouping.",
+                  "dataHandling": "No data changes.",
+                  "errorHandling": "Explain unavailable context.",
+                  "verificationPlan": []
+                }
+              },
+              "tags": [],
+              "relations": [],
+              "etag": "00000000000000000000000000000000"
+            }
+          ]
+        }
+      },
+      {
+        "tool": "get_item",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "ref": [
+            "5snR"
+          ],
+          "known": [
+            null
+          ]
+        },
+        "result": {
+          "results": [
+            {
+              "ref": "5snR",
+              "item": {
+                "id": "5snR",
+                "type": "plan",
+                "title": "silver whitefish",
+                "slug": "silver_whitefish",
+                "version": 1,
+                "workRevision": 1,
+                "progress": "in_progress",
+                "approval": {
+                  "workRevision": 1,
+                  "approvedAt": "2026-10-16T04:00:00.000Z"
+                },
+                "createdAt": "2026-10-16T04:00:00.000Z",
+                "updatedAt": "2026-10-16T04:00:00.000Z",
+                "specification": {
+                  "objective": "Synthetic context ancestor.",
+                  "requirements": [],
+                  "architecture": "Existing grouping.",
+                  "dataHandling": "No data changes.",
+                  "errorHandling": "Explain unavailable context.",
+                  "verificationPlan": []
+                }
+              },
+              "tags": [],
+              "relations": [],
+              "etag": "00000000000000000000000000000000"
+            }
+          ]
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": true,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "S001",
+          "parent": "5snR",
+          "context": true,
+          "kind": "sub-plan",
+          "progress": "blocked",
+          "approval": "current"
+        },
+        {
+          "id": "N001",
+          "parent": "S001",
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "unresolved_ancestor",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "M001",
+              "type": "task",
+              "title": "gray otter",
+              "slug": "gray_otter",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "MISS",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 1,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 1,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      },
+      {
+        "tool": "get_item",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "ref": [
+            "MISS"
+          ],
+          "known": [
+            null
+          ]
+        },
+        "result": {
+          "results": [
+            {
+              "ref": "MISS",
+              "error": {
+                "code": "NOT_FOUND",
+                "message": "Synthetic missing ancestor.",
+                "details": {}
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "M001",
+          "parent": "MISS",
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        }
+      ],
+      "partial": true,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": [
+        "MISS"
+      ]
+    }
+  },
+  {
+    "name": "plan_alone_zero_tasks",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "silver whitefish",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            }
+          ],
+          "totalCount": 1,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 0,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "plan_progress_and_approval",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "P001",
+              "type": "plan",
+              "title": "gray puma",
+              "slug": "gray_puma",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "not_started"
+            },
+            {
+              "id": "P002",
+              "type": "plan",
+              "title": "red panda",
+              "slug": "red_panda",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "P003",
+              "type": "plan",
+              "title": "blue crane",
+              "slug": "blue_crane",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 2,
+              "progress": "blocked",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "P004",
+              "type": "plan",
+              "title": "white whale",
+              "slug": "white_whale",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "completed",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            }
+          ],
+          "totalCount": 4,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 0,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "P001",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "not_started",
+          "approval": "none recorded"
+        },
+        {
+          "id": "P002",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "P003",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "blocked",
+          "approval": "older"
+        },
+        {
+          "id": "P004",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "completed",
+          "approval": "current"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "empty_with_backlog",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [],
+          "totalCount": 0,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 3,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 0,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [],
+      "partial": false,
+      "empty": true,
+      "backlogOffer": {
+        "count": 3
+      },
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "empty_without_backlog",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [],
+          "totalCount": 0,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 0,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 0,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [],
+      "partial": false,
+      "empty": true,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "missing_counters",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "silver whitefish",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            },
+            {
+              "id": "Efb1",
+              "type": "task",
+              "title": "scarlet tiglon",
+              "slug": "scarlet_tiglon",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "ready_to_build",
+              "priority": "normal",
+              "backlog": false,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 2,
+          "hasMore": false
+        },
+        "compatibilityInput": "Missing counters are a compatibility input, rejected by the current strict catalogue; absent does not mean zero."
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "Efb1",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "ready_to_build"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "empty_missing_counters",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [],
+          "totalCount": 0,
+          "hasMore": false
+        },
+        "compatibilityInput": "Missing counters are a compatibility input, rejected by the current strict catalogue; absent does not mean zero."
+      }
+    ],
+    "presentation": {
+      "outline": [],
+      "partial": false,
+      "empty": true,
+      "backlogOffer": {
+        "count": null
+      },
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "relations_across_pages",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "T010",
+              "type": "task",
+              "title": "low finch",
+              "slug": "low_finch",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "todo",
+              "priority": "low",
+              "backlog": false,
+              "planId": "5snR"
+            },
+            {
+              "id": "A001",
+              "type": "task",
+              "title": "brown turtle",
+              "slug": "brown_turtle",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "todo",
+              "priority": "normal",
+              "backlog": false
+            }
+          ],
+          "totalCount": 4,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 3,
+            "agenda": 0
+          },
+          "hasMore": true,
+          "nextCursor": "c1"
+        }
+      },
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "cursor": "c1"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "T011",
+              "type": "task",
+              "title": "urgent finch",
+              "slug": "urgent_finch",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "building",
+              "priority": "urgent",
+              "backlog": false,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            },
+            {
+              "id": "5snR",
+              "type": "plan",
+              "title": "silver whitefish",
+              "slug": "silver_whitefish",
+              "excerpt": "Synthetic documentary Plan.",
+              "version": 1,
+              "workRevision": 1,
+              "progress": "in_progress",
+              "approval": {
+                "workRevision": 1,
+                "approvedAt": "2026-10-16T04:00:00.000Z"
+              }
+            }
+          ],
+          "totalCount": 4,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 3,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": false,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "T010",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "todo"
+        },
+        {
+          "id": "T011",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "building"
+        },
+        {
+          "id": "A001",
+          "parent": null,
+          "context": false,
+          "kind": "Task",
+          "status": "todo"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "partial_page",
+    "userAskedBacklog": false,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "active"
+        },
+        "result": {
+          "view": "active",
+          "items": [
+            {
+              "id": "A001",
+              "type": "task",
+              "title": "brown turtle",
+              "slug": "brown_turtle",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "todo",
+              "priority": "normal",
+              "backlog": false
+            }
+          ],
+          "totalCount": 2,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 2,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 2,
+            "agenda": 0
+          },
+          "hasMore": true,
+          "nextCursor": "c2"
+        }
+      },
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "cursor": "c2"
+        },
+        "failure": "Synthetic connection reset; no server response was received."
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "A001",
+          "parent": null,
+          "context": false,
+          "kind": "Task",
+          "status": "todo"
+        }
+      ],
+      "partial": true,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  },
+  {
+    "name": "requested_backlog_context",
+    "userAskedBacklog": true,
+    "calls": [
+      {
+        "tool": "list_items",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "view": "backlog"
+        },
+        "result": {
+          "view": "backlog",
+          "items": [
+            {
+              "id": "K001",
+              "type": "task",
+              "title": "green kite",
+              "slug": "green_kite",
+              "excerpt": "Synthetic documentary Task.",
+              "version": 1,
+              "status": "todo",
+              "priority": "normal",
+              "backlog": true,
+              "planId": "5snR",
+              "template": "code",
+              "workRevision": 1
+            }
+          ],
+          "totalCount": 1,
+          "taskViewCounts": {
+            "inbox": 0,
+            "today": 0,
+            "upcoming": 0,
+            "backlog": 1,
+            "completed": 0,
+            "cancelled": 0,
+            "recent": 0,
+            "active": 0,
+            "agenda": 0
+          },
+          "hasMore": false
+        }
+      },
+      {
+        "tool": "get_item",
+        "arguments": {
+          "version_hash": "28d2cd83cbd5810d9",
+          "scope": {
+            "mode": "project",
+            "projectId": "QYQi"
+          },
+          "ref": [
+            "5snR"
+          ],
+          "known": [
+            null
+          ]
+        },
+        "result": {
+          "results": [
+            {
+              "ref": "5snR",
+              "item": {
+                "id": "5snR",
+                "type": "plan",
+                "title": "silver whitefish",
+                "slug": "silver_whitefish",
+                "version": 1,
+                "workRevision": 1,
+                "progress": "in_progress",
+                "approval": {
+                  "workRevision": 1,
+                  "approvedAt": "2026-10-16T04:00:00.000Z"
+                },
+                "createdAt": "2026-10-16T04:00:00.000Z",
+                "updatedAt": "2026-10-16T04:00:00.000Z",
+                "specification": {
+                  "objective": "Synthetic context ancestor.",
+                  "requirements": [],
+                  "architecture": "Existing grouping.",
+                  "dataHandling": "No data changes.",
+                  "errorHandling": "Explain unavailable context.",
+                  "verificationPlan": []
+                }
+              },
+              "tags": [],
+              "relations": [],
+              "etag": "00000000000000000000000000000000"
+            }
+          ]
+        }
+      }
+    ],
+    "presentation": {
+      "outline": [
+        {
+          "id": "5snR",
+          "parent": null,
+          "context": true,
+          "kind": "Plan",
+          "progress": "in_progress",
+          "approval": "current"
+        },
+        {
+          "id": "K001",
+          "parent": "5snR",
+          "context": false,
+          "kind": "Task",
+          "status": "todo"
+        }
+      ],
+      "partial": false,
+      "empty": false,
+      "backlogOffer": false,
+      "unresolvedParents": []
+    }
+  }
+]

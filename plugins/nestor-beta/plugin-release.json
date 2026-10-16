@@ -1,5 +1,5 @@
 {
-  "version": "0.12.6",
-  "version_hash": "c517fc50a38539a1",
-  "changelog": "Spec presents a short business summary first and lets you choose full detail or a concise review. Every specification remains complete; saving and approval then proceed automatically unless you request a draft, a stop or later approval."
+  "version": "0.12.7",
+  "version_hash": "8d2cd83cbd5810d9",
+  "changelog": "Next Tasks shows active Plans, sub-plans and Tasks in their hierarchy, including ready-to-build and building work. Ancestors outside the view stay contextual, pagination preserves relationships, and mixed counters no longer hide Plans or invent missing descendants. Backlog remains on request."
 }
