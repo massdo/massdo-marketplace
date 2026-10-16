@@ -249,6 +249,21 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("mcpServers.journal", result.stderr)
 
+    def test_dotted_mcp_json_must_match_mcp_json(self):
+        server = {"mcpServers": {"journal": {"type": "http", "url": "https://a.example/mcp"}}}
+        self.json("plugins/demo/mcp.json", server)
+        self.json("plugins/demo/.mcp.json", server)
+        path = "plugins/demo/.kimi-plugin/plugin.json"
+        manifest = json.loads((self.root / path).read_text())
+        manifest["mcpServers"] = {"journal": {"url": "https://a.example/mcp"}}
+        self.json(path, manifest)
+        self.check()
+        # Only the dotted file moves, so the Kimi check against mcp.json stays green.
+        server["mcpServers"]["journal"]["url"] = "https://b.example/mcp"
+        self.json("plugins/demo/.mcp.json", server)
+        result = self.check(ok=False)
+        self.assertIn(".mcp.json and mcp.json have diverged", result.stderr)
+
     def test_nestor_grouped_read_protection_is_required_in_body(self):
         shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
         self.check()
