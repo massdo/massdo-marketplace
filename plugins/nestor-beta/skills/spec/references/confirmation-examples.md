@@ -4,6 +4,7 @@ These exchanges illustrate the expected tone and closing of each flow. They supp
 static review of this skill, not evidence of observed conversational behaviour. Conduct
 the real exchange in the user's language, with the actual slugs and server results. `A`
 is the agent and `U` the user; bracketed text summarises what the agent shows.
+For the complete detail-choice matrix, see [the review examples](review-examples.md).
 
 ## Normal wording
 
@@ -26,10 +27,13 @@ The user invokes this skill with the idea "Reject invalid export dates".
 
 > A: Should an invalid date return an error, or fall back to today?
 > U: An error.
-> A: [specification and tree] `brown_turtle (reject invalid export dates)` will reject invalid dates with an error. To implement it, run `/nestor-beta:build brown_turtle target:main`.
+> A: Invalid export dates will return a clear error before any records are read. I will create one validation Task; existing records stay unchanged. Would you like to see the complete plan?
+> U: No.
+> A: `brown_turtle (reject invalid export dates)` will reject invalid dates with an error. To implement it, run `/nestor-beta:build brown_turtle target:main`.
 
-The last answer settles the last decision. In the same turn, the agent compiles the work,
-shows it, creates the Task, approves it and closes with the user outcome and next choice.
+The business answer settles the last requirement; the agent compiles the complete work
+before the summary. After the detail answer, it creates and approves the fully specified
+Task in the same turn and closes with the user outcome and next choice.
 
 ## Complete Plan
 
@@ -37,6 +41,8 @@ The user invokes this skill with the idea "Export dated records to CSV".
 
 > A: Should the export include archived records?
 > U: No.
+> A: You will get a CSV for the selected date, without archived records. I will create an export Plan covering date validation and file generation; validation comes first and existing records stay unchanged. Would you like to see the complete plan?
+> U: Yes.
 > A: [specifications, tree with each node's kind, dependencies] `gray_xerinae (dated CSV export)` will export dated records without archived records. To implement it, run `/nestor-beta:build gray_xerinae target:main`.
 
 The agent writes the Plan, its code Tasks and their dependency edges, then approves the
@@ -45,7 +51,7 @@ Plan once: that approval covers its whole subtree.
 ## Rerun on approved work
 
 The user invokes this skill on `copper_manatee`, an approved code Task of the approved
-Plan `gray_xerinae`, to also export ISO week dates.
+Plan `gray_xerinae`, to also export ISO week dates, explicitly requesting full detail.
 
 > A: Should a week date export the whole week or only its first day?
 > U: The whole week.
@@ -66,14 +72,14 @@ No write follows. The closing describes only the work available for a later cont
 
 > A: The export work stops here. When you return, we can finish how invalid dates are handled.
 
-> U: Save it, but don't approve it yet.
+> U: Save it, but don't approve it yet, and show the full detail.
 > A: [specification and tree] `brown_turtle (reject invalid export dates)` describes the date-error behaviour for later review. It is not ready to build yet; return to Spec when you want to proceed.
 
 The agent does not ask for approval again later to get around that choice.
 
 ## Explicit draft
 
-> U: Keep it as a draft.
+> U: Keep it as a draft and show the full detail.
 > A: [specification and tree] `brown_turtle (reject invalid export dates)` outlines the date-error behaviour. Return to Spec to finish it before building.
 
 ## Reconcilable conflict
