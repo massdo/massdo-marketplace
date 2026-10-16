@@ -1,5 +1,5 @@
 {
-  "version": "0.12.5",
-  "version_hash": "c78218b37686e602",
-  "changelog": "Spec and Build messages focus on what the work brings to the user and the next useful choice, without narrating internal steps. Failures remain actionable, and detailed verification evidence stays in Nestor and the pull request."
+  "version": "0.12.6",
+  "version_hash": "c517fc50a38539a1",
+  "changelog": "Spec presents a short business summary first and lets you choose full detail or a concise review. Every specification remains complete; saving and approval then proceed automatically unless you request a draft, a stop or later approval."
 }
