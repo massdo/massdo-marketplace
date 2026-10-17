@@ -235,64 +235,191 @@ request may serve no Nestor Task or Plan; only the user can confirm that. Say it
 and never guess the references. When Nestor cannot be reached, the references stay
 unverified: state that limit without treating it as a pass.
 
-### Merge confidence and report
+### Merge risk and report
 
-Give every open PR an integer percentage from 0 to 100: confidence that **this PR can merge
-into `main` at the examined head and baseline, with acceptable technical risk within the
-checks performed**. One meaning serves **ready**, **blocked** and **out of selection**. It
-does not measure confidence in the grouping, and it is not a statistically calibrated
-probability. The facts are objective; their weighting and the remaining risk are judgment.
+Assess every open PR on two separate axes, from the evidence above. Neither one is a number,
+internally or in the report.
 
-Use these indicative anchors, adapted to merge readiness rather than doctor's delivery
-thresholds; do not turn them into a points formula or a new merge gate:
+- **State — can it merge into `main` now, at the examined head and baseline?** **Ready**,
+  **blocked** or **out of selection**, as the gates above decide. A PR that is not ready
+  keeps its cause and the action that would make it ready.
+- **Risk — what would an error in this change cost?** **Low**: complete, favorable evidence
+  on a targeted change. **Medium**: evidence absent or inconclusive — no CI, limited
+  coverage, unknown rules on `main` or unknown mergeability. **High**: a broad or sensitive
+  change — a workflow, a release, authentication, a data migration — with weak coverage, or
+  a diff that contradicts its description. No CI is a coverage limit, not a failed check;
+  local or optional checks you actually observed can supply the missing evidence. These are
+  anchors, not a formula: weigh the evidence and give the reason in one sentence.
 
-- **95–99%: complete favorable evidence.** Base `main`, non-draft, `MERGEABLE` and `CLEAN`;
-  applicable protections and rulesets known; required checks and reviews satisfied or
-  confirmed not required; diff read and relevant validations observed on this head;
-  dependencies, overlaps, local work and workflow/release effects accounted for.
-- **0–10%: a confirmed obstacle as the PR stands.** A conflict, failed required check,
-  missing required approval, draft or different base prevents it landing on `main` now.
-  Identify the obstacle even when other evidence is favorable.
-- **20–60%: evidence absent or inconclusive.** Unavailable requirements, unknown mergeability
-  or limited validation coverage leave material uncertainty. No CI is a coverage limit,
-  not a failed check; actual local or optional checks may improve the assessment. A 403 is
-  unknown requirements, not absent rules or a confirmed check failure.
+A low risk replaces no mandatory check, protection, group rule or user agreement. Groups —
+ready, blocked, out of selection — come from the existing gates above, never from the risk.
+Any head or `main` change invalidates the assessment; reassess after each merge and before
+seeking renewed approval.
 
-Within these anchors, weigh the evidence and explain the remaining judgment briefly. A high
-score replaces no mandatory check, protection, group rule or user agreement. Groups are
-decided by the existing gates above, never by a percentage threshold. Any head or `main`
-change invalidates the score; reassess after each merge and before seeking renewed approval.
+The report has two levels. Its examples are in English, like the rest of this skill, which
+does not set the language of your replies: write all of it, the block heading and the reply
+words included, in the user's language.
 
-Start every PR line with `85% - [#N Title](URL) — head SHA — main SHA — base — group — evidence
-and limits`. In a table, put the percentage first, before the PR. Lead with the scored list,
-in the user's language. Give concise observed facts, name missing or unknown evidence, and
-make clear that the percentage is the residual judgment. These examples share the examined
-`main` baseline `b012345`; abbreviated SHAs are for display only:
+**Level 1 — the proposed action.** In normal mode, the first response is this block alone,
+and so is every later proposal — a pull request edit, a merge, a release step:
 
-| Confidence (estimate) | Pull request | Head / main | Base | Group | Evidence and limits |
-|---|---|---|---|---|---|
-| 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood, title and footer conform; judgment: broad coverage, residual risk beyond tests |
-| 96% | [#18 Add retry](https://github.com/OWNER/REPO/pull/18) | `a9b8c7d` / `b012345` | `main` | blocked | observed: non-draft, MERGEABLE/CLEAN, required checks passed on this head, diff read; footer lists `gray_xerinae`, which Nestor does not know; judgment: technically ready, blocked until the footer is corrected |
-| 5% | [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | `e4f5a6b` / `b012345` | `main` | blocked | observed: conflict and required `validate` failed on this head; judgment: cannot land as-is |
-| 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read, no Nestor footer; unknown: automated validation coverage, tasks served; judgment: limited change, limited evidence |
-| 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
-| 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
+```text
+## ▶ PROPOSED ACTION
 
-In normal mode, end each report with one block quote holding only the next action — a pull
-request edit, a merge (section 4) or a release step (section 5) — with its exact target, its
-effects and the agreement it needs. Having no pull request to merge does not mean everything
-is published: when `main` is ahead of its latest release, the next action is that release.
-When nothing remains, say so and ask nothing; when the next action is blocked, name what is
-missing or the decision it awaits instead of offering it.
+**Merge [#40](https://github.com/OWNER/REPO/pull/40) — scrolling Trending banner — into main**
 
-> **Merge [#12 Add export](https://github.com/OWNER/REPO/pull/12)**: head `a1b2c3d` into `main` at `b012345`, by squash.
-> Effects: `validate` runs on `main`; no release or deployment. Merge it now?
+Shall I do it? Reply "yes" or "details".
+```
+
+- **(a)** The bold line gives the verb, each pull request with its link and what it does in
+  plain words, and the destination.
+- **(b)** Several ready PRs make one grouped action, in the chosen order: "Merge #12 then
+  #16 into main". A "yes" covers exactly that list and that order. Each PR is still verified
+  again just before its merge (section 4), and a change found there stops the sequence.
+- **(c)** When the merge method needs confirming, the line names it in plain words: "with a
+  merge commit, like the previous PRs". A PR without a Nestor footer is named the same way,
+  "though it names no Nestor Task or Plan", so that "yes" confirms it serves none.
+- **(d)** A line starting with ⚠ appears only when the action automatically triggers a
+  publication — a tag, a GitHub Release, a package, a version notification — or a
+  deployment: "⚠ Publishes release v1.4.0". Otherwise there is no effect line.
+- **(e)** When the next action is blocked, the block proposes the action that unblocks it,
+  such as the exact correction of a PR footer, or names the decision it awaits, in one
+  sentence.
+- **(f)** When `main` is ahead of its latest release and no PR is left to merge, the
+  proposed action is the release step.
+- **(g)** When there is nothing to ship, one sentence says so, with no block and no question.
+
+Level 1 shows no SHA, check name, GitHub state, count, `main` baseline or table, and names
+local work only when it blocks the action.
+
+**Level 2 — the details,** given when the user asks for them or for any explanation:
+
+1. **Header.** One line: the repository and the number of PRs in each state.
+2. **One block per PR.** Its title carries the link and says what the PR does in plain
+   words, drawn from the diff and the Nestor items you read — never a word-for-word
+   translation of its English title. Four lines follow: **What it changes**, the effect for
+   the user or the product in one sentence; **State**, ready, blocked or out of selection,
+   with the cause and the action needed when it is not ready; **Risk**, low, medium or high,
+   with its reason in one sentence; **Task**, the Tasks or Plans of its footer, cited with
+   Nestor's item citation rule, or the missing footer and the decision it needs.
+3. **Order.** Ready PRs first, then blocked ones, then those out of selection.
+4. **End.** **If I merge**: what the merges start — CI, a release, a deployment, or nothing
+   published. **Next**: the step after them. Local work and how far `main` is ahead of its
+   latest release, in one sentence when they matter. Then the same proposed action block.
+
+SHAs, check names, GitHub states, protections and rulesets, 403 refusals and sources (file
+and line) appear only when the user asks again, or when they block a PR, and then in plain
+words.
+
+The other level 1 cases. Two ready PRs, merged in the chosen order:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Merge [#12](https://github.com/OWNER/REPO/pull/12) — CSV export of the journal — then [#16](https://github.com/OWNER/REPO/pull/16) — installation guide in three steps — into main**
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A merge that publishes on its own, with a method to confirm:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Merge [#21](https://github.com/OWNER/REPO/pull/21) — offline mode — into main, with a merge commit like the previous PRs**
+
+⚠ Publishes release v1.4.0
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A footer to correct before the merge:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Remove `gray_xerinae`, which Nestor does not know, from the footer of [#18](https://github.com/OWNER/REPO/pull/18) — automatic retry of failed uploads**
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A release step, with no PR left to merge:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Release v1.4.0 from main by pushing its tag — it ships the three changes merged since v1.3.2**
+
+⚠ Publishes release v1.4.0 on GitHub and npm
+
+Shall I do it? Reply "yes" or "details".
+```
+
+Nothing to ship:
+
+```text
+Nothing to ship: no pull request is open, and main matches its latest release.
+```
+
+Level 2, once the user asks for details:
+
+```text
+REPO: 2 PRs ready to merge, 3 blocked, 1 out of selection
+
+**[#12](https://github.com/OWNER/REPO/pull/12) — Export the journal as a CSV file**
+- What it changes: users can download all their entries as a spreadsheet.
+- State: ready. The tests pass and nothing conflicts with main.
+- Risk: low. A targeted change: 120 lines of code and 300 lines of tests.
+- Task: `brown_turtle (CSV export)`
+
+**[#16](https://github.com/OWNER/REPO/pull/16) — Rewrite the installation guide in three steps**
+- What it changes: new users can install the app without reading one long paragraph.
+- State: ready. Nothing blocks it.
+- Risk: medium. No automated check runs on documentation, so only a reading of the diff supports it.
+- Task: `olive_wren (installation guide)`
+
+**[#18](https://github.com/OWNER/REPO/pull/18) — Retry failed uploads automatically**
+- What it changes: an upload cut off by the network resumes by itself instead of failing.
+- State: blocked. The code is ready, but its footer names `gray_xerinae`, which Nestor does not know: remove it before merging.
+- Risk: low. Tests cover the retry, and the change stays inside the upload module.
+- Task: `copper_manatee (upload retry)`; `gray_xerinae` is unknown.
+
+**[#14](https://github.com/OWNER/REPO/pull/14) — Switch sign-in to company accounts**
+- What it changes: users would sign in with their company account instead of a password.
+- State: blocked. It conflicts with recent changes on main, and a required test run fails: its author has to update the branch and fix the tests.
+- Risk: high. It changes authentication, and its tests fail.
+- Task: `teal_heron (single sign-on)`
+
+**[#17](https://github.com/OWNER/REPO/pull/17) — Refresh stale search results**
+- What it changes: search results update as soon as an entry changes.
+- State: blocked. GitHub refuses to show this account the rules that protect main, so what the PR still needs is unknown: a repository admin has to share them or grant read access.
+- Risk: medium. The rules for merging into main are unknown.
+- Task: `amber_lynx (search cache)`
+
+**[#15](https://github.com/OWNER/REPO/pull/15) — Document the CSV export**
+- What it changes: the user guide explains the export that #12 adds.
+- State: out of selection. It targets the `feature/export` branch, not main, and needs #12 first.
+- Risk: medium. Its diff was made against another branch, so how it would land on main is unknown.
+- Task: `brown_turtle (CSV export)`
+
+If I merge: the tests run again on main; nothing is published or deployed.
+
+Next: releasing these changes, since main will then be ahead of its latest release, v1.3.2.
+
+Local work: two commits in the `docs-draft` worktree are on no remote branch yet.
+
+## ▶ PROPOSED ACTION
+
+**Merge [#12](https://github.com/OWNER/REPO/pull/12) — CSV export of the journal — then [#16](https://github.com/OWNER/REPO/pull/16) — installation guide in three steps — into main**
+
+Shall I do it? Reply "yes" or "details".
+```
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
 request without a separate authorization. In normal mode, when a check needs a checkout,
 use a clean temporary worktree at the examined head outside the user's working tree, and
 remove it afterwards. In `list`, use observed CI/log evidence without a checkout or local
-validation run, record missing coverage in the score, output the scored report and **stop**.
+validation run, count missing coverage in the risk, output the PR blocks and **stop**.
 
 ## 3. Recognize the release procedure — before any merge
 
