@@ -267,8 +267,10 @@ The report has two levels. Its examples are in English, like the rest of this sk
 does not set the language of your replies: write all of it, the block heading and the reply
 words included, in the user's language.
 
-**Level 1 — the proposed action.** In normal mode, the first response is this block alone,
-and so is every later proposal — a pull request edit, a merge, a release step:
+**Level 1 — the proposed action.** In normal mode, the first response is this block alone.
+Every later proposal — a pull request edit, a merge, a release step — is the same block,
+preceded only by the result of the previous action in one or two sentences with its useful
+link:
 
 ```text
 ## ▶ PROPOSED ACTION
