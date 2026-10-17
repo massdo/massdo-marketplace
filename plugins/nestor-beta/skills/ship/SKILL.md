@@ -351,6 +351,16 @@ A footer to correct before the merge:
 Shall I do it? Reply "yes" or "details".
 ```
 
+A decision only the user can make, still in one sentence:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Tell me which Nestor project holds this repository: none is named REPO, so no pull request footer can be checked**
+
+Reply with the project's name, or "details".
+```
+
 A release step, with no PR left to merge:
 
 ```text
