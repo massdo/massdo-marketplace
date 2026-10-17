@@ -49,9 +49,8 @@ The response contains only those PR blocks, in the user's language and in the or
 level 2: no header, end of report, proposed action or question. Put unknown data in the
 affected PR's State or Risk, in plain words, including local coverage limits and any title
 or footer that does not conform; no separate inventory or progress narration. If there are
-no open PRs, say only that. If the repository,
-authentication or `main` cannot be resolved, give one concise error and stop without asking
-for an action.
+no open PRs, say only that. If the repository, authentication or `main` cannot be resolved,
+give one concise error and stop without asking for an action.
 
 ## Scope and consent
 
