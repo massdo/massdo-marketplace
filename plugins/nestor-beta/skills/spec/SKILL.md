@@ -130,7 +130,8 @@ scope, main deliverables and concrete impacts. Then make the essential changes
 understandable in the same terms: which items will be created or changed, any
 reorganisation and which stored content will be replaced, including its effect. Do not
 start with full specifications or a long list of files, symbols, commands, MCP fields or
-technical steps. This presentation comes before writes, never folded into the final report.
+technical steps. Send this presentation as a visible message before the first write call,
+never folded into the final report.
 
 In the same turn, without waiting for an answer, save the complete work as described below
 and approve it under section 4. Ask neither a presentation question nor a write
