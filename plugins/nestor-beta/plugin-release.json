@@ -1,5 +1,5 @@
 {
-  "version": "0.12.8",
-  "version_hash": "21eaff123a60e7e2",
-  "changelog": "Ship answers first with only the proposed action, in a visible block that asks for yes or details. The readable details come on request, one block per pull request with what it changes, its state and its risk in words, low, medium or high, instead of a percentage."
+  "version": "0.12.9",
+  "version_hash": "5ec3d080cf1830fa",
+  "changelog": "Spec now saves and approves the complete work as soon as the interview ends, with no summary or display question first. It then reports the saved item and its status, and typing detail shows the saved work without changing it."
 }
