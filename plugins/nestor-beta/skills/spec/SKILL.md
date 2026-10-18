@@ -130,14 +130,20 @@ scope, main deliverables and concrete impacts. Then make the essential changes
 understandable in the same terms: which items will be created or changed, any
 reorganisation and which stored content will be replaced, including its effect. Do not
 start with full specifications or a long list of files, symbols, commands, MCP fields or
-technical steps. Send this presentation as a visible message before the first write call,
-never folded into the final report.
+technical steps.
 
-In the same turn, without waiting for an answer, save the complete work as described below
-and approve it under section 4. Ask neither a presentation question nor a write
-confirmation first: the invocation already authorises these writes. An explicit draft or
-later approval saves without approving; an explicit stop received before saving prevents
-every write.
+Then, in one reply and without waiting for an answer:
+
+1. Write this presentation in a text block of the reply, so the user can read it above
+   the result even if a write fails. Thinking does not count, even when displayed, and
+   the final report never replaces it.
+2. Save the complete work as described below and approve it under section 4.
+3. Only then state the actual result and offer the detail, as described at the end of
+   this section.
+
+Ask neither a presentation question nor a write confirmation before these writes: the
+invocation already authorises them. An explicit draft or later approval saves without
+approving; an explicit stop received before saving prevents every write.
 
 The full detail is every specification, the complete tree with each node's kind (Plan,
 sub-plan or code Task), justified dependencies and all content changes, naming the
