@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review open pull requests with a merge confidence percentage, check their English title and Nestor Task or Plan footer, propose which ones to merge into main, then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests, check their English title and Nestor Task or Plan footer, and answer first with only the proposed action, such as which ones to merge into main, giving the readable details and each pull request's risk in words on request; then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
 disable-model-invocation: true
 ---
@@ -13,25 +13,27 @@ has. Git and the GitHub CLI (`gh`) do the work; the Nestor MCP server confirms t
 Nestor Tasks and Plans.
 
 The user decides every action that cannot be undone. Your part is to make that decision easy
-and safe: look at everything there is to see, say what you found and what you could not see,
-and ask when each action comes up rather than once at the start.
+and safe: look at everything there is to see, propose one clear action, explain what you found
+and what you could not see when the user asks, and ask when each action comes up rather than
+once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "28d2cd83cbd5810d9" }` on every Nestor MCP call.
+Pass `{ "version_hash": "221eaff123a60e7e2" }` on every Nestor MCP call.
 
 ## Modes
 
 `/nestor-beta:ship [list]` — Codex: `$nestor-beta:ship [list]`.
 
 - **No mode argument:** run the existing diagnosis, proposal, agreed merges and repository
-  release procedure below.
-- **`list`:** `ship list` returns only the scored list of every open PR. Apply inventory and
+  release procedure below. The first response is the proposed action alone (level 1 in
+  "Merge risk and report"); the details (level 2) come only when the user asks for them.
+- **`list`:** `ship list` returns only the level 2 block of every open PR. Apply inventory and
   verification with the read-only substitutions below, then stop before sections 3–5. Do
   not propose merges or releases, ask for approval, or offer a next action. `list` is a mode,
   never a target branch; the target remains `main`.
 
-In `list`, make only the reads needed for the list and its scores: GitHub queries, Nestor
+In `list`, make only the reads needed for the blocks and their risk: GitHub queries, Nestor
 reads and local inspection. Never mutate remote state or local files, refs, branches or
 worktrees. Do not fetch, checkout, create/remove a worktree, write output files, run builds
 or tests that could write artifacts, edit a pull request, merge, tag, launch workflows,
@@ -43,13 +45,12 @@ Read remote files needed to understand checks or changed workflow/release effect
 or `git show SHA:PATH` when the pinned object already exists locally. Do not fetch a missing
 object. Keep unrelated release discovery out of this mode.
 
-The response contains only PR rows or lines in the user's language: percentage first, link
-and title, examined head and `main` baseline, base, group, concise evidence and useful limits.
-Put unknown data in the affected PR's reason, including local coverage limits and any title
-or footer that does not conform; no separate inventory, progress narration, proposal or
-approval question. If there are no open PRs, say only that. If the repository,
-authentication or `main` cannot be resolved, give one concise error and stop without asking
-for an action.
+The response contains only those PR blocks, in the user's language and in the order of
+level 2: no header, end of report, proposed action or question. Put unknown data in the
+affected PR's State or Risk, in plain words, including local coverage limits and any title
+or footer that does not conform; no separate inventory or progress narration. If there are
+no open PRs, say only that. If the repository, authentication or `main` cannot be resolved,
+give one concise error and stop without asking for an action.
 
 ## Scope and consent
 
@@ -94,18 +95,19 @@ Start from the evidence, not from the user's description of it.
 3. **Read every open pull request.** `gh pr list` returns 30 results by default and does not
    say when it stops, so walk every page:
    `gh api --paginate "repos/OWNER/REPO/pulls?state=open&per_page=100" --jq '.[] | [.number, .base.ref, .draft, .head.sha[0:7], .title] | @tsv'`.
-   In normal mode, state how many you read; in `list`, return every row without a summary.
+   In normal mode, keep the count for the header of the details; in `list`, return every
+   PR's block without a summary.
 4. **Split them.** The pull requests whose base is `main` are the candidates. The others,
    whose base is another branch — often one that stacks on a candidate — are out of
-   selection: list them anyway, with the base they target.
+   selection: the details still show them, with the base they target.
 5. **Look at this machine.** In normal mode, `git worktree list --porcelain` lists the
    worktrees. For each reachable one, `git -C <path> status --porcelain=v1 --branch` shows uncommitted changes
    and `git -C <path> log --oneline HEAD --not --remotes` the commits that no remote branch
    contains yet, a detached worktree included. `git log --oneline --branches --not --remotes`
    covers the local branches checked out nowhere. Having no upstream does not make a branch
    unpushed, since its commits may already sit on another remote branch: these two are the
-   test. Keep the summary short: name the worktrees that hold uncommitted changes or unpushed
-   commits, and count the clean ones instead of listing them.
+   test. When the details report it, keep it to one sentence: name the worktrees that hold
+   uncommitted changes or unpushed commits, and count the clean ones instead of listing them.
    In `list`, use `git worktree list --porcelain` and inspect only local work relevant to the
    PR head repositories and branches, using
    `GIT_OPTIONAL_LOCKS=0 git -C <path> status --porcelain=v1 --branch` so status does not
@@ -113,19 +115,22 @@ Start from the evidence, not from the user's description of it.
    for a live remote head, including a fork's own repository, and compare local history to
    that SHA only if its object is already present. Cached remote
    refs alone do not prove commits are unpushed. If comparison is unavailable, put local
-   push state unknown in the affected row; do not fetch to resolve it.
+   push state unknown in the affected PR's State; do not fetch to resolve it.
 
-Keep this inventory for the scored report below. Lead the normal diagnosis with that report,
-then give the count, the baseline, whether `main` is ahead of its latest release, and a short
-local-work summary. In `list`, output only the scored report. You see this machine's clones
-and worktrees and GitHub's state. You do not see another agent's unsaved work, another
-machine, or a session that has not pushed; say so instead of implying complete coverage.
+Keep this inventory for the report described in "Merge risk and report". In normal mode, the
+first response is the proposed action alone (level 1). The count, the `main` baseline,
+whether `main` is ahead of its latest release and the local work appear only in the details
+(level 2), in plain words, or when the user asks. Local work on a candidate's branch goes
+into that PR's State and, when it blocks, into the proposed action. In `list`, output only
+the PR blocks. You see this machine's clones and worktrees and GitHub's state. You do not see
+another agent's unsaved work, another machine, or a session that has not pushed; say so
+where you report local work, instead of implying complete coverage.
 
 ## 2. Verify each pull request
 
 For every open pull request, read the evidence that decides whether it can land on `main`
 as it stands now. Only a candidate whose base is `main` can be ready; the others remain out
-of selection, but still receive a score with the same meaning.
+of selection, but their risk is assessed with the same meaning.
 
 ```bash
 gh pr view N --repo OWNER/REPO --json number,title,url,body,isDraft,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner,mergeable,mergeStateStatus,reviewDecision,latestReviews,reviewRequests,statusCheckRollup
@@ -136,7 +141,7 @@ gh pr diff N --repo OWNER/REPO
 
 - **Pinned evidence.** Keep the full `headRefOid` and the full `main` baseline SHA with the
   evidence. Re-read the head, base and GitHub's `main` SHA before reporting. If either commit
-  or the base changed, discard the old assessment, repeat the affected checks and score the
+  or the base changed, discard the old assessment, repeat the affected checks and assess the
   new pair. A diff or a check read during that change does not belong to a stable assessment.
 - **Draft.** `isDraft` true means not ready. Read that field itself rather than inferring a
   draft from `mergeStateStatus`.
@@ -165,7 +170,7 @@ gh pr diff N --repo OWNER/REPO
   **requirements unknown**. An empty check list alone proves neither no CI nor no rules.
 - **Reviews.** `reviewDecision` `CHANGES_REQUESTED` or `REVIEW_REQUIRED` is blocked. An empty
   value establishes no review requirement only when the protection and ruleset evidence
-  agrees; otherwise the requirement is unknown. Say which reviews were actually received
+  agrees; otherwise the requirement is unknown. Record which reviews were actually received
   and whether the required approvals apply to this head.
 - **Dependencies between pull requests.** A base branch that is another pull request's head,
   a "depends on #N" in a description, two pull requests editing the same lines or bumping the
@@ -173,7 +178,8 @@ gh pr diff N --repo OWNER/REPO
   the earlier one has merged.
 - **Work in progress.** Uncommitted changes or unpushed commits in a worktree matching the
   candidate's head repository and branch (`headRefName`) mean the remote head may not be what
-  its author means to ship. Say so in its reason, and ask about it in the proposal.
+  its author means to ship. Say so in that PR's State and, when it blocks the merge, ask
+  about it in the proposed action.
 - **The diff.** It is what lands on `main`. Read it for what the title does not say — a
   changed workflow or release file, anything that contradicts the description. A diff for
   another base does not establish integration with `main`; state that limit. Record relevant
@@ -229,70 +235,209 @@ Then check four things:
   that was lost.
 
 A title that fails, or a footer that fails one of these checks, is non-conforming: the pull
-request is blocked until it is corrected, whatever its percentage. A missing or invalid
+request is blocked until it is corrected, whatever its risk. A missing or invalid
 footer is not validated traceability. A missing footer alone does not block, since a pull
 request may serve no Nestor Task or Plan; only the user can confirm that. Say it is missing
 and never guess the references. When Nestor cannot be reached, the references stay
 unverified: state that limit without treating it as a pass.
 
-### Merge confidence and report
+### Merge risk and report
 
-Give every open PR an integer percentage from 0 to 100: confidence that **this PR can merge
-into `main` at the examined head and baseline, with acceptable technical risk within the
-checks performed**. One meaning serves **ready**, **blocked** and **out of selection**. It
-does not measure confidence in the grouping, and it is not a statistically calibrated
-probability. The facts are objective; their weighting and the remaining risk are judgment.
+Assess every open PR on two separate axes, from the evidence above. Neither one is a number,
+internally or in the report.
 
-Use these indicative anchors, adapted to merge readiness rather than doctor's delivery
-thresholds; do not turn them into a points formula or a new merge gate:
+- **State — can it merge into `main` now, at the examined head and baseline?** **Ready**,
+  **blocked** or **out of selection**, as the gates above decide. A PR that is not ready
+  keeps its cause and the action that would make it ready.
+- **Risk — what would an error in this change cost?** **Low**: complete, favorable evidence
+  on a targeted change. **Medium**: evidence absent or inconclusive — no CI, limited
+  coverage, unknown rules on `main` or unknown mergeability. **High**: a broad or sensitive
+  change — a workflow, a release, authentication, a data migration — with weak coverage, or
+  a diff that contradicts its description. No CI is a coverage limit, not a failed check;
+  local or optional checks you actually observed can supply the missing evidence. These are
+  anchors, not a formula: weigh the evidence and give the reason in one sentence.
 
-- **95–99%: complete favorable evidence.** Base `main`, non-draft, `MERGEABLE` and `CLEAN`;
-  applicable protections and rulesets known; required checks and reviews satisfied or
-  confirmed not required; diff read and relevant validations observed on this head;
-  dependencies, overlaps, local work and workflow/release effects accounted for.
-- **0–10%: a confirmed obstacle as the PR stands.** A conflict, failed required check,
-  missing required approval, draft or different base prevents it landing on `main` now.
-  Identify the obstacle even when other evidence is favorable.
-- **20–60%: evidence absent or inconclusive.** Unavailable requirements, unknown mergeability
-  or limited validation coverage leave material uncertainty. No CI is a coverage limit,
-  not a failed check; actual local or optional checks may improve the assessment. A 403 is
-  unknown requirements, not absent rules or a confirmed check failure.
+A low risk replaces no mandatory check, protection, group rule or user agreement. Groups —
+ready, blocked, out of selection — come from the existing gates above, never from the risk.
+Any head or `main` change invalidates the assessment; reassess after each merge and before
+seeking renewed approval.
 
-Within these anchors, weigh the evidence and explain the remaining judgment briefly. A high
-score replaces no mandatory check, protection, group rule or user agreement. Groups are
-decided by the existing gates above, never by a percentage threshold. Any head or `main`
-change invalidates the score; reassess after each merge and before seeking renewed approval.
+The report has two levels. Its examples are in English, like the rest of this skill, which
+does not set the language of your replies: write all of it, the block heading and the reply
+words included, in the user's language.
 
-Start every PR line with `85% - [#N Title](URL) — head SHA — main SHA — base — group — evidence
-and limits`. In a table, put the percentage first, before the PR. Lead with the scored list,
-in the user's language. Give concise observed facts, name missing or unknown evidence, and
-make clear that the percentage is the residual judgment. These examples share the examined
-`main` baseline `b012345`; abbreviated SHAs are for display only:
+**Level 1 — the proposed action.** In normal mode, the first response is this block alone.
+Every later proposal — a pull request edit, a merge, a release step — is the same block,
+preceded only by the result of the previous action in one or two sentences with its useful
+link:
 
-| Confidence (estimate) | Pull request | Head / main | Base | Group | Evidence and limits |
-|---|---|---|---|---|---|
-| 97% | [#12 Add export](https://github.com/OWNER/REPO/pull/12) | `a1b2c3d` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, rules known, required checks passed and approvals satisfied on this head, diff and relevant tests verified, dependencies and release effects understood, title and footer conform; judgment: broad coverage, residual risk beyond tests |
-| 96% | [#18 Add retry](https://github.com/OWNER/REPO/pull/18) | `a9b8c7d` / `b012345` | `main` | blocked | observed: non-draft, MERGEABLE/CLEAN, required checks passed on this head, diff read; footer lists `gray_xerinae`, which Nestor does not know; judgment: technically ready, blocked until the footer is corrected |
-| 5% | [#14 Rework auth](https://github.com/OWNER/REPO/pull/14) | `e4f5a6b` / `b012345` | `main` | blocked | observed: conflict and required `validate` failed on this head; judgment: cannot land as-is |
-| 60% | [#16 Update docs](https://github.com/OWNER/REPO/pull/16) | `d8e9f01` / `b012345` | `main` | ready | observed: non-draft, MERGEABLE/CLEAN, no required checks or reviews, no CI configured, diff read, no Nestor footer; unknown: automated validation coverage, tasks served; judgment: limited change, limited evidence |
-| 35% | [#17 Fix cache](https://github.com/OWNER/REPO/pull/17) | `f1a2b3c` / `b012345` | `main` | blocked | observed: MERGEABLE/CLEAN; unknown: protections and rulesets returned 403, no displayed checks; judgment: requirements cannot be established |
-| 10% | [#15 Docs on #12](https://github.com/OWNER/REPO/pull/15) | `c7d8e9f` / `b012345` | `feature/export` | out of selection | observed: different base, depends on #12; unknown: integration with main; judgment: cannot land on main as-is |
+```text
+## ▶ PROPOSED ACTION
 
-In normal mode, end each report with one block quote holding only the next action — a pull
-request edit, a merge (section 4) or a release step (section 5) — with its exact target, its
-effects and the agreement it needs. Having no pull request to merge does not mean everything
-is published: when `main` is ahead of its latest release, the next action is that release.
-When nothing remains, say so and ask nothing; when the next action is blocked, name what is
-missing or the decision it awaits instead of offering it.
+**Merge [#40](https://github.com/OWNER/REPO/pull/40) — scrolling Trending banner — into main**
 
-> **Merge [#12 Add export](https://github.com/OWNER/REPO/pull/12)**: head `a1b2c3d` into `main` at `b012345`, by squash.
-> Effects: `validate` runs on `main`; no release or deployment. Merge it now?
+Shall I do it? Reply "yes" or "details".
+```
+
+- **(a)** The bold line gives the verb, each pull request with its link and what it does in
+  plain words, and the destination.
+- **(b)** Several ready PRs make one grouped action, in the chosen order: "Merge #12 then
+  #16 into main". A "yes" covers exactly that list and that order. Each PR is still verified
+  again just before its merge (section 4), and a change found there stops the sequence.
+- **(c)** When the merge method needs confirming, the line names it in plain words: "with a
+  merge commit, like the previous PRs". A PR without a Nestor footer is named the same way,
+  "though it names no Nestor Task or Plan", so that "yes" confirms it serves none.
+- **(d)** A line starting with ⚠ appears only when the action automatically triggers a
+  publication — a tag, a GitHub Release, a package, a version notification — or a
+  deployment: "⚠ Publishes release v1.4.0". Otherwise there is no effect line.
+- **(e)** When the next action is blocked, the block proposes the action that unblocks it,
+  such as the exact correction of a PR footer, or names the decision it awaits, in one
+  sentence.
+- **(f)** When `main` is ahead of its latest release and no PR is left to merge, the
+  proposed action is the release step.
+- **(g)** When there is nothing to ship, one sentence says so, with no block and no question.
+
+Level 1 shows no SHA, check name, GitHub state, count, `main` baseline or table, and names
+local work only when it blocks the action.
+
+**Level 2 — the details,** given when the user asks for them or for any explanation:
+
+1. **Header.** One line: the repository and the number of PRs in each state.
+2. **One block per PR.** Its title carries the link and says what the PR does in plain
+   words, drawn from the diff and the Nestor items you read — never a word-for-word
+   translation of its English title. Four lines follow: **What it changes**, the effect for
+   the user or the product in one sentence; **State**, ready, blocked or out of selection,
+   with the cause and the action needed when it is not ready; **Risk**, low, medium or high,
+   with its reason in one sentence; **Task**, the Tasks or Plans of its footer, cited with
+   Nestor's item citation rule, or the missing footer and the decision it needs.
+3. **Order.** Ready PRs first, then blocked ones, then those out of selection.
+4. **End.** **If I merge**: what the merges start — CI, a release, a deployment, or nothing
+   published. **Next**: the step after them. Local work and how far `main` is ahead of its
+   latest release, in one sentence when they matter. Then the same proposed action block.
+
+SHAs, check names, GitHub states, protections and rulesets, 403 refusals and sources (file
+and line) appear only when the user asks again, or when they block a PR, and then in plain
+words.
+
+The other level 1 cases. Two ready PRs, merged in the chosen order:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Merge [#12](https://github.com/OWNER/REPO/pull/12) — CSV export of the journal — then [#16](https://github.com/OWNER/REPO/pull/16) — installation guide in three steps — into main**
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A merge that publishes on its own, with a method to confirm:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Merge [#21](https://github.com/OWNER/REPO/pull/21) — offline mode — into main, with a merge commit like the previous PRs**
+
+⚠ Publishes release v1.4.0
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A footer to correct before the merge:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Remove `gray_xerinae`, which Nestor does not know, from the footer of [#18](https://github.com/OWNER/REPO/pull/18) — automatic retry of failed uploads**
+
+Shall I do it? Reply "yes" or "details".
+```
+
+A decision only the user can make, still in one sentence:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Tell me which Nestor project holds this repository: none is named REPO, so no pull request footer can be checked**
+
+Reply with the project's name, or "details".
+```
+
+A release step, with no PR left to merge:
+
+```text
+## ▶ PROPOSED ACTION
+
+**Release v1.4.0 from main by pushing its tag — it ships the three changes merged since v1.3.2**
+
+⚠ Publishes release v1.4.0 on GitHub and npm
+
+Shall I do it? Reply "yes" or "details".
+```
+
+Nothing to ship:
+
+```text
+Nothing to ship: no pull request is open, and main matches its latest release.
+```
+
+Level 2, once the user asks for details:
+
+```text
+REPO: 2 PRs ready to merge, 3 blocked, 1 out of selection
+
+**[#12](https://github.com/OWNER/REPO/pull/12) — Export the journal as a CSV file**
+- What it changes: users can download all their entries as a spreadsheet.
+- State: ready. The tests pass and nothing conflicts with main.
+- Risk: low. A targeted change: 120 lines of code and 300 lines of tests.
+- Task: `brown_turtle (CSV export)`
+
+**[#16](https://github.com/OWNER/REPO/pull/16) — Rewrite the installation guide in three steps**
+- What it changes: new users can install the app without reading one long paragraph.
+- State: ready. Nothing blocks it.
+- Risk: medium. No automated check runs on documentation, so only a reading of the diff supports it.
+- Task: `olive_wren (installation guide)`
+
+**[#18](https://github.com/OWNER/REPO/pull/18) — Retry failed uploads automatically**
+- What it changes: an upload cut off by the network resumes by itself instead of failing.
+- State: blocked. The code is ready, but its footer names `gray_xerinae`, which Nestor does not know: remove it before merging.
+- Risk: low. Tests cover the retry, and the change stays inside the upload module.
+- Task: `copper_manatee (upload retry)`; `gray_xerinae` is unknown.
+
+**[#14](https://github.com/OWNER/REPO/pull/14) — Switch sign-in to company accounts**
+- What it changes: users would sign in with their company account instead of a password.
+- State: blocked. It conflicts with recent changes on main, and a required test run fails: its author has to update the branch and fix the tests.
+- Risk: high. It changes authentication, and its tests fail.
+- Task: `teal_heron (single sign-on)`
+
+**[#17](https://github.com/OWNER/REPO/pull/17) — Refresh stale search results**
+- What it changes: search results update as soon as an entry changes.
+- State: blocked. GitHub refuses to show this account the rules that protect main, so what the PR still needs is unknown: a repository admin has to share them or grant read access.
+- Risk: medium. The rules for merging into main are unknown.
+- Task: `amber_lynx (search cache)`
+
+**[#15](https://github.com/OWNER/REPO/pull/15) — Document the CSV export**
+- What it changes: the user guide explains the export that #12 adds.
+- State: out of selection. It targets the `feature/export` branch, not main, and needs #12 first.
+- Risk: medium. Its diff was made against another branch, so how it would land on main is unknown.
+- Task: `brown_turtle (CSV export)`
+
+If I merge: the tests run again on main; nothing is published or deployed.
+
+Next: releasing these changes, since main will then be ahead of its latest release, v1.3.2.
+
+Local work: two commits in the `docs-draft` worktree are on no remote branch yet.
+
+## ▶ PROPOSED ACTION
+
+**Merge [#12](https://github.com/OWNER/REPO/pull/12) — CSV export of the journal — then [#16](https://github.com/OWNER/REPO/pull/16) — installation guide in three steps — into main**
+
+Shall I do it? Reply "yes" or "details".
+```
 
 Do not stash, discard, force-push, resolve a conflict, or bring local commits into a pull
 request without a separate authorization. In normal mode, when a check needs a checkout,
 use a clean temporary worktree at the examined head outside the user's working tree, and
 remove it afterwards. In `list`, use observed CI/log evidence without a checkout or local
-validation run, record missing coverage in the score, output the scored report and **stop**.
+validation run, count missing coverage in the risk, output the PR blocks and **stop**.
 
 ## 3. Recognize the release procedure — before any merge
 
@@ -317,16 +462,17 @@ or `publish` in it is a hint, not a finding: a script called `publish_…` that 
 version documents to a catalog service is a notification, and a workflow that reacts to
 `release: published` does not create the release it reacts to.
 
-**How to conclude.** Cite the file and line behind each conclusion
-(`git show <ref>:<path> | nl -ba` shows the numbers). A procedure you cannot establish stays
-uncertain. Never run a publishing command to find out what it does.
+**How to conclude.** Keep the file and line behind each conclusion
+(`git show <ref>:<path> | nl -ba` shows the numbers), and give them when the user asks. A
+procedure you cannot establish stays uncertain. Never run a publishing command to find out
+what it does.
 
 Then act on the procedure you found:
 
-- **It publishes automatically after a merge into `main`.** Announce the effect in the merge
-  proposal, before the user agrees; after the merge, follow the workflow and check what it
-  did. Read its conditions: a release workflow on `main` does not mean every merge publishes —
-  filters, `if` conditions and version guards decide.
+- **It publishes automatically after a merge into `main`.** Announce the effect on the ⚠
+  line of the proposed action, before the user agrees; after the merge, follow the workflow
+  and check what it did. Read its conditions: a release workflow on `main` does not mean
+  every merge publishes — filters, `if` conditions and version guards decide.
 - **It publishes when a tag is pushed.** After the merges and their validation, prepare the
   version, the exact tag, the notes and the documented command. Ask before creating or
   pushing the tag, unless an agreement already covers it.
@@ -344,8 +490,8 @@ Then act on the procedure you found:
 **Notes built from pull request descriptions.** Whatever triggers it, a procedure that reuses
 those descriptions in what it publishes must leave the `nestor tasks:` footer out. Check
 here, in the chain you just read, that it drops that line. When it does not, a merge or a
-release that publishes on its own carries the footer out before anyone can remove it: say so
-in the proposal with the correction the procedure needs, and trigger no merge or release
+release that publishes on its own carries the footer out before anyone can remove it: the
+proposed action is the correction the procedure needs; trigger no merge or release
 that would publish the footer until that correction is agreed and in place. The correction
 is to the procedure, never to the pull request: the footer stays in the description, where
 it is the only link to the tasks. Filtering you cannot establish leaves the procedure
@@ -353,22 +499,26 @@ uncertain.
 
 ## 4. Propose, then merge
 
-**The proposal.** Put in front of the user the repository, `main` with its baseline commit, the
-selected pull requests with the head commits you verified, the merge order and why, the
-validations done, the merge method, and the automatic effects each merge will have according
-to the release procedure you found. Then wait for the user's agreement, unless one already
-given in the session covers exactly this.
+**The proposal.** It is the level 1 block of "Merge risk and report": the selected pull
+requests in the merge order, the merge method when it needs confirming, and the ⚠ line for
+any automatic effect a merge will have according to the release procedure you found. The
+repository, `main` with its baseline commit, the head commits you verified, the validations
+done and the reason for the order stay internal, pinned with the evidence, and are given when
+the user asks. Then wait for the user's agreement, unless one already given in the session
+covers exactly this.
 
 The method is the one the repository allows and documents: its merge settings
 (`gh api repos/OWNER/REPO --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'`),
 the rules on `main`
 (`gh api --paginate "repos/OWNER/REPO/rules/branches/main?per_page=100"` can restrict methods), and
-its contributor documents. When several are allowed and none is documented, ask in the
-proposal instead of choosing.
+its contributor documents. When several are allowed and none is documented, do not settle it
+yourself: the action line names the method you propose in plain words, as rule (c)
+describes, so that the user's agreement decides it.
 
-**Titles and footers.** Have non-conforming metadata corrected before the merge. Name each
-title or footer that fails and the correction it needs, using only slugs you verified; for a
-missing footer, ask whether the pull request serves Nestor Tasks or Plans, and which ones.
+**Titles and footers.** Have non-conforming metadata corrected before the merge: the proposed
+action is then the exact correction each failing title or footer needs, using only slugs you
+verified. For a missing footer, ask whether the pull request serves Nestor Tasks or Plans,
+and which ones, through the action line, as rule (c) describes.
 Editing a pull request is a write of its own — `gh pr edit N --repo OWNER/REPO --title … --body-file …`
 — so it waits for its agreement, and the pull request is verified again afterwards.
 
@@ -376,7 +526,7 @@ Editing a pull request is a write of its own — `gh pr edit N --repo OWNER/REPO
 
 1. Read it again. Its base must still be `main` and its head the commit you verified, and its
    checks, reviews and mergeability must still hold. Read `main`'s current SHA too and
-   reassess the evidence and score if that baseline moved. The merge below guards the head,
+   reassess the evidence, state and risk if that baseline moved. The merge below guards the head,
    not the base: a pull request retargeted to another branch keeps its head and would merge
    there. It does not guard the title or the description either: read both again, and when
    one changed since you checked it, check it again before merging, even though the code is
@@ -396,10 +546,14 @@ Editing a pull request is a write of its own — `gh pr edit N --repo OWNER/REPO
 Respect GitHub's protections. Never use `--admin` to get around one; when a protection blocks
 a merge, report it. Stop when the approved scope changes — a head commit moved, a base
 changed, the user changed the list — or a new verification fails, and report the partly
-delivered state: what merged and at which commit, what did not and why. What remains goes
-back through a proposal and needs a new agreement.
+delivered state in one or two sentences: what merged, with its link, what did not and why;
+the commits are given when the user asks. What remains goes back through a proposed action
+and needs a new agreement.
 
 ## 5. Finish
+
+Report each result — merged, pending, failed, release published — in one or two sentences
+with its useful link, then the next proposed action block if one remains.
 
 1. **Check `main`.** Fetch `REMOTE`, then take the final commit of `main` and look at its runs:
    `gh run list --repo OWNER/REPO --commit <sha> --json databaseId,name,status,conclusion,event,url`.
@@ -407,12 +561,14 @@ back through a proposal and needs a new agreement.
    the merge was expected to start with `gh run watch <id> --repo OWNER/REPO --exit-status`,
    and report each result as it is.
 2. **Prepare the release, when the procedure needs an action from you or the user** — a tag,
-   a manual workflow, a documented command. Put a concrete proposal in front of the user
-   before asking: the version and the tag, the commit, the notes, any assets, and the command
-   exactly as the repository documents it. Notes that reuse pull request descriptions leave
-   their `nestor tasks:` footer out. When the procedure needs edits first — a version
-   bump, a changelog, a release pull request — prepare and present them here; opening or
-   pushing them is an action that needs its own agreement. Never create a tag that disagrees
+   a manual workflow, a documented command. Prepare a concrete proposal before asking: the
+   version and the tag, the commit, the notes, any assets, and the command exactly as the
+   repository documents it. Propose it as the level 1 block, the release in the action line
+   and what it publishes on the ⚠ line; give the commit, the notes, the assets and the command
+   when the user asks. Notes that reuse pull request descriptions leave their `nestor tasks:`
+   footer out. When the procedure needs edits first — a version bump, a changelog, a release
+   pull request — prepare them here and show them when the user asks; opening or pushing them
+   is an action that needs its own agreement. Never create a tag that disagrees
    with the versions the repository declares. `gh release create <tag> --repo OWNER/REPO`
    creates the tag itself when it does not exist, so add `--verify-tag` when the tag is meant
    to exist already.
@@ -439,8 +595,7 @@ stop. A retry, a revert or a cleanup is a new action and needs its own agreement
 
 - It never targets a branch other than `main`, and never falls back to one.
 - In `list`, it never mutates remote or local state, a pull request's title and description
-  included, runs merge/release steps or asks for approval; only the scored PR list is
-  returned.
+  included, runs merge/release steps or asks for approval; only the PR blocks are returned.
 - It never merges every pull request, or publishes a release, on the strength of being
   invoked.
 - It never merges a pull request whose title or Nestor footer is non-conforming, and never

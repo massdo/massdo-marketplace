@@ -1,5 +1,5 @@
 {
-  "version": "0.12.7",
-  "version_hash": "8d2cd83cbd5810d9",
-  "changelog": "Next Tasks shows active Plans, sub-plans and Tasks in their hierarchy, including ready-to-build and building work. Ancestors outside the view stay contextual, pagination preserves relationships, and mixed counters no longer hide Plans or invent missing descendants. Backlog remains on request."
+  "version": "0.12.8",
+  "version_hash": "21eaff123a60e7e2",
+  "changelog": "Ship answers first with only the proposed action, in a visible block that asks for yes or details. The readable details come on request, one block per pull request with what it changes, its state and its risk in words, low, medium or high, instead of a percentage."
 }
