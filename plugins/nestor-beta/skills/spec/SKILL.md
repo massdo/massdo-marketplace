@@ -11,10 +11,10 @@ Interview the user, prepare the complete work, then save and approve it in Nesto
 skill writes no code or files and starts no build. Conduct the interview and write the
 specification in the user's language. Start only on their explicit invocation or request
 for this process. That invocation authorises, by default, saving and approving the
-requested scope right after presenting its summary; the full detail is offered afterwards
-as an optional view. An explicit request for a draft or a later approval limits this to
-saving; an explicit stop ends the session without further writes. Never ask for approval
-again to get around that choice.
+requested scope as soon as the work is complete, with nothing displayed before; the full
+detail stays available afterwards on request. An explicit request for a draft or a later
+approval limits this to saving; an explicit stop ends the session without further writes.
+Never ask for approval again to get around that choice.
 
 ## Identify the plugin version
 
@@ -60,8 +60,8 @@ the root repository and their approval state.
 
 When a standalone Task holds several deliverables, prepare a new root Plan in its project
 with the Task's repository, then attach the Task to it with `planId` as one of its code
-Tasks, converting it with `template: "code"` when it is ordinary. Show this reorganisation
-in the tree; the new Plan then becomes the selection.
+Tasks, converting it with `template: "code"` when it is ordinary. The detail tree shows
+this reorganisation; the new Plan then becomes the selection.
 Ask the user first when you are less than 95% sure the Task holds several deliverables.
 For an attached code Task or an ineligible Task, explain the need and obtain explicit
 reorganisation instructions instead.
@@ -72,8 +72,8 @@ Ask one real question at a time, starting with the largest unknown in the materi
 already supplied. Follow the answers. Read repository facts instead of asking the user
 for them. State technical choices with their reasons; ask about decisions that belong
 to the user, including money, risk, priority and taste. Questions serve business and
-technical decisions only: never ask a presentation question before saving. Never ask for
-permission to compile, save or approve.
+technical decisions only: never ask a presentation question. Never ask for permission to
+compile, save or approve.
 
 Keep every question short and natural, one per decision the user must make. Do not
 justify it with this skill's local path, a quoted rule or an account of internal
@@ -119,44 +119,29 @@ HTTPS form without `.git`, such as `https://github.com/owner/repo`, never a loca
 and retain existing Git references. Resolve an unknown repository during the interview.
 Do not introduce a different repository in a descendant.
 
-Compile all of this internally before presenting the result. A short presentation never
-means a shortened specification: every Plan, sub-plan, code Task and dependency must be
-fully prepared and saved, whatever level of detail is displayed.
+Compile all of this internally before saving. What is displayed never shortens the
+specification: every Plan, sub-plan, code Task and dependency must be fully prepared and
+saved, whatever level of detail is displayed.
 
-## 3. Show the summary, save, then offer the detail
+## 3. Save, then report the status
 
-First present a short business summary of the compiled work: its objective, useful result,
-scope, main deliverables and concrete impacts. Then make the essential changes
-understandable in the same terms: which items will be created or changed, any
-reorganisation and which stored content will be replaced, including its effect. Do not
-start with full specifications or a long list of files, symbols, commands, MCP fields or
-technical steps.
+Once the work is compiled, save it as described below and approve it under section 4, in
+the same turn and without waiting for an answer. Display nothing before these writes: no
+summary, no presentation question and no write confirmation, since the invocation already
+authorises them. An explicit draft or later approval saves without approving; an explicit
+stop received before saving prevents every write.
 
-Then, in one reply and without waiting for an answer:
+After the writes, close under the rule below: the status of the saved work, then
+« Tape detail pour voir le détail. » Use the equivalent in the user's language. When the
+user then answers `detail` or an equivalent, show the saved work without writing again:
+every specification, the complete tree with each node's kind (Plan, sub-plan or code
+Task), justified dependencies, the existing items changed and the fields replaced. Any
+other answer, or none, changes nothing that is saved.
 
-1. Write this presentation in a text block of the reply, so the user can read it above
-   the result even if a write fails. Thinking does not count, even when displayed, and
-   the final report never replaces it.
-2. Save the complete work as described below and approve it under section 4.
-3. Only then state the actual result and offer the detail, as described at the end of
-   this section.
-
-Ask neither a presentation question nor a write confirmation before these writes: the
-invocation already authorises them. An explicit draft or later approval saves without
-approving; an explicit stop received before saving prevents every write.
-
-The full detail is every specification, the complete tree with each node's kind (Plan,
-sub-plan or code Task), justified dependencies and all content changes, naming the
-existing items being changed and the fields being replaced. If the user explicitly
-requested it before this presentation, show it directly before the writes, without asking,
-then save and approve; do not offer it again afterwards.
-
-Only after the writes, state their actual result under the closing rule below, then offer
-the full detail as an optional view: « Veux-tu voir le détail complet ? » Use the
-equivalent in the user's language. The answer never conditions, delays or cancels a write:
-yes shows the saved work in full detail without writing again; no, or no answer, changes
-nothing. See [the review examples](references/review-examples.md) for the three entry
-points and their presentations.
+If the user explicitly asked for the detail during the interview, still display nothing
+before the writes: put that detail after the status sentence of the closing, without the
+`detail` offer. See [the review examples](references/review-examples.md) for the three
+entry points and their closings.
 
 Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
@@ -225,23 +210,21 @@ Build.
 
 ## User messages
 
-Keep the final message to two or three short sentences: state the actual result of the
-writes, explain what the planned work will do for the user and cite the selection using
-Nestor's item citation rule. Then give the next choice only if one exists, with the useful
-command or link, and offer the full detail when it has not been shown. Suggest an explicit
-`/nestor-beta:build <slug> target:<branch>` only when the work is ready; do not promise
-that a build will start. This closing replaces Nestor's per-mutation report.
+Close with one short message: cite the selection using Nestor's item citation rule, say
+that it is saved and give its actual status in plain words, then add « Tape detail pour
+voir le détail. » unless the detail is already shown. The statuses are: ready to build;
+draft, not approved; saved, approval postponed. Add no business summary and no build
+command. This closing replaces Nestor's per-mutation report.
 
-Say that result in plain words: saved and approved, ready to build; saved as a draft, not
-approved; saved, approval postponed; or the failure and what was not saved or approved.
-Never present a failure as a success, duplicate work after it or ask for a replacement
+When a write fails, say what was not saved or approved and the action needed. Never
+present a failure as a success, duplicate work after it or ask for a replacement
 validation.
 
-Apply the same rule to intermediate messages, stops, drafts, refusals, conflicts and
-failures: explain the effect on the user's goal, the affected item and the action or
-decision needed, without raw MCP diagnostics or hiding a real problem. A draft remains
-work to finish; a refusal or failed write must not imply the work is ready to build.
-Apart from that result sentence, do not narrate creation, saving, approval, revocation,
-inspection, reservation, statuses, item counts, versions/ETags or technical identifiers.
-Keep recovery details in the held state and MCP records. Interview questions and the
-compiled-work presentation above retain their existing rules.
+Apply the same rule to intermediate messages, stops, refusals and conflicts: explain the
+effect on the user's goal, the affected item and the action or decision needed, without
+raw MCP diagnostics or hiding a real problem. A draft remains work to finish; a refusal or
+failed write must not imply the work is ready to build. Apart from the status sentence, do
+not narrate creation, saving, approval, revocation, inspection, reservation, statuses,
+item counts, versions/ETags or technical identifiers beyond the citation. Keep recovery
+details in the held state and MCP records. Interview questions retain their existing
+rules.
