@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from plugin_release_history import load_history
 
@@ -172,6 +173,7 @@ for ecosystem, (catalog_path, name_of, source_of) in CATALOGS.items():
 # Plugin name -> the hash its plugin-release.json publishes. Filled below, read
 # by the pass that checks the hashes skills hard-code.
 published_hashes: dict[str, str] = {}
+plugin_skills: dict[str, set[str]] = {}
 
 for plugin in plugin_dirs:
     name = plugin.name
@@ -509,6 +511,43 @@ for plugin in plugin_dirs:
             len(paths) == 1,
             f"{name}: skill {skill_name!r} is defined {len(paths)} times: {paths}",
         )
+    plugin_skills[name] = set(by_name)
+
+# Standalone download entry points cannot read repository files at runtime.
+# Their embedded probes must follow the plugin that this tree distributes.
+installers = (ROOT / "install.sh", ROOT / "install.ps1")
+if any(path.is_file() for path in installers):
+    mcp_path = PLUGINS / "nestor" / "mcp.json"
+    check(mcp_path.is_file(), "installers: Nestor MCP configuration is missing")
+    expected_endpoint = read_json(mcp_path)["mcpServers"]["nestor"]["url"] if mcp_path.is_file() else None
+    parsed = urlsplit(expected_endpoint or "")
+    expected_origin = f"{parsed.scheme}://{parsed.netloc}"
+    for path in installers:
+        check(path.is_file(), f"installers: {path.name} is missing")
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8-sig")
+        if path.suffix == ".sh":
+            patterns = {"endpoint": r"^endpoint=(\S+)$", "origin": r"^origin=(\S+)$",
+                        "skills": r"^required_skills='([^']+)'$"}
+        else:
+            patterns = {"endpoint": r"^\$endpoint = '([^']+)'$", "origin": r"^\$origin = '([^']+)'$",
+                        "skills": r"^\$requiredSkills = '([^']+)' \| ConvertFrom-Json$"}
+        constants = {key: re.findall(pattern, source, re.MULTILINE) for key, pattern in patterns.items()}
+        check(constants["endpoint"] == [expected_endpoint],
+              f"{path.name}: endpoint must match plugins/nestor/mcp.json")
+        check(constants["origin"] == [expected_origin],
+              f"{path.name}: origin must match plugins/nestor/mcp.json")
+        required = None
+        if len(constants["skills"]) == 1:
+            try:
+                required = json.loads(constants["skills"][0])
+            except json.JSONDecodeError:
+                pass
+        check(isinstance(required, list) and all(isinstance(value, str) for value in required)
+              and len(required) == len(set(required))
+              and set(required) == plugin_skills.get("nestor", set()),
+              f"{path.name}: required skills must match plugins/nestor/skills")
 
 # --- Journal-integrated skills declare their plugin's identity. ------------
 

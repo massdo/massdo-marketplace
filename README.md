@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <b>Three plugins for your AI agent.</b><br>
-  One paste to install them, one command to run them.
+  <b>Your tasks, notes and projects, with Nestor.</b><br>
+  Set it up once, then ask for what you need in your own words.
 </p>
 
 <br>
@@ -15,12 +15,101 @@
   <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
 </p>
 
-**nestor** is for everyone, no code needed. **nestor-beta** is for coders and goes on top of nestor. **massdo-skills** stands on its own.
+Start with **nestor** to manage your tasks, notes and projects. No coding needed.
+**nestor-beta** adds coding tools. **massdo-skills** changes how your assistant responds.
+Both are optional.
 
 ## 🕹️ Install
 
-Pick your agent, copy, paste. Done.
-Only want one plugin? Keep just its line.
+You will copy a setup command, connect your account in your browser, then start a conversation.
+
+**Before you start:** install and sign in to
+[Codex for the terminal](https://learn.chatgpt.com/docs/codex/cli) or
+[Claude Code](https://code.claude.com/docs/en/quickstart).
+You also need [Git](https://git-scm.com/install/), which setup uses to download Nestor.
+
+### 1. Copy the setup command
+
+Choose your computer below. Copy the whole block into the window described, then press **Enter**.
+Use the Terminal or PowerShell window for this step.
+You will open your conversation in step 3.
+
+<details>
+<summary><b>Mac or Linux</b></summary>
+
+On a Mac, press **⌘ Space**, type **Terminal**, then press **Enter**.
+On Linux, open **Terminal** from your applications.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.sh | bash
+```
+
+</details>
+
+<details>
+<summary><b>Windows</b></summary>
+
+Open **Start**, search for **PowerShell**, then open it.
+
+```powershell
+$installerPath = Join-Path ([IO.Path]::GetTempPath()) ('nestor-' + [guid]::NewGuid() + '.ps1')
+try {
+    Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1' -OutFile $installerPath
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath
+} finally {
+    Remove-Item -LiteralPath $installerPath -ErrorAction SilentlyContinue
+}
+```
+
+Some Windows installations are not supported yet. If setup says it cannot use your app,
+[ask for help](https://github.com/massdo/massdo-marketplace/issues/new).
+
+<details>
+<summary>Windows compatibility details</summary>
+
+The installer requires `codex.exe` or `claude.exe` on `PATH`.
+It rejects `.cmd`, `.bat` and `.ps1` launchers, including the npm shims
+`codex.cmd` and `claude.cmd`. It supports Windows PowerShell 5.1+ and PowerShell 7.
+
+</details>
+
+</details>
+
+If you use Linux through WSL on Windows, use the **Mac or Linux** command in your WSL terminal.
+
+### 2. Connect Nestor
+
+If setup asks which app to use, type `codex` or `claude`, then press **Enter**.
+If it asks to open your browser, type `y`, then press **Enter**.
+Follow the instructions in your browser to sign in and allow the connection.
+Then return to the terminal window.
+
+If you already connected Nestor, setup may finish without opening your browser.
+
+### 3. Start a new conversation
+
+When you see **`Installation complete`**, Nestor is ready.
+Open a **new conversation** in the app you chose, then type:
+
+```text
+Show my tasks.
+```
+
+**Setup did not finish?** If you see **`Nestor is installed — finish connecting your account`**,
+follow the message shown. You can paste the same setup command again to continue.
+If your internet connection stopped, reconnect before trying again.
+
+For any other error, [ask for help](https://github.com/massdo/massdo-marketplace/issues/new).
+Tell us whether you use Mac, Windows or Linux, and whether you chose Codex or Claude Code.
+
+### Manual installation
+
+<details>
+<summary>Other ways to install, including the optional plugins</summary>
+
+The commands below are an alternative to the setup above. They include all three plugins.
+For Nestor alone, use the marketplace command and the Nestor install command for your app.
+Connection and recovery instructions are in the [setup reference](docs/installation.md).
 
 <details>
 <summary><b>Claude Code</b></summary>
@@ -79,9 +168,22 @@ Then, in the TUI:
 
 </details>
 
+</details>
+
 ## 🪄 Use
 
-Type the command in your agent. Each agent has its own accent:
+Tell Nestor what you need in your conversation with Codex or Claude Code. For example:
+
+```text
+Show my tasks.
+Add "Call the dentist" to my tasks.
+Find my notes about Lisbon.
+```
+
+<details>
+<summary>Optional: commands and shortcuts</summary>
+
+You can also use a command for a specific action:
 
 ```text
 Claude Code   /nestor:tree
@@ -90,7 +192,9 @@ Cursor        /tree
 Kimi Code     /skill:tree
 ```
 
-Everything below is written in Claude Code’s accent.
+The command lists below use the Claude Code format.
+
+</details>
 
 ### 📜 nestor · for everyone
 
@@ -108,6 +212,9 @@ A trip, a building site, a client project, a family move: your tasks live in the
 
 Two ways to find them. **Semantic** search understands what you mean, even with other words. **Deterministic** search sticks to exact words, tags and filters, like the tags in Apple Notes, and gives the same list every time. Ask in plain words and nestor mixes both.
 
+<details>
+<summary>Show Nestor shortcuts and advanced options</summary>
+
 - 📓 `/nestor:nestor` — tasks, notes, projects, history
 - ⏱️ `/nestor:activity` — start a timer, get your hours
 - 🌳 `/nestor:tree` — draws a project as a tree
@@ -121,6 +228,8 @@ Invoke `pause` and `resume` without a project argument: transmissions belong to 
 
 > [!NOTE]
 > nestor plugs in the only MCP server in the house: `https://journal.mcp-marketplace.org/mcp`
+
+</details>
 
 ### 💾 nestor-beta · for coders
 
