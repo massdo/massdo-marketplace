@@ -103,6 +103,8 @@ class Installer(unittest.TestCase):
         for client in ('codex', 'claude'):
             with self.subTest(client=client):
                 result = self.run_installer(client)
+                messages = [call[2] for call in self.calls() if call[1] == 'rpc-input']
+                self.assertFalse(any(message.startswith('\ufeff') for message in messages), messages)
                 self.assertEqual(result.returncode, 0, result.stderr + repr(self.calls()))
                 self.assertIn('Installation complète', result.stdout)
         self.assert_no_mutations()

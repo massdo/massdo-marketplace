@@ -182,10 +182,18 @@ function Test-ServerCollision {
     }
 }
 
+function Write-RpcLine($Process, [string]$Text) {
+    # Windows StreamWriter may emit a BOM, which is invalid before a JSON-RPC message.
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $bytes = $encoding.GetBytes($Text + "`n")
+    $stream = $Process.StandardInput.BaseStream
+    $stream.Write($bytes, 0, $bytes.Length)
+    $stream.Flush()
+}
+
 function Invoke-Rpc($Process, [int]$Id, [string]$Method, $Params) {
     $request = @{ id = $Id; method = $Method; params = $Params } | ConvertTo-Json -Compress -Depth 20
-    $Process.StandardInput.WriteLine($request)
-    $Process.StandardInput.Flush()
+    Write-RpcLine $Process $request
     $deadline = [DateTime]::UtcNow.AddSeconds(45)
     while ([DateTime]::UtcNow -lt $deadline) {
         $line = $Process.StandardOutput.ReadLineAsync()
@@ -217,8 +225,7 @@ function Test-Codex {
             clientInfo = @{ name = 'nestor_installer'; version = '1.0.0' }
             capabilities = @{ experimentalApi = $true }
         })
-        $process.StandardInput.WriteLine('{"method":"initialized"}')
-        $process.StandardInput.Flush()
+        Write-RpcLine $process '{"method":"initialized"}'
         $script:VerificationError = 'Les skills Nestor sont absents, désactivés ou illisibles.'
         $skills = Invoke-Rpc $process 2 'skills/list' @{ forceReload = $true }
         $names = @($skills.data | ForEach-Object { $_.skills } |
