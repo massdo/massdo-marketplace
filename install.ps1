@@ -11,6 +11,7 @@ $endpoint = 'https://journal.mcp-marketplace.org/mcp'
 $origin = 'https://journal.mcp-marketplace.org'
 $requiredSkills = '["nestor","activity","tree","pause","resume","check-for-updates"]' | ConvertFrom-Json
 $script:VerificationError = ''
+$script:ClientError = ''
 $script:Installed = $false
 $script:Enabled = $false
 $script:Marketplace = $false
@@ -20,15 +21,32 @@ $previousEncoding = [Console]::OutputEncoding
 $previousInputEncoding = [Console]::InputEncoding
 $previousError = [Console]::Error
 
+function Write-ClientError {
+    if ($script:ClientError) {
+        foreach ($line in @($script:ClientError.TrimEnd() -split '\r?\n' | Select-Object -Last 12)) {
+            [Console]::Error.WriteLine($line)
+        }
+    }
+}
+
 function Stop-Installer([string]$Message) {
     [Console]::Error.WriteLine($Message)
+    Write-ClientError
     exit 1
 }
 
-function Incomplete {
+function Incomplete([switch]$Retry) {
     Write-Output 'Plugin installé — connexion Nestor à terminer'
-    if ($Client -ceq 'codex') { Write-Output 'Reprise : codex mcp login nestor' }
-    else { Write-Output 'Reprise : claude mcp login plugin:nestor:nestor' }
+    $command = 'codex mcp login nestor'
+    if ($Client -cne 'codex') { $command = 'claude mcp login plugin:nestor:nestor' }
+    if ($Retry) {
+        [Console]::Error.WriteLine($script:VerificationError)
+        Write-ClientError
+        Write-Output "Reprise : rétablissez l’accès au serveur, puis relancez cet installateur."
+        Write-Output "Connexion native, uniquement si l’authentification est ensuite demandée : $command"
+        exit 2
+    }
+    Write-Output "Reprise : $command"
     Write-Output 'Relancez ensuite cet installateur pour vérifier la connexion.'
     exit 2
 }
@@ -74,7 +92,7 @@ function New-ClientProcess([string[]]$Arguments, [switch]$Interactive) {
     return $process
 }
 
-function Stop-ClientProcess($Process) {
+function Stop-ClientProcess($Process, $Errors = $null) {
     if (-not $Process.HasExited) {
         try { $Process.Kill($true) } catch {
             if ($env:OS -eq 'Windows_NT') {
@@ -83,11 +101,16 @@ function Stop-ClientProcess($Process) {
         }
         [void]$Process.WaitForExit(2000)
     }
+    if ($null -ne $Errors -and $Errors.Wait(1000)) {
+        $errorText = $Errors.GetAwaiter().GetResult()
+        if ($errorText) { $script:ClientError = $errorText }
+    }
     [void]$processes.Remove($Process)
     $Process.Dispose()
 }
 
 function Invoke-Client([string[]]$Arguments, [int]$Seconds = 30, [switch]$Interactive) {
+    $script:ClientError = ''
     $process = New-ClientProcess $Arguments -Interactive:$Interactive
     $deadline = [DateTime]::UtcNow.AddSeconds($Seconds)
     try {
@@ -97,16 +120,24 @@ function Invoke-Client([string[]]$Arguments, [int]$Seconds = 30, [switch]$Intera
             $errors = $process.StandardError.ReadToEndAsync()
         }
         if (-not $process.WaitForExit($Seconds * 1000)) {
+            $script:ClientError = "Le délai du client a expiré ($Seconds s)."
             return [pscustomobject]@{ Code = 124; Text = '' }
         }
         $text = ''
         if (-not $Interactive) {
             $remaining = [Math]::Max(1, [int]($deadline - [DateTime]::UtcNow).TotalMilliseconds)
-            if (-not $output.Wait($remaining)) { return [pscustomobject]@{ Code = 124; Text = '' } }
+            if (-not $output.Wait($remaining)) {
+                $script:ClientError = "Le délai du client a expiré ($Seconds s)."
+                return [pscustomobject]@{ Code = 124; Text = '' }
+            }
             $remaining = [Math]::Max(1, [int]($deadline - [DateTime]::UtcNow).TotalMilliseconds)
-            if (-not $errors.Wait($remaining)) { return [pscustomobject]@{ Code = 124; Text = '' } }
+            if (-not $errors.Wait($remaining)) {
+                $script:ClientError = "Le délai du client a expiré ($Seconds s)."
+                return [pscustomobject]@{ Code = 124; Text = '' }
+            }
             $text = $output.GetAwaiter().GetResult()
-            [void]$errors.GetAwaiter().GetResult()
+            $errorText = $errors.GetAwaiter().GetResult()
+            if ($process.ExitCode -ne 0) { $script:ClientError = $errorText }
         }
         return [pscustomobject]@{ Code = $process.ExitCode; Text = $text }
     } finally { Stop-ClientProcess $process }
@@ -246,12 +277,14 @@ function Test-Codex {
         $script:VerificationError = "Le type ou l’état d’authentification Nestor ne permet pas le contrôle OAuth."
         if ($entry.authStatus -cne 'oAuth') { return 1 }
         $script:VerificationError = 'Le serveur Nestor est indisponible ou la découverte des outils a échoué.'
-        if ($null -ne (Field $entry 'toolsError') -or ($null -ne $runtime -and $runtime -cne 'connected')) { return 1 }
+        if ($null -ne (Field $entry 'toolsError') -or ($null -ne $runtime -and $runtime -cne 'connected')) { return 3 }
         $script:VerificationError = 'Les outils Nestor requis sont absents de la réponse MCP.'
-        $tools = @($entry.tools.PSObject.Properties | ForEach-Object { $_.Value.name })
+        $toolEntries = $entry.tools
+        if ($toolEntries -isnot [array]) { $toolEntries = @($toolEntries.PSObject.Properties | ForEach-Object { $_.Value }) }
+        $tools = @($toolEntries | ForEach-Object { $_.name })
         if ('get_item' -cnotin $tools) { return 1 }
         return 0
-    } finally { Stop-ClientProcess $process }
+    } finally { Stop-ClientProcess $process $errors }
 }
 
 function Plain-Text([string]$Text) { return [regex]::Replace($Text, '\x1B\[[0-9;]*m', '') }
@@ -276,6 +309,7 @@ function Test-Claude {
     }
     if ([regex]::Matches($text, '(?m)^\s*Status:').Count -ne 1) { return 1 }
     if ($text -cmatch '(?m)^\s*Status: [^\r\n]*Needs authentication\s*$') { return 2 }
+    if ($text -cmatch '(?m)^\s*Status: ([^\r\n]*Failed to connect|[^\r\n]*Connected · tools fetch failed)\s*$') { return 3 }
     if ($connection.Code -eq 0 -and $text -cmatch '(?m)^\s*Status: ✔ Connected\s*$') { return 0 }
     return 1
 }
@@ -290,7 +324,10 @@ function Test-Installation {
         if (-not $script:Enabled) { return 1 }
         if ($Client -ceq 'codex') { return Test-Codex }
         return Test-Claude
-    } catch { return 1 }
+    } catch {
+        if (-not $script:ClientError) { $script:ClientError = $_.Exception.Message }
+        return 1
+    }
 }
 
 try {
@@ -351,15 +388,17 @@ try {
             elseif ($script:Installed) { $arguments = @('plugin', 'enable', $plugin, '--scope', 'user') }
             else { $arguments = @('plugin', 'install', $plugin, '--scope', 'user') }
             $result = Invoke-Client $arguments 120
-            if ($result.Code -eq 0) { $script:Installed = $true }
+            if ($result.Code -ne 0) { Abort-Installation 'Installation du plugin impossible. Relancez cette commande.' }
+            $script:Installed = $true
             try { Read-Plugins } catch { Abort-Installation 'Impossible de vérifier le plugin après installation.' }
-            if ($result.Code -ne 0 -or -not $script:Installed -or -not $script:Enabled) {
+            if (-not $script:Installed -or -not $script:Enabled) {
                 Abort-Installation 'Installation du plugin impossible. Relancez cette commande.'
             }
         }
     }
     $verification = Test-Installation
     if ($verification -eq 0) { Write-Output 'Installation complète'; exit 0 }
+    if ($verification -eq 3) { Incomplete -Retry }
     if ($verification -ne 2) { Stop-Installer $script:VerificationError }
     if ($Check -or $NoLogin -or -not $terminal) { Incomplete }
     [Console]::Write('Ouvrir la connexion Nestor dans le navigateur ? (o/N) : ')
@@ -371,10 +410,11 @@ try {
     if ($result.Code -ne 0) { Incomplete }
     $verification = Test-Installation
     if ($verification -eq 0) { Write-Output 'Installation complète'; exit 0 }
+    if ($verification -eq 3) { Incomplete -Retry }
     if ($verification -eq 2) { Incomplete }
     Stop-Installer $script:VerificationError
 } catch {
-    Abort-Installation 'Le contrôle du client a échoué. Relancez cette commande.'
+    Abort-Installation ('Le contrôle du client a échoué : ' + $_.Exception.Message)
 } finally {
     foreach ($process in @($processes.ToArray())) { Stop-ClientProcess $process }
     if ($scratch -and (Test-Path -LiteralPath $scratch)) { Remove-Item -LiteralPath $scratch -Recurse -Force }

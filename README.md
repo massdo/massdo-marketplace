@@ -30,6 +30,10 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/inst
 
 Windows PowerShell 5.1+ or PowerShell 7, with a native client executable:
 
+**Windows prerequisite:** the installer requires `codex.exe` or `claude.exe` on
+`PATH`. It rejects `.cmd`, `.bat` and `.ps1` launchers, including the npm shims
+`codex.cmd` and `claude.cmd`.
+
 ```powershell
 $installerPath = Join-Path ([IO.Path]::GetTempPath()) ('nestor-' + [guid]::NewGuid() + '.ps1')
 try {

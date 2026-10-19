@@ -64,7 +64,7 @@ temporary file is removed when that child process ends.
 | Exit code | Result | Next action |
 | --- | --- | --- |
 | 0 | `Installation complète` | Start a new client session to use Nestor. |
-| 2 | `Plugin installé — connexion Nestor à terminer` | Authentication is required; run the displayed login command, then rerun the installer. |
+| 2 | `Plugin installé — connexion Nestor à terminer` | Complete authentication, or restore server access and rerun the installer, as indicated. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
 
 Native resume commands:
@@ -76,15 +76,24 @@ claude mcp login plugin:nestor:nestor
 
 Choose the command for the installed client. The client opens OAuth and owns token
 storage and renewal. The installer never reads, copies or stores tokens. Refusing
-or postponing consent leaves the plugin installed. Other verification failures leave
-the plugin installed, exit with code 1 and explain the failing control without
-proposing OAuth. Rerunning the installer resumes missing steps, reuses a valid
+or postponing consent leaves the plugin installed. A failed server connection or
+tool discovery also leaves the plugin installed and returns exit code 2. It prints
+the failing control and asks you to restore server access, then rerun the installer.
+The native login command is shown only as a conditional next step if authentication
+is subsequently required; a connection failure never starts OAuth automatically.
+Missing skills, disabled plugins, invalid responses and configuration errors return
+exit code 1. Failed native commands print their last 12 stderr lines; temporary
+diagnostic files are removed on exit. PowerShell also reports unexpected process
+exceptions. Rerunning the installer resumes missing steps, reuses a valid
 connection and does not add duplicate marketplaces or plugins.
 
 The installer checks the connection immediately after native plugin installation.
 If installation already authenticated Nestor, it does not request another login.
 On the reference versions, Codex's native `plugin add` enables an existing disabled
-plugin and returns its `ON_INSTALL` policy without running OAuth. Claude Code uses
+plugin. An isolated local Codex 0.163.0 installation with an empty `CODEX_HOME` and
+file credential stores exercised marketplace and plugin installation, reported
+`ON_INSTALL` in the native plugin inventory, and stopped at pending authentication
+with `--no-login`. This did not exercise browser consent. Claude Code uses
 `plugin enable --scope user` for an existing disabled plugin. The installer performs
 at most one explicit native login per run.
 
@@ -123,8 +132,9 @@ its complete skill inventory, and `claude mcp get plugin:nestor:nestor` reportin
 the expected endpoint and a connected authenticated MCP exchange. No model
 generation or journal content is used. Configuration alone cannot report success.
 Only Codex's `notLoggedIn`/`authRequired` or Claude's `Needs authentication` result
-offers native login. Missing skills, a disabled plugin, unavailable tools or a
-failed connection report a verification error. `scripts/validate.py` checks the
+offers immediate native login. A failed connection or tool discovery reports an
+incomplete installation with retry instructions. Missing skills, a disabled plugin
+or missing required tools report a verification error. `scripts/validate.py` checks the
 embedded endpoint, origin and required skills against the plugin files.
 
 Protocol references: [Codex app-server](https://learn.chatgpt.com/docs/app-server?surface=cli),

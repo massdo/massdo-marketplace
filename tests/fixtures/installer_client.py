@@ -32,6 +32,12 @@ def text(value):
     print('\033[32m' + value + '\033[0m' if state.get('color') else value)
 
 
+if args == state.get('fail_command'):
+    print(state['native_error'], file=sys.stderr)
+    if args == ['app-server', '--stdio']:
+        request = json.loads(sys.stdin.readline())
+        emit({'id': request['id'], 'error': {'message': 'native startup failed'}})
+    sys.exit(1)
 if state.get('network_failure'):
     sys.exit(1)
 if '--help' in args or args == ['--version']:
@@ -95,11 +101,14 @@ elif args[:2] == ['app-server', '--stdio']:
                 {'name': 'nestor:' + skill, 'enabled': not state.get('disabled_skill')}
                 for skill in skills]}]}
         elif method == 'mcpServerStatus/list':
+            tools = {} if state.get('missing_tools') else {'get_item': {'name': 'get_item'}}
+            if state.get('tools_array'):
+                tools = list(tools.values())
             result = {'data': [{'name': 'nestor', 'pluginId': 'nestor@massdo-marketplace',
                 'httpOrigin': origin,
                 'authStatus': state.get('auth_status', 'oAuth' if state.get('connected', True) else 'notLoggedIn'),
                 'runtimeStatus': state.get('runtime_status'), 'toolsError': state.get('tools_error'),
-                'tools': {} if state.get('missing_tools') else {'get_item': {'name': 'get_item'}}}]}
+                'tools': tools}]}
         else:
             emit({'id': request['id'], 'error': {'message': 'unsupported'}}); continue
         emit({'id': request['id'], 'result': result})

@@ -15,6 +15,7 @@ terminal=false
 installed=false
 enabled=false
 verification_error=
+client_error=
 
 stop_process() {
     kill "$1" 2>/dev/null || :
@@ -32,14 +33,23 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-fail() { printf '%s\n' "$*" >&2; exit 1; }
+show_client_error() {
+    if [ -n "$client_error" ] && [ -s "$client_error" ]; then tail -n 12 "$client_error" >&2; fi
+}
+
+fail() { printf '%s\n' "$*" >&2; show_client_error; exit 1; }
 incomplete() {
     printf '%s\n' 'Plugin installé — connexion Nestor à terminer'
-    if [ "$client" = codex ]; then
-        printf '%s\n' 'Reprise : codex mcp login nestor'
-    else
-        printf '%s\n' 'Reprise : claude mcp login plugin:nestor:nestor'
+    local command='codex mcp login nestor'
+    [ "$client" = codex ] || command='claude mcp login plugin:nestor:nestor'
+    if [ "${1:-}" = retry ]; then
+        printf '%s\n' "$verification_error" >&2
+        show_client_error
+        printf '%s\n' 'Reprise : rétablissez l’accès au serveur, puis relancez cet installateur.'
+        printf '%s\n' "Connexion native, uniquement si l’authentification est ensuite demandée : $command"
+        exit 2
     fi
+    printf '%s\n' "Reprise : $command"
     printf '%s\n' 'Relancez ensuite cet installateur pour vérifier la connexion.'
     exit 2
 }
@@ -47,19 +57,23 @@ incomplete() {
 capture() {
     local limit=$1 destination=$2 deadline result
     shift 2
-    NO_COLOR=1 "$@" </dev/null >"$destination" 2>/dev/null &
+    client_error=
+    NO_COLOR=1 "$@" </dev/null >"$destination" 2>"$destination.err" &
     command_pid=$!
     deadline=$((SECONDS + limit))
     while kill -0 "$command_pid" 2>/dev/null; do
         if [ "$SECONDS" -ge "$deadline" ]; then
             stop_process "$command_pid"
             command_pid=
+            client_error="$destination.err"
+            printf '%s\n' "Le délai du client a expiré ($limit s)." >>"$client_error"
             return 124
         fi
         sleep 0.1
     done
     wait "$command_pid"; result=$?
     command_pid=
+    [ "$result" -eq 0 ] || client_error="$destination.err"
     return "$result"
 }
 
@@ -120,7 +134,7 @@ codex_probe() {
     verification_error='Le type ou l’état d’authentification Nestor ne permet pas le contrôle OAuth.'
     json -e '.authStatus == "oAuth"' "$scratch/status.json" >/dev/null || return 1
     verification_error='Le serveur Nestor est indisponible ou la découverte des outils a échoué.'
-    json -e '.toolsError == null and (.runtimeStatus == null or .runtimeStatus == "connected")' "$scratch/status.json" >/dev/null || return 1
+    json -e '.toolsError == null and (.runtimeStatus == null or .runtimeStatus == "connected")' "$scratch/status.json" >/dev/null || return 3
     verification_error='Les outils Nestor requis sont absents de la réponse MCP.'
     json -e '[.tools[].name] | index("get_item") != null' "$scratch/status.json" >/dev/null || return 1
     return 0
@@ -131,9 +145,10 @@ codex_check() {
     capture 20 "$scratch/server.json" "$binary" mcp get nestor --json || return 1
     verification_error='Le serveur Nestor est désactivé ou possède une autre URL.'
     json -e --arg url "$endpoint" '.enabled == true and .transport.url == $url' "$scratch/server.json" >/dev/null || return 1
+    verification_error='Impossible de préparer le canal de contrôle Codex.'
     mkfifo "$scratch/rpc-in" "$scratch/rpc-out" || return 1
     exec 4<>"$scratch/rpc-in"
-    "$binary" app-server --stdio <"$scratch/rpc-in" >"$scratch/rpc-out" 2>/dev/null &
+    "$binary" app-server --stdio <"$scratch/rpc-in" >"$scratch/rpc-out" 2>"$scratch/app-server.err" &
     app_pid=$!
     exec 5<>"$scratch/rpc-out"
     local result
@@ -141,6 +156,7 @@ codex_check() {
     exec 4>&- 5>&-
     stop_process "$app_pid"
     app_pid=
+    [ "$result" -eq 0 ] || client_error="$scratch/app-server.err"
     rm -f "$scratch/rpc-in" "$scratch/rpc-out"
     return "$result"
 }
@@ -163,6 +179,7 @@ claude_check() {
     [ "$url" = "$endpoint" ] || fail 'Collision : le serveur du plugin possède une autre URL.'
     [ "$(grep -c '^[[:space:]]*Status:' "$scratch/connection-plain")" = 1 ] || return 1
     if grep -Eq '^[[:space:]]*Status: .*Needs authentication[[:space:]]*$' "$scratch/connection-plain"; then return 2; fi
+    if grep -Eq '^[[:space:]]*Status: (.*Failed to connect|.*Connected · tools fetch failed)[[:space:]]*$' "$scratch/connection-plain"; then return 3; fi
     [ "$result" -eq 0 ] && grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain"
 }
 
@@ -301,13 +318,15 @@ if [ "$check_only" = false ]; then
             capture 120 "$scratch/add-plugin" "$binary" plugin install "$plugin" --scope user
         fi
         result=$?
-        [ "$result" -ne 0 ] || installed=true
+        [ "$result" -eq 0 ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
+        installed=true
         plugin_state || abort_installation 'Impossible de vérifier le plugin après installation.'
-        [ "$result" -eq 0 ] && [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
+        [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
     fi
 fi
 verify; verification_status=$?
 if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complète'; exit 0; fi
+[ "$verification_status" -ne 3 ] || incomplete retry
 [ "$verification_status" -eq 2 ] || fail "$verification_error"
 if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
 printf '%s' 'Ouvrir la connexion Nestor dans le navigateur ? (o/N) : ' >&3
@@ -316,5 +335,6 @@ case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
 login || incomplete
 verify; verification_status=$?
 if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complète'; exit 0; fi
+[ "$verification_status" -ne 3 ] || incomplete retry
 [ "$verification_status" -eq 2 ] || fail "$verification_error"
 incomplete

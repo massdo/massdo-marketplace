@@ -121,9 +121,11 @@ class Installer(unittest.TestCase):
                     self.assertNotIn('Installation complète', result.stdout)
         self.assert_no_mutations()
 
-    def test_codex_requires_discovered_tools_and_no_discovery_error(self):
-        for state in ({'missing_tools': True}, {'tools_error': 'offline'}):
-            result = self.run_installer(state=state)
+    def test_codex_requires_discovered_tools_in_object_or_array(self):
+        for as_array in (False, True):
+            result = self.run_installer(state={'tools_array': as_array})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            result = self.run_installer(state={'tools_array': as_array, 'missing_tools': True})
             self.assertEqual(result.returncode, 1, result.stdout)
             self.assertNotIn('codex mcp login nestor', result.stdout)
 
@@ -167,8 +169,6 @@ function Invoke-WebRequest {
     def test_non_authentication_failures_never_offer_login(self):
         for client in ('codex', 'claude'):
             cases = [{'disabled_skill': True}, {'enabled': False}, {'missing_server': True}]
-            cases.append({'tools_error': 'offline'} if client == 'codex' else {'offline': True})
-            cases.append({'runtime_status': 'failed'} if client == 'codex' else {'tools_error': 'offline'})
             if client == 'codex':
                 cases.append({'auth_status': 'unknown'})
             for state in cases:
@@ -180,15 +180,76 @@ function Invoke-WebRequest {
                     self.assertTrue(result.stderr.strip())
         self.assert_no_mutations()
 
+    def test_connection_failure_keeps_plugin_and_prints_retry_without_login(self):
+        for client in ('codex', 'claude'):
+            cases = [{'tools_error': 'offline'}]
+            cases.append({'runtime_status': 'failed'} if client == 'codex' else {'offline': True})
+            for failure in cases:
+                for options in (('--check',), ()):
+                    with self.subTest(client=client, failure=failure, options=options):
+                        state = {**failure, 'installed': bool(options), 'marketplace': bool(options),
+                                 'other_settings': ['keep']}
+                        result = self.run_installer(client, state, options)
+                        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                        self.assertIn('Plugin installé — connexion Nestor à terminer', result.stdout)
+                        self.assertIn('Reprise :', result.stdout)
+                        self.assertIn('uniquement si', result.stdout)
+                        server = 'nestor' if client == 'codex' else 'plugin:nestor:nestor'
+                        self.assertIn(client + ' mcp login ' + server, result.stdout)
+                        self.assertTrue(result.stderr.strip())
+                        saved = json.loads(self.state.read_text())
+                        self.assertTrue(saved['installed'])
+                        self.assertEqual(saved['other_settings'], ['keep'])
+                        self.assertFalse(any('login' in call and '--help' not in call for call in self.calls()))
+                        for key in failure:
+                            saved.pop(key)
+                        self.log.write_text('')
+                        resumed = self.run_installer(client, saved, ())
+                        self.assertEqual(resumed.returncode, 0, resumed.stderr)
+                        self.assert_no_mutations()
+
+    def test_native_command_failures_keep_bounded_stderr(self):
+        native_error = 'omitted native header\n' + 'detail\n' * 14 + 'fatal: accès au dépôt refusé'
+        for client in ('codex', 'claude'):
+            commands = [
+                (['plugin', 'marketplace', 'add', 'massdo/massdo-marketplace'],
+                 {'installed': False, 'marketplace': False}, ()),
+                (['plugin', 'add', 'nestor@massdo-marketplace', '--json'] if client == 'codex' else
+                 ['plugin', 'install', 'nestor@massdo-marketplace', '--scope', 'user'],
+                 {'installed': False}, ()),
+                (['plugin', 'list', '--json'], {}, ('--check',)),
+                (['mcp', 'get', 'nestor', '--json'] if client == 'codex' else
+                 ['plugin', 'details', 'nestor@massdo-marketplace'], {}, ('--check',)),
+            ]
+            if client == 'codex':
+                commands.append((['app-server', '--stdio'], {}, ('--check',)))
+            for command, state, options in commands:
+                with self.subTest(client=client, command=command):
+                    result = self.run_installer(client, {**state, 'fail_command': command,
+                                                        'native_error': native_error}, options)
+                    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                    self.assertIn('fatal: accès au dépôt refusé', result.stderr)
+                    self.assertNotIn('omitted native header', result.stderr)
+                    self.assertNotIn('Installation complète', result.stdout)
+
+    @unittest.skipUnless(POWERSHELL, 'PowerShell process-start errors use the global exception handler')
+    def test_unstartable_client_reports_native_exception(self):
+        binary = self.bin / ('codex.exe' if os.name == 'nt' else 'codex')
+        binary.write_bytes(b'not a native executable\n')
+        result = self.run_installer()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('Le contrôle du client a échoué :', result.stderr)
+        self.assertIn(str(binary), result.stderr)
+
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_verification_failure_in_a_terminal_does_not_prompt_for_oauth(self):
         for client in ('codex', 'claude'):
-            for state in ({'disabled_skill': True}, {'tools_error': 'offline'}):
+            for state, expected in (({'disabled_skill': True}, 1), ({'tools_error': 'offline'}, 2)):
                 self.state.write_text(json.dumps(state))
                 code, output = self.run_interactive(self.command(client, ()), [])
-                self.assertEqual(code, 1, output)
+                self.assertEqual(code, expected, output)
                 self.assertNotIn('navigateur', output)
-                self.assertNotIn('mcp login', output)
+                self.assert_no_mutations()
         self.assert_no_mutations()
 
     def test_invalid_arguments_fail(self):
