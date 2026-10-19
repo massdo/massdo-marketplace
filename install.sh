@@ -79,7 +79,7 @@ ensure_jq() {
     chmod 700 "$jq_bin"
 }
 
-json() { "$jq_bin" "$@"; }
+json() { "$jq_bin" "$@" 2>/dev/null; }
 
 rpc() {
     local id=$1 request=$2 line remaining deadline=$((SECONDS + 45))
@@ -137,15 +137,71 @@ claude_check() {
 
 plugin_state() {
     if [ "$client" = codex ]; then
-        capture 30 "$scratch/plugins.json" "$binary" plugin list --json --marketplace massdo-marketplace || return 1
+        capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
+        json -e '.installed | type == "array"' "$scratch/plugins.json" >/dev/null || return 1
+        json -e '[.installed[] | select((.pluginId | startswith("nestor@")) and .pluginId != "nestor@massdo-marketplace")] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision : un plugin Nestor provient d’une autre marketplace.'
         json -ce '[.installed[] | select(.pluginId == "nestor@massdo-marketplace")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
     else
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
+        json -e 'type == "array"' "$scratch/plugins.json" >/dev/null || return 1
+        json -e '[.[] | select((.id | startswith("nestor@")) and (.id != "nestor@massdo-marketplace" or .scope != "user"))] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision : Nestor possède une autre source ou une autre portée.'
         json -ce '[.[] | select(.id == "nestor@massdo-marketplace" and .scope == "user")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
     fi
     json -e 'length <= 1' "$scratch/selected.json" >/dev/null || return 1
     installed=$(json -r 'length == 1' "$scratch/selected.json")
     enabled=$(json -r '.[0].enabled == true' "$scratch/selected.json")
+}
+
+marketplace_state() {
+    capture 30 "$scratch/marketplaces.json" "$binary" plugin marketplace list --json || return 1
+    if [ "$client" = codex ]; then
+        json -ce '.marketplaces | arrays | [.[] | select(.name == "massdo-marketplace")]' "$scratch/marketplaces.json" >"$scratch/marketplace.json" || return 1
+        json -e 'all(.marketplaceSource.sourceType == "git" and (.marketplaceSource.source == "https://github.com/massdo/massdo-marketplace.git" or .marketplaceSource.source == "https://github.com/massdo/massdo-marketplace"))' "$scratch/marketplace.json" >/dev/null || fail 'Collision : la marketplace possède une autre source.'
+    else
+        json -ce 'arrays | [.[] | select(.name == "massdo-marketplace")]' "$scratch/marketplaces.json" >"$scratch/marketplace.json" || return 1
+        json -e 'all(.source == "github" and .repo == "massdo/massdo-marketplace")' "$scratch/marketplace.json" >/dev/null || fail 'Collision : la marketplace possède une autre source.'
+    fi
+    json -e 'length <= 1' "$scratch/marketplace.json" >/dev/null || fail 'Collision : plusieurs marketplaces portent le même nom.'
+    marketplace=$(json -r 'length == 1' "$scratch/marketplace.json")
+}
+
+server_collision() {
+    if [ "$client" = codex ]; then
+        capture 30 "$scratch/servers.json" "$binary" mcp list --json || return 1
+        json -e 'type == "array"' "$scratch/servers.json" >/dev/null || return 1
+        json -e --arg url "$endpoint" --argjson installed "$installed" '[.[] | select(.name == "nestor")] | length <= 1 and all($installed and .transport.url == $url)' "$scratch/servers.json" >/dev/null || fail 'Collision : le serveur nestor possède une configuration existante différente.'
+    else
+        if capture 30 "$scratch/manual-server" "$binary" mcp get nestor; then
+            fail 'Collision : un serveur nestor existe hors du plugin.'
+        fi
+        if [ "$installed" = false ] && capture 30 "$scratch/manual-server" "$binary" mcp get plugin:nestor:nestor; then
+            fail 'Collision : un serveur possède déjà le nom du plugin.'
+        fi
+    fi
+}
+
+abort_installation() {
+    [ "$installed" = false ] || incomplete
+    fail "$*"
+}
+
+login() {
+    local server=nestor deadline=$((SECONDS + 300)) result
+    [ "$client" = codex ] || server=plugin:nestor:nestor
+    NO_COLOR=1 "$binary" mcp login "$server" <&3 >&3 2>&3 &
+    command_pid=$!
+    while kill -0 "$command_pid" 2>/dev/null; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+            kill "$command_pid" 2>/dev/null || :
+            wait "$command_pid" 2>/dev/null || :
+            command_pid=
+            return 124
+        fi
+        sleep 0.1
+    done
+    wait "$command_pid"; result=$?
+    command_pid=
+    return "$result"
 }
 
 verify() {
@@ -180,6 +236,44 @@ umask 077
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-install.XXXXXX") || fail 'Répertoire temporaire indisponible.'
 cd "$scratch" || exit 1
 ensure_jq
+capture 15 "$scratch/version" "$binary" --version || fail 'Version du client indisponible.'
+for capability in 'plugin list' 'plugin marketplace list' 'mcp login'; do
+    # Capability names are fixed here, never supplied by the caller.
+    capture 15 "$scratch/help" "$binary" $capability --help || fail 'Client incompatible : mettez le client à jour.'
+done
+if [ "$client" = codex ]; then
+    capture 15 "$scratch/help" "$binary" app-server --help || fail 'Client incompatible : app-server manque.'
+else
+    capture 15 "$scratch/help" "$binary" plugin details --help || fail 'Client incompatible : inventaire des skills indisponible.'
+fi
+plugin_state || fail 'Impossible de lire les plugins du client.'
+marketplace_state || abort_installation 'Impossible de lire les marketplaces du client.'
+server_collision || abort_installation 'Impossible de vérifier la configuration MCP.'
+if [ "$check_only" = false ]; then
+    if [ "$marketplace" = false ]; then
+        capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Ajout de la marketplace impossible. Relancez cette commande.'
+        marketplace_state && [ "$marketplace" = true ] || abort_installation 'La marketplace ajoutée reste introuvable.'
+    fi
+    if [ "$installed" = false ] || [ "$enabled" = false ]; then
+        if [ "$client" = codex ]; then
+            # The native add command also enables an existing plugin; it does not run OAuth.
+            capture 120 "$scratch/add-plugin" "$binary" plugin add "$plugin" --json
+        elif [ "$installed" = true ]; then
+            capture 120 "$scratch/add-plugin" "$binary" plugin enable "$plugin" --scope user
+        else
+            capture 120 "$scratch/add-plugin" "$binary" plugin install "$plugin" --scope user
+        fi
+        result=$?
+        plugin_state || abort_installation 'Impossible de vérifier le plugin après installation.'
+        [ "$result" -eq 0 ] && [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
+    fi
+fi
 if verify; then printf '%s\n' 'Installation complète'; exit 0; fi
-if [ "$installed" = true ]; then incomplete; fi
-fail 'Nestor doit être installé avant ce contrôle.'
+[ "$installed" = true ] || fail 'Nestor doit être installé avant ce contrôle.'
+if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
+printf '%s' 'Ouvrir la connexion Nestor dans le navigateur ? (o/N) : ' >&3
+IFS= read -r answer <&3 || incomplete
+case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
+login || incomplete
+if verify; then printf '%s\n' 'Installation complète'; exit 0; fi
+incomplete
