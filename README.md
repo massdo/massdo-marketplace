@@ -31,7 +31,13 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/inst
 Windows PowerShell 5.1+ or PowerShell 7, with a native client executable:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1')))
+$installerPath = Join-Path ([IO.Path]::GetTempPath()) ('nestor-' + [guid]::NewGuid() + '.ps1')
+try {
+    Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1' -OutFile $installerPath
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath
+} finally {
+    Remove-Item -LiteralPath $installerPath -ErrorAction SilentlyContinue
+}
 ```
 
 If both clients are present, choose one in the terminal. Without a terminal, specify

@@ -44,11 +44,13 @@ jobs:
       matrix:
         shell: [powershell, pwsh]
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Test native Windows orchestration without credentials
-        shell: ${{ matrix.shell }}
         run: '& .\tests\test_install.ps1'

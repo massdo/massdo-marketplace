@@ -605,6 +605,49 @@ class RepositoryValidation(unittest.TestCase):
         result = self.check(ok=False)
         self.assertIn("invalid YAML", result.stderr)
 
+    def add_installers(self):
+        shutil.copytree(ROOT / 'plugins/nestor', self.root / 'plugins/nestor')
+        for name in ('install.sh', 'install.ps1'):
+            shutil.copy2(ROOT / name, self.root / name)
+        for catalog in ('.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json',
+                        '.cursor-plugin/marketplace.json', '.kimi-plugin/marketplace.json'):
+            document = json.loads((self.root / catalog).read_text())
+            source = json.loads((ROOT / catalog).read_text())
+            document['plugins'].extend(entry for entry in source['plugins']
+                                       if entry.get('name', entry.get('id')) == 'nestor')
+            self.json(catalog, document)
+
+    def test_installer_probe_constants_follow_the_plugin(self):
+        self.add_installers()
+        self.run_command(sys.executable, 'scripts/validate.py')
+        for name in ('install.sh', 'install.ps1'):
+            path = self.root / name
+            source = path.read_text(encoding='utf-8-sig')
+            for old, new, message in (
+                ('https://journal.mcp-marketplace.org/mcp', 'https://other.example/mcp', 'endpoint must match'),
+                ('"tree"', '"missing-skill"', 'required skills must match'),
+            ):
+                with self.subTest(installer=name, drift=message):
+                    path.write_text(source.replace(old, new), encoding='utf-8-sig')
+                    result = self.run_command(sys.executable, 'scripts/validate.py', ok=False)
+                    self.assertIn(name + ': ' + message, result.stderr)
+                    path.write_text(source, encoding='utf-8-sig')
+
+    def test_plugin_skill_rename_requires_installer_probe_updates(self):
+        self.add_installers()
+        old = self.root / 'plugins/nestor/skills/tree'
+        target = old.with_name('branches')
+        old.rename(target)
+        path = target / 'SKILL.md'
+        path.write_text(path.read_text().replace('name: tree\n', 'name: branches\n'))
+        result = self.run_command(sys.executable, 'scripts/validate.py', ok=False)
+        self.assertIn('required skills must match', result.stderr)
+        for name in ('install.sh', 'install.ps1'):
+            path = self.root / name
+            path.write_text(path.read_text(encoding='utf-8-sig').replace('"tree"', '"branches"'),
+                            encoding='utf-8-sig')
+        self.run_command(sys.executable, 'scripts/validate.py')
+
 
 class SkillFrontmatter(unittest.TestCase):
     def test_missing_yaml_dependency_fails_explicitly(self):

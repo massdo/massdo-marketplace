@@ -3,6 +3,8 @@ set -u
 
 plugin=nestor@massdo-marketplace
 endpoint=https://journal.mcp-marketplace.org/mcp
+origin=https://journal.mcp-marketplace.org
+required_skills='["nestor","activity","tree","pause","resume","check-for-updates"]'
 client=
 check_only=false
 no_login=false
@@ -12,6 +14,7 @@ command_pid=
 terminal=false
 installed=false
 enabled=false
+verification_error=
 
 stop_process() {
     kill "$1" 2>/dev/null || :
@@ -102,42 +105,65 @@ rpc() {
     return 1
 }
 
+codex_probe() {
+    verification_error='Le protocole de contrôle Codex a échoué.'
+    rpc 1 '{"id":1,"method":"initialize","params":{"clientInfo":{"name":"nestor_installer","version":"1.0.0"},"capabilities":{"experimentalApi":true}}}' || return 1
+    printf '%s\n' '{"method":"initialized"}' >&4
+    verification_error='Les skills Nestor sont absents, désactivés ou illisibles.'
+    rpc 2 '{"id":2,"method":"skills/list","params":{"forceReload":true}}' || return 1
+    json -e --argjson required "$required_skills" '[.result.data[].skills[] | select(.enabled == true) | .name] as $names | $required | all(. as $name | $names | index("nestor:" + $name) != null)' "$scratch/reply.json" >/dev/null || return 1
+    verification_error='Le contrôle du serveur Nestor a échoué.'
+    rpc 3 '{"id":3,"method":"mcpServerStatus/list","params":{"serverName":"nestor","detail":"toolsAndAuthOnly","limit":100}}' || return 1
+    verification_error='Le serveur Nestor est absent ou possède une identité différente.'
+    json -ce --arg plugin "$plugin" --arg origin "$origin" '[.result.data[] | select(.name == "nestor" and .pluginId == $plugin and .httpOrigin == $origin)] | if length == 1 then .[0] else error("Invalid server identity") end' "$scratch/reply.json" >"$scratch/status.json" || return 1
+    if json -e '.authStatus == "notLoggedIn" or .runtimeStatus == "authRequired"' "$scratch/status.json" >/dev/null; then return 2; fi
+    verification_error='Le type ou l’état d’authentification Nestor ne permet pas le contrôle OAuth.'
+    json -e '.authStatus == "oAuth"' "$scratch/status.json" >/dev/null || return 1
+    verification_error='Le serveur Nestor est indisponible ou la découverte des outils a échoué.'
+    json -e '.toolsError == null and (.runtimeStatus == null or .runtimeStatus == "connected")' "$scratch/status.json" >/dev/null || return 1
+    verification_error='Les outils Nestor requis sont absents de la réponse MCP.'
+    json -e '[.tools[].name] | index("get_item") != null' "$scratch/status.json" >/dev/null || return 1
+    return 0
+}
+
 codex_check() {
+    verification_error='Le serveur Nestor est introuvable ou son contrôle a échoué.'
     capture 20 "$scratch/server.json" "$binary" mcp get nestor --json || return 1
+    verification_error='Le serveur Nestor est désactivé ou possède une autre URL.'
     json -e --arg url "$endpoint" '.enabled == true and .transport.url == $url' "$scratch/server.json" >/dev/null || return 1
     mkfifo "$scratch/rpc-in" "$scratch/rpc-out" || return 1
     exec 4<>"$scratch/rpc-in"
     "$binary" app-server --stdio <"$scratch/rpc-in" >"$scratch/rpc-out" 2>/dev/null &
     app_pid=$!
     exec 5<>"$scratch/rpc-out"
-    local success=false
-    if rpc 1 '{"id":1,"method":"initialize","params":{"clientInfo":{"name":"nestor_installer","version":"1.0.0"},"capabilities":{"experimentalApi":true}}}'; then
-        printf '%s\n' '{"method":"initialized"}' >&4
-        if rpc 2 '{"id":2,"method":"skills/list","params":{"forceReload":true}}' &&
-            json -e '[.result.data[].skills[] | select(.enabled == true) | .name] as $names | ["nestor:nestor","nestor:activity","nestor:tree","nestor:pause","nestor:resume","nestor:check-for-updates"] | all(. as $name | $names | index($name) != null)' "$scratch/reply.json" >/dev/null &&
-            rpc 3 '{"id":3,"method":"mcpServerStatus/list","params":{"serverName":"nestor","detail":"toolsAndAuthOnly","limit":100}}' &&
-            json -e '.result.data | any(.name == "nestor" and .pluginId == "nestor@massdo-marketplace" and .httpOrigin == "https://journal.mcp-marketplace.org" and .authStatus == "oAuth" and .toolsError == null and (.runtimeStatus == null or .runtimeStatus == "connected") and ([.tools[].name] | index("get_item") != null))' "$scratch/reply.json" >/dev/null; then
-            success=true
-        fi
-    fi
+    local result
+    codex_probe; result=$?
     exec 4>&- 5>&-
     stop_process "$app_pid"
     app_pid=
     rm -f "$scratch/rpc-in" "$scratch/rpc-out"
-    [ "$success" = true ]
+    return "$result"
 }
 
 claude_check() {
+    verification_error='L’inventaire des skills Nestor est indisponible.'
     capture 30 "$scratch/details" "$binary" plugin details "$plugin" || return 1
     sed $'s/\033\\[[0-9;]*m//g' "$scratch/details" >"$scratch/details-plain"
     local skill
-    for skill in nestor activity tree pause resume check-for-updates; do
+    verification_error='Les skills Nestor sont absents ou désactivés.'
+    for skill in $(printf '%s' "$required_skills" | json -r '.[]'); do
         sed -n '/^[[:space:]]*Skills ([0-9][0-9]*)/p' "$scratch/details-plain" | grep -Eq "(^|[ ,])$skill([ ,]|$)" || return 1
     done
-    capture 45 "$scratch/connection" "$binary" mcp get plugin:nestor:nestor || return 1
+    local result url
+    verification_error='Le serveur Nestor est indisponible ou son contrôle a échoué.'
+    capture 45 "$scratch/connection" "$binary" mcp get plugin:nestor:nestor; result=$?
     sed $'s/\033\\[[0-9;]*m//g' "$scratch/connection" >"$scratch/connection-plain"
-    grep -Eq '^[[:space:]]*URL: https://journal[.]mcp-marketplace[.]org/mcp[[:space:]]*$' "$scratch/connection-plain" || fail 'Collision : le serveur du plugin possède une autre URL.'
-    grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain"
+    [ "$(grep -c '^[[:space:]]*URL:' "$scratch/connection-plain")" = 1 ] || return 1
+    url=$(sed -n 's/^[[:space:]]*URL:[[:space:]]*//p' "$scratch/connection-plain" | sed 's/[[:space:]]*$//')
+    [ "$url" = "$endpoint" ] || fail 'Collision : le serveur du plugin possède une autre URL.'
+    [ "$(grep -c '^[[:space:]]*Status:' "$scratch/connection-plain")" = 1 ] || return 1
+    if grep -Eq '^[[:space:]]*Status: .*Needs authentication[[:space:]]*$' "$scratch/connection-plain"; then return 2; fi
+    [ "$result" -eq 0 ] && grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain"
 }
 
 plugin_state() {
@@ -149,7 +175,7 @@ plugin_state() {
     else
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
         json -e 'type == "array"' "$scratch/plugins.json" >/dev/null || return 1
-        json -e '[.[] | select((.id | startswith("nestor@")) and (.id != "nestor@massdo-marketplace" or .scope != "user"))] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision : Nestor possède une autre source ou une autre portée.'
+        json -e '[.[] | select(.scope != "synced" and (.id | startswith("nestor@")) and (.id != "nestor@massdo-marketplace" or .scope != "user"))] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision : Nestor possède une autre source ou une autre portée.'
         json -ce '[.[] | select(.id == "nestor@massdo-marketplace" and .scope == "user")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
     fi
     json -e 'length <= 1' "$scratch/selected.json" >/dev/null || return 1
@@ -186,7 +212,6 @@ server_collision() {
 }
 
 abort_installation() {
-    [ "$installed" = false ] || incomplete
     fail "$*"
 }
 
@@ -209,7 +234,12 @@ login() {
 }
 
 verify() {
-    plugin_state && [ "$installed" = true ] && [ "$enabled" = true ] || return 1
+    verification_error='Impossible de lire les plugins du client.'
+    plugin_state || return 1
+    verification_error='Le plugin Nestor est absent.'
+    [ "$installed" = true ] || return 1
+    verification_error='Le plugin Nestor est désactivé. Relancez sans --check pour l’activer.'
+    [ "$enabled" = true ] || return 1
     if [ "$client" = codex ]; then codex_check; else claude_check; fi
 }
 
@@ -276,12 +306,15 @@ if [ "$check_only" = false ]; then
         [ "$result" -eq 0 ] && [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
     fi
 fi
-if verify; then printf '%s\n' 'Installation complète'; exit 0; fi
-[ "$installed" = true ] || fail 'Nestor doit être installé avant ce contrôle.'
+verify; verification_status=$?
+if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complète'; exit 0; fi
+[ "$verification_status" -eq 2 ] || fail "$verification_error"
 if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
 printf '%s' 'Ouvrir la connexion Nestor dans le navigateur ? (o/N) : ' >&3
 IFS= read -r answer <&3 || incomplete
 case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
 login || incomplete
-if verify; then printf '%s\n' 'Installation complète'; exit 0; fi
+verify; verification_status=$?
+if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complète'; exit 0; fi
+[ "$verification_status" -eq 2 ] || fail "$verification_error"
 incomplete

@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 state_path = Path(os.environ['NESTOR_TEST_STATE'])
 state = json.loads(state_path.read_text())
@@ -13,8 +14,11 @@ if args[:1] == ['--fixture-client']:
     client, args = args[1], args[2:]
 with Path(os.environ['NESTOR_TEST_LOG']).open('a') as log:
     log.write(json.dumps([client, *args]) + '\n')
-endpoint = 'https://journal.mcp-marketplace.org/mcp'
-skills = ['nestor', 'activity', 'tree', 'pause', 'resume', 'check-for-updates']
+plugin_dir = Path(os.environ['NESTOR_TEST_FIXTURE']).resolve().parents[2] / 'plugins/nestor'
+endpoint = json.loads((plugin_dir / 'mcp.json').read_text())['mcpServers']['nestor']['url']
+url = urlsplit(endpoint)
+origin = url.scheme + '://' + url.netloc
+skills = sorted(path.parent.name for path in (plugin_dir / 'skills').glob('*/SKILL.md'))
 
 def save():
     state_path.write_text(json.dumps(state))
@@ -64,6 +68,8 @@ elif args[:2] == ['plugin', 'list']:
         entries = [{'id': identifier, 'pluginId': identifier,
                     'scope': state.get('scope', 'user'), 'enabled': state.get('enabled', True)}]
     entries.append({'id': 'other@other', 'pluginId': 'other@other', 'scope': 'user', 'enabled': True})
+    if client == 'claude' and state.get('synced'):
+        entries.append({'id': 'nestor@synced', 'scope': 'synced', 'enabled': True})
     emit({'installed': entries} if client == 'codex' else entries)
 elif args[:2] == ['mcp', 'list']:
     emit([{'name': 'nestor', 'transport': {'url': state.get('url', endpoint)}}]
@@ -88,19 +94,24 @@ elif args[:2] == ['app-server', '--stdio']:
                 for skill in skills]}]}
         elif method == 'mcpServerStatus/list':
             result = {'data': [{'name': 'nestor', 'pluginId': 'nestor@massdo-marketplace',
-                'httpOrigin': 'https://journal.mcp-marketplace.org',
-                'authStatus': 'oAuth' if state.get('connected', True) else 'notLoggedIn',
-                'runtimeStatus': None, 'toolsError': state.get('tools_error'),
+                'httpOrigin': origin,
+                'authStatus': state.get('auth_status', 'oAuth' if state.get('connected', True) else 'notLoggedIn'),
+                'runtimeStatus': state.get('runtime_status'), 'toolsError': state.get('tools_error'),
                 'tools': {} if state.get('missing_tools') else {'get_item': {'name': 'get_item'}}}]}
         else:
             emit({'id': request['id'], 'error': {'message': 'unsupported'}}); continue
         emit({'id': request['id'], 'result': result})
 elif args[:2] == ['plugin', 'details']:
-    text('Component inventory\n  Skills (6)  ' + ', '.join([] if state.get('disabled_skill') else skills))
+    text('Component inventory\n  Skills (' + str(len(skills)) + ')  ' + ', '.join([] if state.get('disabled_skill') else skills))
 elif args[:3] == ['mcp', 'get', 'plugin:nestor:nestor']:
     if not state.get('installed', True) or state.get('missing_server'):
         sys.exit(1)
-    text('  Status: ' + ('✔ Connected' if state.get('connected', True) else '✘ Needs authentication'))
+    status = '✔ Connected' if state.get('connected', True) else '✘ Needs authentication'
+    if state.get('offline'):
+        status = '✘ Failed to connect'
+    if state.get('tools_error'):
+        status = '! Connected · tools fetch failed'
+    text('  Status: ' + status)
     text('  URL: ' + state.get('url', endpoint))
 elif args[:2] == ['mcp', 'login']:
     if state.get('refuse_oauth'):

@@ -8,6 +8,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $plugin = 'nestor@massdo-marketplace'
 $endpoint = 'https://journal.mcp-marketplace.org/mcp'
+$origin = 'https://journal.mcp-marketplace.org'
+$requiredSkills = '["nestor","activity","tree","pause","resume","check-for-updates"]' | ConvertFrom-Json
+$script:VerificationError = ''
 $script:Installed = $false
 $script:Enabled = $false
 $script:Marketplace = $false
@@ -29,7 +32,6 @@ function Incomplete {
 }
 
 function Abort-Installation([string]$Message) {
-    if ($script:Installed) { Incomplete }
     Stop-Installer $Message
 }
 
@@ -124,7 +126,9 @@ function Read-Plugins {
         $selected = @($identities | Where-Object { $_.pluginId -ceq $plugin })
     } else {
         $entries = @($document)
-        $identities = @($entries | Where-Object { ([string](Field $_ 'id')).StartsWith('nestor@') })
+        $identities = @($entries | Where-Object {
+            (Field $_ 'scope') -cne 'synced' -and ([string](Field $_ 'id')).StartsWith('nestor@')
+        })
         if (@($identities | Where-Object { $_.id -cne $plugin -or $_.scope -cne 'user' }).Count) {
             Stop-Installer 'Collision : Nestor possède une autre source ou une autre portée.'
         }
@@ -201,8 +205,11 @@ function Invoke-Rpc($Process, [int]$Id, [string]$Method, $Params) {
 }
 
 function Test-Codex {
+    $script:VerificationError = 'Le serveur Nestor est introuvable ou son contrôle a échoué.'
     $server = Read-ClientJson @('mcp', 'get', 'nestor', '--json')
-    if ($server.enabled -isnot [bool] -or -not $server.enabled -or $server.transport.url -cne $endpoint) { return $false }
+    $script:VerificationError = 'Le serveur Nestor est désactivé ou possède une autre URL.'
+    if ($server.enabled -isnot [bool] -or -not $server.enabled -or $server.transport.url -cne $endpoint) { return 1 }
+    $script:VerificationError = 'Le protocole de contrôle Codex a échoué.'
     $process = New-ClientProcess @('app-server', '--stdio')
     $errors = $process.StandardError.ReadToEndAsync()
     try {
@@ -212,55 +219,73 @@ function Test-Codex {
         })
         $process.StandardInput.WriteLine('{"method":"initialized"}')
         $process.StandardInput.Flush()
+        $script:VerificationError = 'Les skills Nestor sont absents, désactivés ou illisibles.'
         $skills = Invoke-Rpc $process 2 'skills/list' @{ forceReload = $true }
         $names = @($skills.data | ForEach-Object { $_.skills } |
             Where-Object { $_.enabled -is [bool] -and $_.enabled } | ForEach-Object { $_.name })
-        foreach ($skill in @('nestor', 'activity', 'tree', 'pause', 'resume', 'check-for-updates')) {
-            if ('nestor:' + $skill -cnotin $names) { return $false }
+        foreach ($skill in $requiredSkills) {
+            if ('nestor:' + $skill -cnotin $names) { return 1 }
         }
+        $script:VerificationError = 'Le contrôle du serveur Nestor a échoué.'
         $status = Invoke-Rpc $process 3 'mcpServerStatus/list' @{
             serverName = 'nestor'; detail = 'toolsAndAuthOnly'; limit = 100
         }
-        foreach ($entry in $status.data) {
-            $runtime = Field $entry 'runtimeStatus'
-            $tools = @($entry.tools.PSObject.Properties | ForEach-Object { $_.Value.name })
-            if ($entry.name -ceq 'nestor' -and $entry.pluginId -ceq $plugin -and
-                $entry.httpOrigin -ceq 'https://journal.mcp-marketplace.org' -and
-                $entry.authStatus -ceq 'oAuth' -and $null -eq (Field $entry 'toolsError') -and
-                ($null -eq $runtime -or $runtime -ceq 'connected') -and 'get_item' -cin $tools) {
-                return $true
-            }
-        }
-        return $false
+        $script:VerificationError = 'Le serveur Nestor est absent ou possède une identité différente.'
+        $selected = @($status.data | Where-Object {
+            $_.name -ceq 'nestor' -and $_.pluginId -ceq $plugin -and $_.httpOrigin -ceq $origin
+        })
+        if ($selected.Count -ne 1) { return 1 }
+        $entry = $selected[0]
+        $runtime = Field $entry 'runtimeStatus'
+        if ($entry.authStatus -ceq 'notLoggedIn' -or $runtime -ceq 'authRequired') { return 2 }
+        $script:VerificationError = "Le type ou l’état d’authentification Nestor ne permet pas le contrôle OAuth."
+        if ($entry.authStatus -cne 'oAuth') { return 1 }
+        $script:VerificationError = 'Le serveur Nestor est indisponible ou la découverte des outils a échoué.'
+        if ($null -ne (Field $entry 'toolsError') -or ($null -ne $runtime -and $runtime -cne 'connected')) { return 1 }
+        $script:VerificationError = 'Les outils Nestor requis sont absents de la réponse MCP.'
+        $tools = @($entry.tools.PSObject.Properties | ForEach-Object { $_.Value.name })
+        if ('get_item' -cnotin $tools) { return 1 }
+        return 0
     } finally { Stop-ClientProcess $process }
 }
 
 function Plain-Text([string]$Text) { return [regex]::Replace($Text, '\x1B\[[0-9;]*m', '') }
 
 function Test-Claude {
+    $script:VerificationError = "L’inventaire des skills Nestor est indisponible."
     $inventory = Invoke-Client @('plugin', 'details', $plugin)
-    if ($inventory.Code -ne 0) { return $false }
+    if ($inventory.Code -ne 0) { return 1 }
     $text = Plain-Text $inventory.Text
     $line = [regex]::Match($text, '(?m)^\s*Skills \(\d+\)[^\r\n]*').Value
-    foreach ($skill in @('nestor', 'activity', 'tree', 'pause', 'resume', 'check-for-updates')) {
-        if ($line -cnotmatch ('(^|[ ,])' + [regex]::Escape($skill) + '([ ,]|$)')) { return $false }
+    $script:VerificationError = 'Les skills Nestor sont absents ou désactivés.'
+    foreach ($skill in $requiredSkills) {
+        if ($line -cnotmatch ('(^|[ ,])' + [regex]::Escape($skill) + '([ ,]|$)')) { return 1 }
     }
+    $script:VerificationError = 'Le serveur Nestor est indisponible ou son contrôle a échoué.'
     $connection = Invoke-Client @('mcp', 'get', 'plugin:nestor:nestor') 45
     $text = Plain-Text $connection.Text
-    if ($connection.Code -ne 0) { return $false }
-    if ($text -cnotmatch '(?m)^\s*URL: https://journal[.]mcp-marketplace[.]org/mcp\s*$') {
+    $urls = [regex]::Matches($text, '(?m)^\s*URL: ([^\r\n]*)')
+    if ($urls.Count -ne 1) { return 1 }
+    if ($urls[0].Groups[1].Value.Trim() -cne $endpoint) {
         Stop-Installer 'Collision : le serveur du plugin possède une autre URL.'
     }
-    return $text -cmatch '(?m)^\s*Status: ✔ Connected\s*$'
+    if ([regex]::Matches($text, '(?m)^\s*Status:').Count -ne 1) { return 1 }
+    if ($text -cmatch '(?m)^\s*Status: [^\r\n]*Needs authentication\s*$') { return 2 }
+    if ($connection.Code -eq 0 -and $text -cmatch '(?m)^\s*Status: ✔ Connected\s*$') { return 0 }
+    return 1
 }
 
 function Test-Installation {
     try {
+        $script:VerificationError = 'Impossible de lire les plugins du client.'
         Read-Plugins
-        if (-not $script:Installed -or -not $script:Enabled) { return $false }
+        $script:VerificationError = 'Le plugin Nestor est absent.'
+        if (-not $script:Installed) { return 1 }
+        $script:VerificationError = "Le plugin Nestor est désactivé. Relancez sans -Check pour l’activer."
+        if (-not $script:Enabled) { return 1 }
         if ($Client -ceq 'codex') { return Test-Codex }
         return Test-Claude
-    } catch { return $false }
+    } catch { return 1 }
 }
 
 try {
@@ -323,8 +348,9 @@ try {
             }
         }
     }
-    if (Test-Installation) { Write-Output 'Installation complète'; exit 0 }
-    if (-not $script:Installed) { Stop-Installer 'Nestor doit être installé avant ce contrôle.' }
+    $verification = Test-Installation
+    if ($verification -eq 0) { Write-Output 'Installation complète'; exit 0 }
+    if ($verification -ne 2) { Stop-Installer $script:VerificationError }
     if ($Check -or $NoLogin -or -not $terminal) { Incomplete }
     [Console]::Write('Ouvrir la connexion Nestor dans le navigateur ? (o/N) : ')
     $answer = [Console]::ReadLine()
@@ -333,8 +359,10 @@ try {
     if ($Client -ceq 'claude') { $server = 'plugin:nestor:nestor' }
     $result = Invoke-Client @('mcp', 'login', $server) 300 -Interactive
     if ($result.Code -ne 0) { Incomplete }
-    if (Test-Installation) { Write-Output 'Installation complète'; exit 0 }
-    Incomplete
+    $verification = Test-Installation
+    if ($verification -eq 0) { Write-Output 'Installation complète'; exit 0 }
+    if ($verification -eq 2) { Incomplete }
+    Stop-Installer $script:VerificationError
 } catch {
     Abort-Installation 'Le contrôle du client a échoué. Relancez cette commande.'
 } finally {

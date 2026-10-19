@@ -40,7 +40,13 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/inst
 Windows:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1'))) -Client codex
+$installerPath = Join-Path ([IO.Path]::GetTempPath()) ('nestor-' + [guid]::NewGuid() + '.ps1')
+try {
+    Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1' -OutFile $installerPath
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath -Client codex
+} finally {
+    Remove-Item -LiteralPath $installerPath -ErrorAction SilentlyContinue
+}
 ```
 
 Use `claude` instead of `codex` for Claude Code. If only one client is installed,
@@ -49,13 +55,16 @@ the terminal separately from piped script content. Without a terminal, the clien
 selection is required and the installer leaves OAuth for a later native login.
 With a terminal, the installer asks before opening native OAuth. Answer `o` to
 continue. `--no-login` or `-NoLogin` skips that prompt.
+The Windows command downloads the file without decoding its UTF-8 BOM, then starts
+a child PowerShell process. Its exit code cannot close the calling console. The
+temporary file is removed when that child process ends.
 
 ## Result and recovery
 
 | Exit code | Result | Next action |
 | --- | --- | --- |
 | 0 | `Installation complète` | Start a new client session to use Nestor. |
-| 2 | `Plugin installé — connexion Nestor à terminer` | Run the displayed login command, then rerun the installer. |
+| 2 | `Plugin installé — connexion Nestor à terminer` | Authentication is required; run the displayed login command, then rerun the installer. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
 
 Native resume commands:
@@ -67,8 +76,9 @@ claude mcp login plugin:nestor:nestor
 
 Choose the command for the installed client. The client opens OAuth and owns token
 storage and renewal. The installer never reads, copies or stores tokens. Refusing
-or postponing consent leaves the plugin installed. A connection failure also leaves
-the plugin installed. Rerunning the installer resumes missing steps, reuses a valid
+or postponing consent leaves the plugin installed. Other verification failures leave
+the plugin installed, exit with code 1 and explain the failing control without
+proposing OAuth. Rerunning the installer resumes missing steps, reuses a valid
 connection and does not add duplicate marketplaces or plugins.
 
 The installer checks the connection immediately after native plugin installation.
@@ -84,6 +94,8 @@ Claude Code's accepted source is the native `github` entry for
 installation scope, or conflicting MCP server stops installation without replacing
 the existing configuration. The installer runs its client commands from a temporary
 directory and installs into the user's profile, outside project configuration.
+Claude Code's `synced` inventory entries are excluded from collision checks and
+installation targets. They can coexist with the user-scoped marketplace plugin.
 
 ## Check without configuration changes
 
@@ -110,6 +122,10 @@ no tool discovery error. Claude Code verification requires the enabled user plug
 its complete skill inventory, and `claude mcp get plugin:nestor:nestor` reporting
 the expected endpoint and a connected authenticated MCP exchange. No model
 generation or journal content is used. Configuration alone cannot report success.
+Only Codex's `notLoggedIn`/`authRequired` or Claude's `Needs authentication` result
+offers native login. Missing skills, a disabled plugin, unavailable tools or a
+failed connection report a verification error. `scripts/validate.py` checks the
+embedded endpoint, origin and required skills against the plugin files.
 
 Protocol references: [Codex app-server](https://learn.chatgpt.com/docs/app-server?surface=cli),
 [plugin packaging](https://developers.openai.com/plugins/build/plugins), and

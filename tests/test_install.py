@@ -1,6 +1,7 @@
 """Exercise the installer with isolated CLI doubles, never real accounts."""
 import json
 import os
+import re
 import select
 import shutil
 import subprocess
@@ -121,8 +122,72 @@ class Installer(unittest.TestCase):
     def test_codex_requires_discovered_tools_and_no_discovery_error(self):
         for state in ({'missing_tools': True}, {'tools_error': 'offline'}):
             result = self.run_installer(state=state)
-            self.assertEqual(result.returncode, 2)
-            self.assertIn('codex mcp login nestor', result.stdout)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertNotIn('codex mcp login nestor', result.stdout)
+
+    def test_synced_plugin_is_not_a_collision_or_an_install_target(self):
+        for options in (('--check',), ()):
+            result = self.run_installer('claude', {'synced': True}, options)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assert_no_mutations()
+
+    @unittest.skipUnless(POWERSHELL, 'The Windows entry point uses a child PowerShell process')
+    def test_documented_powershell_command_preserves_parent_and_resume_message(self):
+        block = re.search(r'```powershell\n(.*?)\n```', (ROOT / 'README.md').read_text(), re.DOTALL).group(1)
+        self.assertNotIn('scriptblock', block.lower())
+        self.assertIn('-File $installerPath', block)
+        shell = os.environ.get('NESTOR_TEST_PWSH', 'pwsh')
+        prefix = """
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+function Invoke-WebRequest {
+    param([switch]$UseBasicParsing, [string]$Uri, [string]$OutFile)
+    Copy-Item -LiteralPath $env:NESTOR_TEST_SCRIPT -Destination $OutFile
+}
+"""
+        if os.name != 'nt':
+            prefix += "\nfunction powershell.exe { & $env:NESTOR_TEST_PWSH @args }\n"
+        self.env.update(NESTOR_TEST_SCRIPT=str(ROOT / 'install.ps1'), NESTOR_TEST_PWSH=shell)
+        for state, expected in (({}, 0), ({'connected': False}, 2), ({'disabled_skill': True}, 1)):
+            with self.subTest(expected=expected):
+                self.state.write_text(json.dumps(state))
+                command = block.replace('-File $installerPath', '-File $installerPath -Client codex -Check')
+                command += '\nWrite-Output ("PARENT_ALIVE:" + $LASTEXITCODE)\n'
+                command += 'if (Test-Path -LiteralPath $installerPath) { throw "Temporary script remains" }\n'
+                result = subprocess.run([shell, '-NoProfile', '-Command', prefix + command],
+                                        env=self.env, stdin=subprocess.DEVNULL, capture_output=True,
+                                        encoding='utf-8', errors='replace', timeout=60)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn('PARENT_ALIVE:' + str(expected), result.stdout)
+                if expected == 2:
+                    self.assertIn('Plugin installé — connexion Nestor à terminer', result.stdout)
+        self.assert_no_mutations()
+
+    def test_non_authentication_failures_never_offer_login(self):
+        for client in ('codex', 'claude'):
+            cases = [{'disabled_skill': True}, {'enabled': False}, {'missing_server': True}]
+            cases.append({'tools_error': 'offline'} if client == 'codex' else {'offline': True})
+            cases.append({'runtime_status': 'failed'} if client == 'codex' else {'tools_error': 'offline'})
+            if client == 'codex':
+                cases.append({'auth_status': 'unknown'})
+            for state in cases:
+                with self.subTest(client=client, state=state):
+                    result = self.run_installer(client, state)
+                    self.assertEqual(result.returncode, 1, result.stdout)
+                    self.assertNotIn('mcp login', result.stdout)
+                    self.assertNotIn('connexion Nestor à terminer', result.stdout)
+                    self.assertTrue(result.stderr.strip())
+        self.assert_no_mutations()
+
+    @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
+    def test_verification_failure_in_a_terminal_does_not_prompt_for_oauth(self):
+        for client in ('codex', 'claude'):
+            for state in ({'disabled_skill': True}, {'tools_error': 'offline'}):
+                self.state.write_text(json.dumps(state))
+                code, output = self.run_interactive(self.command(client, ()), [])
+                self.assertEqual(code, 1, output)
+                self.assertNotIn('navigateur', output)
+                self.assertNotIn('mcp login', output)
+        self.assert_no_mutations()
 
     def test_invalid_arguments_fail(self):
         result = self.run_installer(client='unknown')
@@ -200,7 +265,7 @@ class Installer(unittest.TestCase):
         for client in ('codex', 'claude'):
             result = self.run_installer(client, {'installed': False, 'partial_install_failure': True,
                                                'connected': False}, ())
-            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertEqual(result.returncode, 1, result.stderr)
             state = json.loads(self.state.read_text())
             self.assertTrue(state['installed'])
             state.update(connected=True, partial_install_failure=False)
