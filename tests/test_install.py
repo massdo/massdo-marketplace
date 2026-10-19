@@ -103,7 +103,7 @@ class Installer(unittest.TestCase):
         for client in ('codex', 'claude'):
             with self.subTest(client=client):
                 result = self.run_installer(client)
-                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.returncode, 0, result.stderr + repr(self.calls()))
                 self.assertIn('Installation complète', result.stdout)
         self.assert_no_mutations()
 

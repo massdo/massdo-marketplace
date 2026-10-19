@@ -82,6 +82,8 @@ elif args[:3] == ['mcp', 'get', 'nestor']:
     emit({'enabled': True, 'transport': {'url': state.get('url', endpoint)}})
 elif args[:2] == ['app-server', '--stdio']:
     for line in sys.stdin:
+        with Path(os.environ['NESTOR_TEST_LOG']).open('a') as log:
+            log.write(json.dumps([client, 'rpc-input', line]) + '\n')
         request = json.loads(line)
         method = request['method']
         if 'id' not in request:
