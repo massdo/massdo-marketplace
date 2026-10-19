@@ -223,6 +223,15 @@ Local results and an open PR are delivery evidence, not production proof.
 
 ## 5. Block, interrupt and resume
 
+After an ownership refusal or a confirmed ownership change, stop this build: do not start
+further edits, commands, commits, pushes or Nestor mutations. Cancel this build's running
+commands when the client allows it, without discarding existing changes. Do not fetch
+another execution's proof or reserve again to continue.
+
+This stop is cooperative and non-deterministic: it depends on the agent observing the
+change and following this instruction. It does not terminate the agent or revoke its
+filesystem or Git access; enforced cancellation requires the host.
+
 For a persistent obstacle on an active building Task, call `manage_build(operation:
 "block", id: activeTaskId)` with ownership, its held pair, and non-empty
 `blockage: { reason, resumeCondition }`. Use the closing rule below and stop. It retains
