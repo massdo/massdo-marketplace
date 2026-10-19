@@ -53,7 +53,7 @@ Use `claude` instead of `codex` for Claude Code. If only one client is installed
 the installer selects it. If both are installed, it asks for a choice. Bash reads
 the terminal separately from piped script content. Without a terminal, the client
 selection is required and the installer leaves OAuth for a later native login.
-With a terminal, the installer asks before opening native OAuth. Answer `o` to
+With a terminal, the installer asks before opening native OAuth. Answer `y` to
 continue. `--no-login` or `-NoLogin` skips that prompt.
 The Windows command downloads the file without decoding its UTF-8 BOM, then starts
 a child PowerShell process. Its exit code cannot close the calling console. The
@@ -63,8 +63,8 @@ temporary file is removed when that child process ends.
 
 | Exit code | Result | Next action |
 | --- | --- | --- |
-| 0 | `Installation complète` | Start a new client session to use Nestor. |
-| 2 | `Plugin installé — connexion Nestor à terminer` | Complete authentication, or restore server access and rerun the installer, as indicated. |
+| 0 | `Installation complete` | Start a new client session to use Nestor. |
+| 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
 
 Native resume commands:

@@ -80,7 +80,7 @@ If you use Linux through WSL on Windows, use the **Mac or Linux** command in you
 ### 2. Connect Nestor
 
 If setup asks which app to use, type `codex` or `claude`, then press **Enter**.
-If it asks to open your browser, type `o`, then press **Enter**.
+If it asks to open your browser, type `y`, then press **Enter**.
 Follow the instructions in your browser to sign in and allow the connection.
 Then return to the terminal window.
 
@@ -88,14 +88,14 @@ If you already connected Nestor, setup may finish without opening your browser.
 
 ### 3. Start a new conversation
 
-When you see **`Installation complète`**, Nestor is ready.
+When you see **`Installation complete`**, Nestor is ready.
 Open a **new conversation** in the app you chose, then type:
 
 ```text
 Show my tasks.
 ```
 
-**Setup did not finish?** If you see **`Plugin installé — connexion Nestor à terminer`**,
+**Setup did not finish?** If you see **`Nestor is installed — finish connecting your account`**,
 follow the message shown. You can paste the same setup command again to continue.
 If your internet connection stopped, reconnect before trying again.
 

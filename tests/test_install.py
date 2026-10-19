@@ -106,7 +106,7 @@ class Installer(unittest.TestCase):
                 messages = [call[2] for call in self.calls() if call[1] == 'rpc-input']
                 self.assertFalse(any(message.startswith('\ufeff') for message in messages), messages)
                 self.assertEqual(result.returncode, 0, result.stderr + repr(self.calls()))
-                self.assertIn('Installation complète', result.stdout)
+                self.assertIn('Installation complete', result.stdout)
         self.assert_no_mutations()
 
     def test_failed_checks_never_report_complete(self):
@@ -118,7 +118,7 @@ class Installer(unittest.TestCase):
                 with self.subTest(client=client, state=state):
                     result = self.run_installer(client, state)
                     self.assertNotEqual(result.returncode, 0)
-                    self.assertNotIn('Installation complète', result.stdout)
+                    self.assertNotIn('Installation complete', result.stdout)
         self.assert_no_mutations()
 
     def test_codex_requires_discovered_tools_in_object_or_array(self):
@@ -163,7 +163,7 @@ function Invoke-WebRequest {
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertIn('PARENT_ALIVE:' + str(expected), result.stdout)
                 if expected == 2:
-                    self.assertIn('Plugin installé — connexion Nestor à terminer', result.stdout)
+                    self.assertIn('Nestor is installed — finish connecting your account', result.stdout)
         self.assert_no_mutations()
 
     def test_non_authentication_failures_never_offer_login(self):
@@ -176,7 +176,7 @@ function Invoke-WebRequest {
                     result = self.run_installer(client, state)
                     self.assertEqual(result.returncode, 1, result.stdout)
                     self.assertNotIn('mcp login', result.stdout)
-                    self.assertNotIn('connexion Nestor à terminer', result.stdout)
+                    self.assertNotIn('finish connecting your account', result.stdout)
                     self.assertTrue(result.stderr.strip())
         self.assert_no_mutations()
 
@@ -191,9 +191,9 @@ function Invoke-WebRequest {
                                  'other_settings': ['keep']}
                         result = self.run_installer(client, state, options)
                         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-                        self.assertIn('Plugin installé — connexion Nestor à terminer', result.stdout)
-                        self.assertIn('Reprise :', result.stdout)
-                        self.assertIn('uniquement si', result.stdout)
+                        self.assertIn('Nestor is installed — finish connecting your account', result.stdout)
+                        self.assertIn('Try again:', result.stdout)
+                        self.assertIn('If you are asked to sign in afterward', result.stdout)
                         server = 'nestor' if client == 'codex' else 'plugin:nestor:nestor'
                         self.assertIn(client + ' mcp login ' + server, result.stdout)
                         self.assertTrue(result.stderr.strip())
@@ -230,7 +230,7 @@ function Invoke-WebRequest {
                     self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
                     self.assertIn('fatal: accès au dépôt refusé', result.stderr)
                     self.assertNotIn('omitted native header', result.stderr)
-                    self.assertNotIn('Installation complète', result.stdout)
+                    self.assertNotIn('Installation complete', result.stdout)
 
     @unittest.skipUnless(POWERSHELL, 'PowerShell process-start errors use the global exception handler')
     def test_unstartable_client_reports_native_exception(self):
@@ -238,7 +238,7 @@ function Invoke-WebRequest {
         binary.write_bytes(b'not a native executable\n')
         result = self.run_installer()
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        prefix = 'Le contrôle du client a échoué :'
+        prefix = 'Client check failed:'
         self.assertIn(prefix, result.stderr)
         self.assertTrue(result.stderr.split(prefix, 1)[1].strip())
 
@@ -249,7 +249,7 @@ function Invoke-WebRequest {
                 self.state.write_text(json.dumps(state))
                 code, output = self.run_interactive(self.command(client, ()), [])
                 self.assertEqual(code, expected, output)
-                self.assertNotIn('navigateur', output)
+                self.assertNotIn('browser', output)
                 self.assert_no_mutations()
         self.assert_no_mutations()
 
@@ -262,7 +262,7 @@ function Invoke-WebRequest {
             result = self.run_installer(client, {'installed': False, 'marketplace': False,
                                         'connected': False, 'other_settings': {'keep': 42}}, ())
             self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertIn('Plugin installé — connexion Nestor à terminer', result.stdout)
+            self.assertIn('Nestor is installed — finish connecting your account', result.stdout)
             state = json.loads(self.state.read_text())
             self.assertTrue(state['installed'])
             self.assertTrue(state['marketplace'])
@@ -294,7 +294,7 @@ function Invoke-WebRequest {
                     result = self.run_installer(client, state, ())
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn('Collision', result.stderr)
-                    self.assertNotIn('Installation complète', result.stdout)
+                    self.assertNotIn('Installation complete', result.stdout)
                     self.assertEqual(json.loads(self.state.read_text()), state)
         self.assert_no_mutations()
 
@@ -374,17 +374,17 @@ function Invoke-WebRequest {
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_oauth_acceptance_refusal_and_report_use_one_native_login(self):
         for client in ('codex', 'claude'):
-            for refusal, answer, expected in ((False, 'o', 0), (True, 'o', 2), (False, 'n', 2)):
+            for refusal, answer, expected in ((False, 'y', 0), (True, 'y', 2), (False, 'n', 2)):
                 with self.subTest(client=client, refusal=refusal, answer=answer):
                     self.log.write_text('')
                     self.state.write_text(json.dumps({'installed': False, 'connected': False,
                                                       'refuse_oauth': refusal}))
-                    code, output = self.run_interactive(self.command(client, ()), [('navigateur', answer)])
+                    code, output = self.run_interactive(self.command(client, ()), [('browser', answer)])
                     self.assertEqual(code, expected, output)
                     logins = [call for call in self.calls() if 'login' in call and '--help' not in call]
-                    self.assertEqual(len(logins), 1 if answer == 'o' else 0)
+                    self.assertEqual(len(logins), 1 if answer == 'y' else 0)
                     if expected:
-                        self.assertIn('Plugin installé — connexion Nestor à terminer', output)
+                        self.assertIn('Nestor is installed — finish connecting your account', output)
 
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_client_choice_and_piped_script_keep_terminal_input_separate(self):
@@ -393,9 +393,9 @@ function Invoke-WebRequest {
             command = self.command(None, ())
         else:
             command = ['/bin/bash', '-c', 'cat "$1" | /bin/bash -s --', 'installer', str(ROOT / 'install.sh')]
-        code, output = self.run_interactive(command, [('Client à utiliser', 'claude'), ('navigateur', 'o')])
+        code, output = self.run_interactive(command, [('Choose your app', 'claude'), ('browser', 'y')])
         self.assertEqual(code, 0, output)
-        self.assertIn('Installation complète', output)
+        self.assertIn('Installation complete', output)
 
 
 if __name__ == '__main__':
