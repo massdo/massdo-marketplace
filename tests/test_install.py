@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -33,7 +34,7 @@ class Installer(unittest.TestCase):
         else:
             for client in ('codex', 'claude'):
                 path = self.bin / client
-                path.write_text('#!' + sys.executable + '\n' + fixture.split('\n', 1)[1])
+                path.write_text('#!/usr/bin/env python3\n' + fixture.split('\n', 1)[1])
                 path.chmod(0o755)
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
                     'NESTOR_TEST_STATE': str(self.state), 'NESTOR_TEST_LOG': str(self.log),
@@ -57,7 +58,7 @@ class Installer(unittest.TestCase):
         self.state.write_text(json.dumps(state or {}))
         return subprocess.run(self.command(client, options),
                               env=self.env, stdin=subprocess.DEVNULL, capture_output=True,
-                              text=True, timeout=60, start_new_session=True)
+                              encoding='utf-8', errors='replace', timeout=60, start_new_session=True)
 
     def calls(self):
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
@@ -65,6 +66,37 @@ class Installer(unittest.TestCase):
     def assert_no_mutations(self):
         self.assertFalse(any(any(word in call for word in ('login', 'add', 'install', 'enable'))
                              and '--help' not in call for call in self.calls()), self.calls())
+
+    def run_interactive(self, command, responses):
+        import pty
+        pid, terminal = pty.fork()
+        if pid == 0:
+            os.execvpe(command[0], command, {**self.env, 'TERM': 'dumb'})
+        output = bytearray()
+        deadline = time.monotonic() + 60
+        pending = list(responses)
+        try:
+            while True:
+                if time.monotonic() >= deadline:
+                    os.killpg(pid, 9)
+                    self.fail('Interactive scenario timed out: ' + output.decode(errors='replace'))
+                ready, _, _ = select.select([terminal], [], [], 1)
+                if not ready:
+                    continue
+                try:
+                    part = os.read(terminal, 8192)
+                except OSError:
+                    break
+                if not part:
+                    break
+                output.extend(part)
+                if pending and pending[0][0] in output.decode(errors='replace'):
+                    _, answer = pending.pop(0)
+                    os.write(terminal, (answer + '\n').encode())
+        finally:
+            os.close(terminal)
+            _, status = os.waitpid(pid, 0)
+        return os.waitstatus_to_exitcode(status), output.decode(errors='replace')
 
     def test_connected_clients_succeed_without_login_or_configuration_changes(self):
         for client in ('codex', 'claude'):
@@ -177,41 +209,54 @@ class Installer(unittest.TestCase):
         result = self.run_installer('claude', {'color': True})
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    @unittest.skipIf(POWERSHELL, 'PowerShell has a built-in JSON parser')
+    def test_downloaded_json_parser_with_wrong_checksum_is_never_executed(self):
+        utilities = self.root / 'utilities'
+        utilities.mkdir()
+        for name in ('uname', 'mktemp', 'rm', 'sha256sum', 'shasum'):
+            source = shutil.which(name)
+            if source:
+                (utilities / name).symlink_to(source)
+        (utilities / 'codex').symlink_to(self.bin / 'codex')
+        curl = utilities / 'curl'
+        curl.write_text('#!/bin/bash\nwhile [ "$#" -gt 0 ]; do\n'
+                        'if [ "$1" = -o ]; then printf invalid > "$2"; exit 0; fi\nshift\ndone\nexit 1\n')
+        curl.chmod(0o755)
+        self.env['PATH'] = str(utilities)
+        temporary = self.root / 'temporary'
+        temporary.mkdir()
+        self.env['TMPDIR'] = str(temporary)
+        result = self.run_installer()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('SHA-256', result.stderr)
+        self.assertEqual(list(temporary.iterdir()), [])
+        self.assertEqual(self.calls(), [])
+
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_oauth_acceptance_refusal_and_report_use_one_native_login(self):
-        import pty
         for client in ('codex', 'claude'):
             for refusal, answer, expected in ((False, 'o', 0), (True, 'o', 2), (False, 'n', 2)):
                 with self.subTest(client=client, refusal=refusal, answer=answer):
                     self.log.write_text('')
                     self.state.write_text(json.dumps({'installed': False, 'connected': False,
                                                       'refuse_oauth': refusal}))
-                    pid, terminal = pty.fork()
-                    if pid == 0:
-                        os.execvpe(self.command(client, ())[0], self.command(client, ()), self.env)
-                    os.write(terminal, (answer + '\n').encode())
-                    output = bytearray()
-                    try:
-                        while True:
-                            ready, _, _ = select.select([terminal], [], [], 45)
-                            if not ready:
-                                os.kill(pid, 9)
-                                self.fail('Installer did not finish its interactive scenario')
-                            try:
-                                part = os.read(terminal, 8192)
-                            except OSError:
-                                break
-                            if not part:
-                                break
-                            output.extend(part)
-                    finally:
-                        os.close(terminal)
-                        _, status = os.waitpid(pid, 0)
-                    self.assertEqual(os.waitstatus_to_exitcode(status), expected, output.decode())
+                    code, output = self.run_interactive(self.command(client, ()), [('navigateur', answer)])
+                    self.assertEqual(code, expected, output)
                     logins = [call for call in self.calls() if 'login' in call and '--help' not in call]
                     self.assertEqual(len(logins), 1 if answer == 'o' else 0)
                     if expected:
-                        self.assertIn('Plugin installé — connexion Nestor à terminer', output.decode())
+                        self.assertIn('Plugin installé — connexion Nestor à terminer', output)
+
+    @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
+    def test_client_choice_and_piped_script_keep_terminal_input_separate(self):
+        self.state.write_text(json.dumps({'installed': False, 'connected': False}))
+        if POWERSHELL:
+            command = self.command(None, ())
+        else:
+            command = ['/bin/bash', '-c', 'cat "$1" | /bin/bash -s --', 'installer', str(ROOT / 'install.sh')]
+        code, output = self.run_interactive(command, [('Client à utiliser', 'claude'), ('navigateur', 'o')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Installation complète', output)
 
 
 if __name__ == '__main__':
