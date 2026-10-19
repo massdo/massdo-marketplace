@@ -28,7 +28,17 @@ class InstallerClientLauncher
         using (var process = Process.Start(info))
         {
             var input = new Thread(() => {
-                try { Console.OpenStandardInput().CopyTo(process.StandardInput.BaseStream); process.StandardInput.Close(); }
+                try {
+                    var source = Console.OpenStandardInput();
+                    var destination = process.StandardInput.BaseStream;
+                    var buffer = new byte[4096];
+                    int count;
+                    while ((count = source.Read(buffer, 0, buffer.Length)) != 0) {
+                        destination.Write(buffer, 0, count);
+                        destination.Flush();
+                    }
+                    process.StandardInput.Close();
+                }
                 catch (IOException) { }
                 catch (ObjectDisposedException) { }
             });
