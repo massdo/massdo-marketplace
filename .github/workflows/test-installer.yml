@@ -1,0 +1,54 @@
+name: Test Nestor installer
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Ensure the test JSON parser is available
+        shell: bash
+        run: |
+          if ! command -v jq >/dev/null; then
+            if [ "${RUNNER_OS}" = macOS ]; then
+              brew install jq
+            else
+              sudo apt-get update
+              sudo apt-get install -y jq
+            fi
+          fi
+      - name: Test Bash orchestration without credentials
+        shell: bash
+        run: |
+          bash -n install.sh
+          python3 -m unittest discover -s tests -p test_install.py -v
+
+  powershell:
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Test native Windows orchestration without credentials
+        shell: ${{ matrix.shell }}
+        run: '& .\tests\test_install.ps1'

@@ -19,6 +19,27 @@
 
 ## 🕹️ Install
 
+Install **Nestor** with one command. Codex or Claude Code must already be installed.
+The installer selects the client, uses its native plugin commands, and checks the skills and authenticated MCP connection.
+
+macOS, Linux and WSL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.sh | bash
+```
+
+Windows PowerShell 5.1+ or PowerShell 7, with a native client executable:
+
+```powershell
+& ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.ps1')))
+```
+
+If both clients are present, choose one in the terminal. Without a terminal, specify
+`--client codex` for Bash or `-Client codex` for PowerShell. OAuth then remains available through the displayed resume command.
+See [installation and recovery](docs/installation.md) for prerequisites, checks and validation limits.
+
+### Manual installation
+
 Pick your agent, copy, paste. Done.
 Only want one plugin? Keep just its line.
 
