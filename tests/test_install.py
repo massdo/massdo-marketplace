@@ -25,7 +25,7 @@ class Installer(unittest.TestCase):
         self.bin.mkdir()
         self.state = self.root / 'state.json'
         self.log = self.root / 'calls.jsonl'
-        fixture = (ROOT / 'tests/fixtures/installer_client.py').read_text()
+        fixture = (ROOT / 'tests/fixtures/installer_client.py').read_text(encoding='utf-8')
         if os.name == 'nt':
             compiler = Path(os.environ['WINDIR']) / 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
             subprocess.run([str(compiler), '/nologo', '/target:exe', '/out:' + str(self.bin / 'codex.exe'),
@@ -135,7 +135,7 @@ class Installer(unittest.TestCase):
 
     @unittest.skipUnless(POWERSHELL, 'The Windows entry point uses a child PowerShell process')
     def test_documented_powershell_command_preserves_parent_and_resume_message(self):
-        block = re.search(r'```powershell\n(.*?)\n```', (ROOT / 'README.md').read_text(), re.DOTALL).group(1)
+        block = re.search(r'```powershell\n(.*?)\n```', (ROOT / 'README.md').read_text(encoding='utf-8'), re.DOTALL).group(1)
         self.assertNotIn('scriptblock', block.lower())
         self.assertIn('-File $installerPath', block)
         shell = os.environ.get('NESTOR_TEST_PWSH', 'pwsh')

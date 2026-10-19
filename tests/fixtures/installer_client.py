@@ -15,7 +15,7 @@ if args[:1] == ['--fixture-client']:
 with Path(os.environ['NESTOR_TEST_LOG']).open('a') as log:
     log.write(json.dumps([client, *args]) + '\n')
 plugin_dir = Path(os.environ['NESTOR_TEST_FIXTURE']).resolve().parents[2] / 'plugins/nestor'
-endpoint = json.loads((plugin_dir / 'mcp.json').read_text())['mcpServers']['nestor']['url']
+endpoint = json.loads((plugin_dir / 'mcp.json').read_text(encoding='utf-8'))['mcpServers']['nestor']['url']
 url = urlsplit(endpoint)
 origin = url.scheme + '://' + url.netloc
 skills = sorted(path.parent.name for path in (plugin_dir / 'skills').glob('*/SKILL.md'))
