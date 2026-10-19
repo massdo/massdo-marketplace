@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -15,6 +16,7 @@ class InstallerClientLauncher
 
     static int Main(string[] args)
     {
+        Console.InputEncoding = new UTF8Encoding(false);
         var info = new ProcessStartInfo();
         info.FileName = Environment.GetEnvironmentVariable("NESTOR_TEST_PYTHON");
         var client = Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);

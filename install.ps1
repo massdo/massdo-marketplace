@@ -17,6 +17,8 @@ $script:Marketplace = $false
 $processes = New-Object 'System.Collections.Generic.List[System.Diagnostics.Process]'
 $scratch = $null
 $previousEncoding = [Console]::OutputEncoding
+$previousInputEncoding = [Console]::InputEncoding
+$previousError = [Console]::Error
 
 function Stop-Installer([string]$Message) {
     [Console]::Error.WriteLine($Message)
@@ -59,6 +61,9 @@ function New-ClientProcess([string[]]$Arguments, [switch]$Interactive) {
     $info.RedirectStandardOutput = -not $Interactive
     $info.RedirectStandardError = -not $Interactive
     if (-not $Interactive) {
+        if ($null -ne $info.PSObject.Properties['StandardInputEncoding']) {
+            $info.StandardInputEncoding = New-Object System.Text.UTF8Encoding($false)
+        }
         $info.StandardOutputEncoding = New-Object System.Text.UTF8Encoding($false)
         $info.StandardErrorEncoding = New-Object System.Text.UTF8Encoding($false)
     }
@@ -182,18 +187,10 @@ function Test-ServerCollision {
     }
 }
 
-function Write-RpcLine($Process, [string]$Text) {
-    # Windows StreamWriter may emit a BOM, which is invalid before a JSON-RPC message.
-    $encoding = New-Object System.Text.UTF8Encoding($false)
-    $bytes = $encoding.GetBytes($Text + "`n")
-    $stream = $Process.StandardInput.BaseStream
-    $stream.Write($bytes, 0, $bytes.Length)
-    $stream.Flush()
-}
-
 function Invoke-Rpc($Process, [int]$Id, [string]$Method, $Params) {
     $request = @{ id = $Id; method = $Method; params = $Params } | ConvertTo-Json -Compress -Depth 20
-    Write-RpcLine $Process $request
+    $Process.StandardInput.WriteLine($request)
+    $Process.StandardInput.Flush()
     $deadline = [DateTime]::UtcNow.AddSeconds(45)
     while ([DateTime]::UtcNow -lt $deadline) {
         $line = $Process.StandardOutput.ReadLineAsync()
@@ -225,7 +222,8 @@ function Test-Codex {
             clientInfo = @{ name = 'nestor_installer'; version = '1.0.0' }
             capabilities = @{ experimentalApi = $true }
         })
-        Write-RpcLine $process '{"method":"initialized"}'
+        $process.StandardInput.WriteLine('{"method":"initialized"}')
+        $process.StandardInput.Flush()
         $script:VerificationError = 'Les skills Nestor sont absents, désactivés ou illisibles.'
         $skills = Invoke-Rpc $process 2 'skills/list' @{ forceReload = $true }
         $names = @($skills.data | ForEach-Object { $_.skills } |
@@ -297,6 +295,11 @@ function Test-Installation {
 
 try {
     [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+    # .NET Framework uses Console.InputEncoding when it creates the redirected writer.
+    [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
+    $errorWriter = New-Object System.IO.StreamWriter([Console]::OpenStandardError(), [Console]::OutputEncoding)
+    $errorWriter.AutoFlush = $true
+    [Console]::SetError($errorWriter)
     $terminal = -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected
     if (-not $Client) {
         if (-not $terminal) { Stop-Installer 'Sans terminal, indiquez -Client codex ou -Client claude.' }
@@ -376,4 +379,6 @@ try {
     foreach ($process in @($processes.ToArray())) { Stop-ClientProcess $process }
     if ($scratch -and (Test-Path -LiteralPath $scratch)) { Remove-Item -LiteralPath $scratch -Recurse -Force }
     [Console]::OutputEncoding = $previousEncoding
+    [Console]::InputEncoding = $previousInputEncoding
+    [Console]::SetError($previousError)
 }
