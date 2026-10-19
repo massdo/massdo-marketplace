@@ -136,8 +136,8 @@ claude_check() {
     done
     capture 45 "$scratch/connection" "$binary" mcp get plugin:nestor:nestor || return 1
     sed $'s/\033\\[[0-9;]*m//g' "$scratch/connection" >"$scratch/connection-plain"
-    grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain" &&
-        grep -Eq '^[[:space:]]*URL: https://journal[.]mcp-marketplace[.]org/mcp[[:space:]]*$' "$scratch/connection-plain"
+    grep -Eq '^[[:space:]]*URL: https://journal[.]mcp-marketplace[.]org/mcp[[:space:]]*$' "$scratch/connection-plain" || fail 'Collision : le serveur du plugin possède une autre URL.'
+    grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain"
 }
 
 plugin_state() {
@@ -241,13 +241,16 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-install.XXXXXX") || fail 'Répertoir
 cd "$scratch" || exit 1
 ensure_jq
 capture 15 "$scratch/version" "$binary" --version || fail 'Version du client indisponible.'
-for capability in 'plugin list' 'plugin marketplace list' 'mcp login'; do
+for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
     # Capability names are fixed here, never supplied by the caller.
     capture 15 "$scratch/help" "$binary" $capability --help || fail 'Client incompatible : mettez le client à jour.'
 done
 if [ "$client" = codex ]; then
+    capture 15 "$scratch/help" "$binary" plugin add --help || fail 'Client incompatible : installation native indisponible.'
     capture 15 "$scratch/help" "$binary" app-server --help || fail 'Client incompatible : app-server manque.'
 else
+    capture 15 "$scratch/help" "$binary" plugin install --help || fail 'Client incompatible : installation native indisponible.'
+    capture 15 "$scratch/help" "$binary" plugin enable --help || fail 'Client incompatible : activation native indisponible.'
     capture 15 "$scratch/help" "$binary" plugin details --help || fail 'Client incompatible : inventaire des skills indisponible.'
 fi
 plugin_state || fail 'Impossible de lire les plugins du client.'

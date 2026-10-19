@@ -164,6 +164,7 @@ class Installer(unittest.TestCase):
                 with self.subTest(client=client, state=state):
                     result = self.run_installer(client, state, ())
                     self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('Collision', result.stderr)
                     self.assertNotIn('Installation complète', result.stdout)
                     self.assertEqual(json.loads(self.state.read_text()), state)
         self.assert_no_mutations()
@@ -184,6 +185,15 @@ class Installer(unittest.TestCase):
     def test_incompatible_client_fails_before_mutation(self):
         result = self.run_installer(state={'incompatible': True}, options=())
         self.assertNotEqual(result.returncode, 0)
+        self.assert_no_mutations()
+
+    def test_missing_install_capability_stops_before_adding_marketplace(self):
+        for client in ('codex', 'claude'):
+            command = 'plugin add' if client == 'codex' else 'plugin install'
+            state = {'installed': False, 'marketplace': False, 'missing_capability': command}
+            result = self.run_installer(client, state, ())
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(json.loads(self.state.read_text()), state)
         self.assert_no_mutations()
 
     def test_failed_install_can_be_resumed_without_duplicate(self):

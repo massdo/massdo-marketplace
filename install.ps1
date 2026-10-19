@@ -247,8 +247,11 @@ function Test-Claude {
     }
     $connection = Invoke-Client @('mcp', 'get', 'plugin:nestor:nestor') 45
     $text = Plain-Text $connection.Text
-    return $connection.Code -eq 0 -and $text -cmatch '(?m)^\s*Status: ✔ Connected\s*$' -and
-        $text -cmatch '(?m)^\s*URL: https://journal[.]mcp-marketplace[.]org/mcp\s*$'
+    if ($connection.Code -ne 0) { return $false }
+    if ($text -cnotmatch '(?m)^\s*URL: https://journal[.]mcp-marketplace[.]org/mcp\s*$') {
+        Stop-Installer 'Collision : le serveur du plugin possède une autre URL.'
+    }
+    return $text -cmatch '(?m)^\s*Status: ✔ Connected\s*$'
 }
 
 function Test-Installation {
@@ -283,12 +286,20 @@ try {
     $scratch = Join-Path ([IO.Path]::GetTempPath()) ('nestor-install-' + [guid]::NewGuid().ToString('N'))
     [void](New-Item -ItemType Directory -Path $scratch)
     foreach ($arguments in @(@('--version'), @('plugin', 'list', '--help'),
-            @('plugin', 'marketplace', 'list', '--help'), @('mcp', 'login', '--help'))) {
+            @('plugin', 'marketplace', 'list', '--help'), @('plugin', 'marketplace', 'add', '--help'),
+            @('mcp', 'login', '--help'))) {
         if ((Invoke-Client $arguments 15).Code -ne 0) { Stop-Installer 'Client incompatible : mettez le client à jour.' }
     }
     if ($Client -ceq 'codex') { $arguments = @('app-server', '--help') }
     else { $arguments = @('plugin', 'details', '--help') }
     if ((Invoke-Client $arguments 15).Code -ne 0) { Stop-Installer 'Client incompatible : contrôle natif indisponible.' }
+    if ($Client -ceq 'codex') { $commands = @('add') }
+    else { $commands = @('install', 'enable') }
+    foreach ($name in $commands) {
+        if ((Invoke-Client @('plugin', $name, '--help') 15).Code -ne 0) {
+            Stop-Installer 'Client incompatible : installation ou activation native indisponible.'
+        }
+    }
     try { Read-Plugins } catch { Stop-Installer 'Impossible de lire les plugins du client.' }
     try { Read-Marketplace } catch { Abort-Installation 'Impossible de lire les marketplaces du client.' }
     try { Test-ServerCollision } catch { Abort-Installation 'Impossible de vérifier la configuration MCP.' }

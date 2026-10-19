@@ -31,7 +31,7 @@ def text(value):
 if state.get('network_failure'):
     sys.exit(1)
 if '--help' in args or args == ['--version']:
-    if state.get('incompatible'):
+    if state.get('incompatible') or state.get('missing_capability') == ' '.join(args[:-1]):
         sys.exit(1)
     print('test client: --json --scope --stdio')
 elif args[:3] == ['plugin', 'marketplace', 'list']:
