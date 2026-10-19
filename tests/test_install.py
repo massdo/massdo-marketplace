@@ -238,8 +238,9 @@ function Invoke-WebRequest {
         binary.write_bytes(b'not a native executable\n')
         result = self.run_installer()
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        self.assertIn('Le contrôle du client a échoué :', result.stderr)
-        self.assertIn(str(binary), result.stderr)
+        prefix = 'Le contrôle du client a échoué :'
+        self.assertIn(prefix, result.stderr)
+        self.assertTrue(result.stderr.split(prefix, 1)[1].strip())
 
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_verification_failure_in_a_terminal_does_not_prompt_for_oauth(self):

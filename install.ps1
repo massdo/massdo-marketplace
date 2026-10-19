@@ -95,9 +95,14 @@ function New-ClientProcess([string[]]$Arguments, [switch]$Interactive) {
 function Stop-ClientProcess($Process, $Errors = $null) {
     if (-not $Process.HasExited) {
         try { $Process.Kill($true) } catch {
-            if ($env:OS -eq 'Windows_NT') {
-                & (Join-Path $env:SystemRoot 'System32/taskkill.exe') /PID $Process.Id /T /F *> $null
-            } else { $Process.Kill() }
+            if (-not $Process.HasExited) {
+                if ($env:OS -eq 'Windows_NT') {
+                    & {
+                        $ErrorActionPreference = 'SilentlyContinue'
+                        & (Join-Path $env:SystemRoot 'System32/taskkill.exe') /PID $Process.Id /T /F *> $null
+                    }
+                } else { $Process.Kill() }
+            }
         }
         [void]$Process.WaitForExit(2000)
     }
