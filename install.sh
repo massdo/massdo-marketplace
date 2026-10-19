@@ -13,9 +13,16 @@ terminal=false
 installed=false
 enabled=false
 
+stop_process() {
+    kill "$1" 2>/dev/null || :
+    sleep 0.2
+    kill -KILL "$1" 2>/dev/null || :
+    wait "$1" 2>/dev/null || :
+}
+
 cleanup() {
-    [ -z "$app_pid" ] || kill "$app_pid" 2>/dev/null || :
-    [ -z "$command_pid" ] || kill "$command_pid" 2>/dev/null || :
+    [ -z "$app_pid" ] || stop_process "$app_pid"
+    [ -z "$command_pid" ] || stop_process "$command_pid"
     [ -z "$scratch" ] || rm -rf -- "$scratch"
 }
 trap cleanup EXIT
@@ -42,8 +49,7 @@ capture() {
     deadline=$((SECONDS + limit))
     while kill -0 "$command_pid" 2>/dev/null; do
         if [ "$SECONDS" -ge "$deadline" ]; then
-            kill "$command_pid" 2>/dev/null || :
-            wait "$command_pid" 2>/dev/null || :
+            stop_process "$command_pid"
             command_pid=
             return 124
         fi
@@ -115,8 +121,7 @@ codex_check() {
         fi
     fi
     exec 4>&- 5>&-
-    kill "$app_pid" 2>/dev/null || :
-    wait "$app_pid" 2>/dev/null || :
+    stop_process "$app_pid"
     app_pid=
     rm -f "$scratch/rpc-in" "$scratch/rpc-out"
     [ "$success" = true ]
@@ -192,8 +197,7 @@ login() {
     command_pid=$!
     while kill -0 "$command_pid" 2>/dev/null; do
         if [ "$SECONDS" -ge "$deadline" ]; then
-            kill "$command_pid" 2>/dev/null || :
-            wait "$command_pid" 2>/dev/null || :
+            stop_process "$command_pid"
             command_pid=
             return 124
         fi
@@ -264,6 +268,7 @@ if [ "$check_only" = false ]; then
             capture 120 "$scratch/add-plugin" "$binary" plugin install "$plugin" --scope user
         fi
         result=$?
+        [ "$result" -ne 0 ] || installed=true
         plugin_state || abort_installation 'Impossible de vérifier le plugin après installation.'
         [ "$result" -eq 0 ] && [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Installation du plugin impossible. Relancez cette commande.'
     fi
