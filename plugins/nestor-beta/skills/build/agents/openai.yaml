@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Build"
   short_description: "Build an approved Plan or code Task into a shared PR"
-  default_prompt: "Use $nestor-beta:build <plan-or-task-id-or-slug> [prod] [target:<branch>] to deliver approved code work into its shared pull request."
+  default_prompt: "Use $nestor-beta:build <plan-or-task-id-or-slug> [prod] [target:<branch>] [--worktree] to deliver approved code work into its shared pull request."
 
 policy:
   allow_implicit_invocation: false

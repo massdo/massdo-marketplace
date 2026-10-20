@@ -1,5 +1,5 @@
 {
-  "version": "0.12.9",
-  "version_hash": "5ec3d080cf1830fa",
-  "changelog": "Spec now saves and approves the complete work as soon as the interview ends, with no summary or display question first. It then reports the saved item and its status, and typing detail shows the saved work without changing it."
+  "version": "0.12.10",
+  "version_hash": "ede0426ee06206cd",
+  "changelog": "Build accepts a --worktree argument: the work then lands in a linked Git worktree of the same repository, reused when one already holds the work branch, and the user's checkout stays untouched, dirty or not. Without the argument, the build still works in the current checkout."
 }
