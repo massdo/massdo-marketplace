@@ -3,18 +3,31 @@ set -u
 
 plugin=nestor@massdo-marketplace
 endpoint=https://journal.mcp-marketplace.org/mcp
+clients=()
 client=
 terminal=false
 scratch=
+gum_bin=
+gum_version=2.0.2
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 
 cleanup() { [ -z "$scratch" ] || rm -rf -- "$scratch"; }
 trap cleanup EXIT
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi
+}
+
+verify_checksum() {
+    local actual
+    actual=$(sha256_of "$1") || fail 'Cannot check the SHA-256 checksum.'
+    [ "${actual%% *}" = "$2" ] || fail "$3"
+}
+
 ensure_jq() {
     if command -v jq >/dev/null 2>&1; then jq_bin=$(command -v jq); return; fi
-    local asset digest actual
+    local asset digest
     case "$(uname -s)-$(uname -m)" in
         Darwin-arm64) asset=jq-macos-arm64; digest=a9fe3ea2f86dfc72f6728417521ec9067b343277152b114f4e98d8cb0e263603 ;;
         Darwin-x86_64) asset=jq-macos-amd64; digest=e80dbe0d2a2597e3c11c404f03337b981d74b4a8504b70586c354b7697a7c27f ;;
@@ -25,10 +38,33 @@ ensure_jq() {
     jq_bin="$scratch/jq"
     curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 60 \
         "https://github.com/jqlang/jq/releases/download/jq-1.8.1/$asset" -o "$jq_bin" || fail 'Cannot download jq.'
-    if command -v sha256sum >/dev/null 2>&1; then actual=$(sha256sum "$jq_bin")
-    else actual=$(shasum -a 256 "$jq_bin") || fail 'Cannot check the SHA-256 checksum.'; fi
-    [ "${actual%% *}" = "$digest" ] || fail 'The jq download failed its SHA-256 checksum check.'
+    verify_checksum "$jq_bin" "$digest" 'The jq download failed its SHA-256 checksum check.'
     chmod 700 "$jq_bin"
+}
+
+# Same pinned menu tool as install.sh; only needed to ask which apps to clean.
+ensure_gum() {
+    if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
+        gum_bin=$(command -v gum)
+        return
+    fi
+    local asset digest directory
+    case "$(uname -s)-$(uname -m)" in
+        Darwin-arm64) asset=Darwin_arm64; digest=4777a69b1170b8db23c95d5889fb32186cfda1a3ac950d339aa17e3513633890 ;;
+        Darwin-x86_64) asset=Darwin_x86_64; digest=5374966c7c7199ea879fcaa525ddc6d447a098d3d35496e430a9a1ef38d30485 ;;
+        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=8ebf8b54ec1e8c81f2bb58b59ff9b70998186a4d11375f0cf357b80e0ccfa1d5 ;;
+        Linux-x86_64) asset=Linux_x86_64; digest=d842e06d93dbed90af48cb8dd10698db6f22e331fc40346bb37bbc753109edc2 ;;
+        *) fail 'This computer architecture is not supported.' ;;
+    esac
+    directory="$scratch/gum"
+    mkdir -p "$directory" || fail 'Cannot create a temporary folder.'
+    curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
+        "https://github.com/charmbracelet/gum/releases/download/v$gum_version/gum_${gum_version}_$asset.tar.gz" \
+        -o "$directory/gum.tar.gz" || fail 'Cannot download the menu tool. Check your internet connection and try again.'
+    verify_checksum "$directory/gum.tar.gz" "$digest" 'The menu tool download failed its SHA-256 checksum check.'
+    tar -xzf "$directory/gum.tar.gz" -C "$directory" || fail 'Cannot unpack the menu tool.'
+    gum_bin="$directory/gum_${gum_version}_$asset/gum"
+    [ -x "$gum_bin" ] || fail 'The menu tool is missing from its archive.'
 }
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
@@ -52,87 +88,170 @@ grokbot_detected() {
         [ -f '/usr/share/applications/grokbot.desktop' ]
 }
 
+cursor_owned() {
+    [ -d "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] &&
+        [ "$(cat "$cursor_plugin/.massdo-installer" 2>/dev/null)" = 'massdo/massdo-marketplace:install.sh:v1' ]
+}
+
+client_label() {
+    case "$1" in
+        codex) printf '%s' 'Codex' ;;
+        claude) printf '%s' 'Claude Code' ;;
+        cursor) printf '%s' 'Cursor' ;;
+        grokbot) printf '%s' 'Grok Bot' ;;
+    esac
+}
+
+add_client() {
+    local existing
+    case "$1" in
+        codex|claude|cursor|grokbot) ;;
+        *) fail 'Choose codex, claude, cursor or grokbot.' ;;
+    esac
+    for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
+    clients+=("$1")
+}
+
+# One line per app for the menu, read without changing anything.
+inventory() {
+    local target=$1 file
+    case "$target" in
+        grokbot) printf '%s' 'manual steps in the app'; return ;;
+        cursor)
+            if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then printf '%s' 'not installed'
+            elif cursor_owned; then printf '%s' 'installed by this setup'
+            else printf '%s' 'existing files are not from this setup'; fi
+            return ;;
+    esac
+    file="$scratch/menu-$target.json"
+    if ! "$target" plugin list --json >"$file" 2>/dev/null; then printf '%s' 'status unknown'; return; fi
+    case "$( client=$target; plugin_present "$file" 2>/dev/null; printf '%s' "$?" )" in
+        0) printf '%s' 'installed' ;;
+        1) printf '%s' 'not installed' ;;
+        *) printf '%s' 'status unknown' ;;
+    esac
+}
+
+choose_clients() {
+    local candidates=() options=() preselected= candidate state label selection option
+    command -v codex >/dev/null 2>&1 && candidates+=(codex)
+    command -v claude >/dev/null 2>&1 && candidates+=(claude)
+    if command -v cursor-agent >/dev/null 2>&1 ||
+        [ -e "$cursor_plugin" ] || [ -L "$cursor_plugin" ]; then candidates+=(cursor); fi
+    grokbot_detected && candidates+=(grokbot)
+    [ "${#candidates[@]}" -gt 0 ] || fail 'No supported app detected.'
+    ensure_gum
+    for candidate in "${candidates[@]}"; do
+        state=$(inventory "$candidate")
+        label="$(client_label "$candidate") — $state"
+        options+=("$label|$candidate")
+        case "$state" in
+            installed|'installed by this setup') preselected="$preselected${preselected:+,}$label" ;;
+        esac
+    done
+    selection=$("$gum_bin" choose --no-limit --label-delimiter='|' \
+        --header='Remove Nestor from which apps? x selects, Enter confirms.' \
+        --selected="$preselected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted.'
+    while IFS= read -r option; do [ -z "$option" ] || add_client "$option"; done <<EOT
+$selection
+EOT
+    if [ "${#clients[@]}" -eq 0 ]; then
+        printf '%s\n' 'Nothing selected. Nestor was left in place.'
+        exit 0
+    fi
+}
+
+# Runs in a subshell per app: fail ends that app only.
+remove_client() {
+    client=$1
+    scratch="$scratch/$client"
+    mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
+    if [ "$client" = grokbot ]; then
+        printf '%s\n' 'To remove Nestor from Grok Bot, open Connect apps → Your plugins.'
+        printf '%s\n' 'Remove the custom Remote HTTPS MCP server named nestor and confirm it disappears from Installed.'
+        printf '%s\n' 'Grok Bot stores plugins in your cloud account; this local command cannot remove them.'
+        exit 2
+    fi
+    if [ "$client" = cursor ]; then
+        if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then
+            printf '%s\n' 'No wizard-managed Nestor plugin is installed in Cursor.'
+            exit 0
+        fi
+        cursor_owned || fail 'The Cursor Nestor plugin was not installed by this wizard; it was left untouched.'
+        rm -rf -- "$cursor_plugin" || fail 'Cannot remove the Cursor Nestor plugin.'
+        [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] || fail 'The Cursor Nestor plugin is still present.'
+        printf '%s\n' 'Nestor removed from Cursor. Reload Cursor or start a new Cursor Agent session.'
+        printf '%s\n' 'If a separate marketplace copy remains in Customize, remove it there.'
+        exit 0
+    fi
+    local binary
+    binary=$(command -v "$client") || fail "Client not found: $client."
+    "$binary" plugin list --json >"$scratch/plugins.json" 2>"$scratch/error" || {
+        tail -n 12 "$scratch/error" >&2
+        fail 'Cannot inspect installed plugins.'
+    }
+    if ! plugin_present "$scratch/plugins.json"; then
+        printf '%s\n' "Nestor is already absent from $client."
+        exit 0
+    fi
+    if [ "$client" = codex ]; then
+        if "$binary" mcp get nestor --json >"$scratch/server.json" 2>/dev/null &&
+            json -e --arg url "$endpoint" '.transport.url == $url' "$scratch/server.json" >/dev/null; then
+            "$binary" mcp logout nestor >/dev/null 2>&1 || :
+        fi
+        "$binary" plugin remove "$plugin" --json >"$scratch/remove.json" 2>"$scratch/error" || {
+            tail -n 12 "$scratch/error" >&2
+            fail 'Cannot remove Nestor from Codex.'
+        }
+    else
+        "$binary" mcp logout plugin:nestor:nestor >/dev/null 2>&1 || :
+        "$binary" plugin uninstall "$plugin" --scope user --json >"$scratch/remove.json" 2>"$scratch/error" || {
+            tail -n 12 "$scratch/error" >&2
+            fail 'Cannot remove Nestor from Claude Code.'
+        }
+    fi
+    "$binary" plugin list --json >"$scratch/after.json" 2>"$scratch/error" || fail 'Nestor removal could not be verified.'
+    if plugin_present "$scratch/after.json"; then fail 'Nestor is still installed.'; fi
+    printf '%s\n' "Nestor removed from $client. Start a new session to apply the change."
+}
+
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --client) [ "$#" -ge 2 ] || fail 'Missing value for --client.'; client=$2; shift 2 ;;
-        --help|-h) printf '%s\n' 'Usage: uninstall.sh [--client codex|claude|cursor|grokbot]'; exit 0 ;;
+        --client)
+            [ "$#" -ge 2 ] || fail 'Missing value for --client.'
+            IFS=, read -r -a names <<< "$2"
+            for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
+            shift 2 ;;
+        --help|-h) printf '%s\n' 'Usage: uninstall.sh [--client codex|claude|cursor|grokbot]...'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
-if [ -z "$client" ]; then
-    [ "$terminal" = true ] || fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
-    choices=()
-    command -v codex >/dev/null 2>&1 && choices+=(codex)
-    command -v claude >/dev/null 2>&1 && choices+=(claude)
-    if command -v cursor-agent >/dev/null 2>&1 ||
-        [ -e "$cursor_plugin" ] || [ -L "$cursor_plugin" ]; then choices+=(cursor); fi
-    grokbot_detected && choices+=(grokbot)
-    [ "${#choices[@]}" -gt 0 ] || fail 'No supported app detected.'
-    if [ "${#choices[@]}" -eq 1 ]; then client=${choices[0]}; else
-        printf 'Remove Nestor from which app (%s): ' "$(IFS=/; printf '%s' "${choices[*]}")" >&3
-        IFS= read -r client <&3 || fail 'App selection was interrupted.'
-        for choice in "${choices[@]}"; do [ "$client" != "$choice" ] || break; done
-        [ "$client" = "$choice" ] || fail 'Choose one of the detected apps.'
-    fi
+if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
+    fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
 fi
-
-case "$client" in
-    codex|claude|cursor|grokbot) ;;
-    *) fail 'Choose codex, claude, cursor or grokbot.' ;;
-esac
-
-if [ "$client" = grokbot ]; then
-    printf '%s\n' 'To remove Nestor from Grok Bot, open Connect apps → Your plugins.'
-    printf '%s\n' 'Remove the custom Remote HTTPS MCP server named nestor and confirm it disappears from Installed.'
-    printf '%s\n' 'Grok Bot stores plugins in your cloud account; this local command cannot remove them.'
-    exit 2
-fi
-
-if [ "$client" = cursor ]; then
-    if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then
-        printf '%s\n' 'No wizard-managed Nestor plugin is installed in Cursor.'
-        exit 0
-    fi
-    [ -d "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] &&
-        [ "$(cat "$cursor_plugin/.massdo-installer" 2>/dev/null)" = 'massdo/massdo-marketplace:install.sh:v1' ] ||
-        fail 'The Cursor Nestor plugin was not installed by this wizard; it was left untouched.'
-    rm -rf -- "$cursor_plugin" || fail 'Cannot remove the Cursor Nestor plugin.'
-    [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] || fail 'The Cursor Nestor plugin is still present.'
-    printf '%s\n' 'Nestor removed from Cursor. Reload Cursor or start a new Cursor Agent session.'
-    printf '%s\n' 'If a separate marketplace copy remains in Customize, remove it there.'
-    exit 0
-fi
-
-binary=$(command -v "$client") || fail "Client not found: $client."
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-uninstall.XXXXXX") || fail 'Cannot create a temporary folder.'
 ensure_jq
-"$binary" plugin list --json >"$scratch/plugins.json" 2>"$scratch/error" || {
-    tail -n 12 "$scratch/error" >&2
-    fail 'Cannot inspect installed plugins.'
-}
-if ! plugin_present "$scratch/plugins.json"; then
-    printf '%s\n' "Nestor is already absent from $client."
-    exit 0
+[ "${#clients[@]}" -gt 0 ] || choose_clients
+failed=false
+pending=false
+summary=
+for name in "${clients[@]}"; do
+    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_label "$name")"
+    ( remove_client "$name" ); status=$?
+    case "$status" in
+        0) line='removed or already absent' ;;
+        2) pending=true; line='finish the steps in the app' ;;
+        *) failed=true; line='not removed — see the message above' ;;
+    esac
+    summary="$summary$(client_label "$name"): $line
+"
+done
+if [ "${#clients[@]}" -gt 1 ]; then
+    printf '\n%s\n' 'Summary'
+    printf '%s' "$summary"
 fi
-
-if [ "$client" = codex ]; then
-    if "$binary" mcp get nestor --json >"$scratch/server.json" 2>/dev/null &&
-        json -e --arg url "$endpoint" '.transport.url == $url' "$scratch/server.json" >/dev/null; then
-        "$binary" mcp logout nestor >/dev/null 2>&1 || :
-    fi
-    "$binary" plugin remove "$plugin" --json >"$scratch/remove.json" 2>"$scratch/error" || {
-        tail -n 12 "$scratch/error" >&2
-        fail 'Cannot remove Nestor from Codex.'
-    }
-else
-    "$binary" mcp logout plugin:nestor:nestor >/dev/null 2>&1 || :
-    "$binary" plugin uninstall "$plugin" --scope user --json >"$scratch/remove.json" 2>"$scratch/error" || {
-        tail -n 12 "$scratch/error" >&2
-        fail 'Cannot remove Nestor from Claude Code.'
-    }
-fi
-"$binary" plugin list --json >"$scratch/after.json" 2>"$scratch/error" || fail 'Nestor removal could not be verified.'
-if plugin_present "$scratch/after.json"; then fail 'Nestor is still installed.'; fi
-printf '%s\n' "Nestor removed from $client. Start a new session to apply the change."
+[ "$failed" = false ] || exit 1
+[ "$pending" = false ] || exit 2
+exit 0

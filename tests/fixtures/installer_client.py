@@ -75,7 +75,7 @@ elif args[:2] == ['plugin', 'list']:
     entries = []
     if state.get('installed', True):
         identifier = 'nestor@' + state.get('plugin_marketplace', 'massdo-marketplace')
-        entries = [{'id': identifier, 'pluginId': identifier,
+        entries = [{'id': identifier, 'pluginId': identifier, 'version': '0.9.1',
                     'scope': state.get('scope', 'user'), 'enabled': state.get('enabled', True)}]
     entries.append({'id': 'other@other', 'pluginId': 'other@other', 'scope': 'user', 'enabled': True})
     if client == 'claude' and state.get('synced'):

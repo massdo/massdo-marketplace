@@ -83,9 +83,10 @@ If you use Linux through WSL on Windows, use the **Mac or Linux** command in you
 
 ### 2. Connect Nestor
 
-If setup asks which app to use, type `codex`, `claude`, `cursor` or `grokbot`,
-then press **Enter**. Windows setup currently accepts Codex and Claude Code.
-If it asks to open your browser, type `y`, then press **Enter**.
+On Mac or Linux, setup lists the apps found on your computer and marks the ones
+that already have Nestor. Move with the arrow keys, press **x** to select or clear
+an app, then press **Enter**. Windows setup asks you to type `codex` or `claude` instead.
+If it asks to open your browser, press **y**.
 Follow the instructions in your browser to sign in and allow the connection.
 Then return to the terminal window.
 
@@ -118,7 +119,8 @@ On Mac or Linux, run the removal wizard:
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
 ```
 
-It removes Nestor from the selected app. For Grok Bot it shows the steps in
+It lists the apps found on your computer, preselects the ones that have Nestor,
+and removes it from the apps you confirm. For Grok Bot it shows the steps in
 **Connect apps**, because its plugins live in your cloud account. The shared
 marketplace stays available for any other plugins you use.
 

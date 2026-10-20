@@ -5,6 +5,7 @@ plugin=nestor@massdo-marketplace
 endpoint=https://journal.mcp-marketplace.org/mcp
 origin=https://journal.mcp-marketplace.org
 required_skills='["nestor","activity","tree","pause","resume","check-for-updates"]'
+clients=()
 client=
 check_only=false
 no_login=false
@@ -16,18 +17,27 @@ installed=false
 enabled=false
 verification_error=
 client_error=
+gum_bin=
+gum_version=2.0.2
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 
+# The braces also silence the shell's own "Terminated" notice for the job.
 stop_process() {
-    kill "$1" 2>/dev/null || :
-    sleep 0.2
-    kill -KILL "$1" 2>/dev/null || :
-    wait "$1" 2>/dev/null || :
+    {
+        kill "$1" || :
+        sleep 0.2
+        kill -KILL "$1" || :
+        wait "$1" || :
+    } 2>/dev/null
+}
+
+cleanup_processes() {
+    [ -z "$app_pid" ] || stop_process "$app_pid"
+    [ -z "$command_pid" ] || stop_process "$command_pid"
 }
 
 cleanup() {
-    [ -z "$app_pid" ] || stop_process "$app_pid"
-    [ -z "$command_pid" ] || stop_process "$command_pid"
+    cleanup_processes
     [ -z "$scratch" ] || rm -rf -- "$scratch"
 }
 trap cleanup EXIT
@@ -85,12 +95,22 @@ capture() {
     return "$result"
 }
 
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi
+}
+
+verify_checksum() {
+    local actual
+    actual=$(sha256_of "$1") || fail 'Cannot check the SHA-256 checksum.'
+    [ "${actual%% *}" = "$2" ] || fail "$3"
+}
+
 ensure_jq() {
     if command -v jq >/dev/null 2>&1; then
         jq_bin=$(command -v jq)
         return
     fi
-    local asset digest actual
+    local asset digest
     case "$(uname -s)-$(uname -m)" in
         Darwin-arm64) asset=jq-macos-arm64; digest=a9fe3ea2f86dfc72f6728417521ec9067b343277152b114f4e98d8cb0e263603 ;;
         Darwin-x86_64) asset=jq-macos-amd64; digest=e80dbe0d2a2597e3c11c404f03337b981d74b4a8504b70586c354b7697a7c27f ;;
@@ -101,13 +121,35 @@ ensure_jq() {
     jq_bin="$scratch/jq"
     curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 60 \
         "https://github.com/jqlang/jq/releases/download/jq-1.8.1/$asset" -o "$jq_bin" || fail 'Cannot download jq. Check your internet connection and try again.'
-    if command -v sha256sum >/dev/null 2>&1; then
-        actual=$(sha256sum "$jq_bin")
-    else
-        actual=$(shasum -a 256 "$jq_bin") || fail 'Cannot check the SHA-256 checksum.'
-    fi
-    [ "${actual%% *}" = "$digest" ] || fail 'The jq download failed its SHA-256 checksum check.'
+    verify_checksum "$jq_bin" "$digest" 'The jq download failed its SHA-256 checksum check.'
     chmod 700 "$jq_bin"
+}
+
+# The menu is drawn by gum (charmbracelet/gum), pinned by version and SHA-256
+# like jq. It is only needed when the setup command has to ask which apps to
+# set up; a run with --client never downloads it.
+ensure_gum() {
+    if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
+        gum_bin=$(command -v gum)
+        return
+    fi
+    local asset digest directory
+    case "$(uname -s)-$(uname -m)" in
+        Darwin-arm64) asset=Darwin_arm64; digest=4777a69b1170b8db23c95d5889fb32186cfda1a3ac950d339aa17e3513633890 ;;
+        Darwin-x86_64) asset=Darwin_x86_64; digest=5374966c7c7199ea879fcaa525ddc6d447a098d3d35496e430a9a1ef38d30485 ;;
+        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=8ebf8b54ec1e8c81f2bb58b59ff9b70998186a4d11375f0cf357b80e0ccfa1d5 ;;
+        Linux-x86_64) asset=Linux_x86_64; digest=d842e06d93dbed90af48cb8dd10698db6f22e331fc40346bb37bbc753109edc2 ;;
+        *) fail 'This computer architecture is not supported.' ;;
+    esac
+    directory="$scratch/gum"
+    mkdir -p "$directory" || fail 'Cannot create a temporary folder.'
+    curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
+        "https://github.com/charmbracelet/gum/releases/download/v$gum_version/gum_${gum_version}_$asset.tar.gz" \
+        -o "$directory/gum.tar.gz" || fail 'Cannot download the menu tool. Check your internet connection and try again.'
+    verify_checksum "$directory/gum.tar.gz" "$digest" 'The menu tool download failed its SHA-256 checksum check.'
+    tar -xzf "$directory/gum.tar.gz" -C "$directory" || fail 'Cannot unpack the menu tool.'
+    gum_bin="$directory/gum_${gum_version}_$asset/gum"
+    [ -x "$gum_bin" ] || fail 'The menu tool is missing from its archive.'
 }
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
@@ -324,6 +366,19 @@ login() {
     return "$result"
 }
 
+# Asks before opening the native OAuth flow; the menu tool draws the question
+# when it is available, otherwise the terminal reads one line.
+ask_login() {
+    local answer
+    if [ -n "$gum_bin" ]; then
+        "$gum_bin" confirm 'Open your browser to connect Nestor?' <&3 2>&3
+        return $?
+    fi
+    printf '%s' 'Open your browser to connect Nestor? (y/N): ' >&3
+    IFS= read -r answer <&3 || return 1
+    case "$answer" in o|O|oui|y|Y|yes) return 0 ;; *) return 1 ;; esac
+}
+
 verify() {
     if [ "$client" = cursor ]; then cursor_check; return $?; fi
     verification_error='Cannot read the installed plugins in your app.'
@@ -335,105 +390,207 @@ verify() {
     if [ "$client" = codex ]; then codex_check; else claude_check; fi
 }
 
-while [ "$#" -gt 0 ]; do
+client_label() {
     case "$1" in
-        --client) [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor or grokbot.'; client=$2; shift 2 ;;
-        --check) check_only=true; shift ;;
-        --no-login) no_login=true; shift ;;
-        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|grokbot] [--check] [--no-login]'; exit 0 ;;
-        *) fail "Unknown option: $1" ;;
+        codex) printf '%s' 'Codex' ;;
+        claude) printf '%s' 'Claude Code' ;;
+        cursor) printf '%s' 'Cursor Agent' ;;
+        grokbot) printf '%s' 'Grok Bot' ;;
     esac
-done
-{ exec 3<>/dev/tty; } 2>/dev/null && terminal=true
-if [ -z "$client" ]; then
-    [ "$terminal" = true ] || fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
-    choices=()
-    command -v codex >/dev/null 2>&1 && choices+=(codex)
-    command -v claude >/dev/null 2>&1 && choices+=(claude)
-    command -v cursor-agent >/dev/null 2>&1 && choices+=(cursor)
-    grokbot_detected && choices+=(grokbot)
-    [ "${#choices[@]}" -gt 0 ] || fail 'Install Codex, Claude Code, Cursor Agent or Grok Bot, then run this setup command again.'
-    if [ "${#choices[@]}" -eq 1 ]; then client=${choices[0]}; else
-        printf 'Choose your app (%s): ' "$(IFS=/; printf '%s' "${choices[*]}")" >&3
-        IFS= read -r client <&3 || fail 'App selection was interrupted. Run this setup command again.'
-        for choice in "${choices[@]}"; do [ "$client" != "$choice" ] || break; done
-        [ "$client" = "$choice" ] || fail 'Choose one of the detected apps.'
+}
+
+client_binary() {
+    if [ "$1" = cursor ]; then command -v cursor-agent || command -v agent; else command -v "$1"; fi
+}
+
+add_client() {
+    local name existing
+    case "$1" in
+        codex|claude|cursor|grokbot) ;;
+        *) fail 'Choose codex, claude, cursor or grokbot.' ;;
+    esac
+    for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
+    clients+=("$1")
+}
+
+# One line per app for the menu: what the app already has, read without
+# changing anything. Collisions and unreadable inventories are reported here
+# as a state and again, in full, when the app is set up.
+inventory() {
+    local target=$1 state
+    case "$target" in
+        grokbot) printf '%s' 'manual steps in the app'; return ;;
+        cursor)
+            state=$( scratch="$scratch/menu-$target"; mkdir -p "$scratch" || exit 1; client=$target
+                     cursor_state 2>/dev/null && printf '%s' "$installed" )
+            case "$state" in
+                true) printf '%s' 'installed' ;;
+                false) printf '%s' 'not installed' ;;
+                *) printf '%s' 'existing files are not from this setup' ;;
+            esac
+            return ;;
+    esac
+    state=$( scratch="$scratch/menu-$target"; mkdir -p "$scratch" || exit 1; client=$target
+             binary=$(client_binary "$target") || exit 1
+             plugin_state 2>/dev/null || exit 1
+             printf '%s %s %s' "$installed" "$enabled" "$(json -r '.[0].version // ""' "$scratch/selected.json")" )
+    set -- $state
+    case "${1:-}/${2:-}" in
+        true/true) printf '%s' "installed${3:+ $3}" ;;
+        true/*) printf '%s' 'installed but disabled' ;;
+        false/*) printf '%s' 'not installed' ;;
+        *) printf '%s' 'status unknown' ;;
+    esac
+}
+
+choose_clients() {
+    local candidates=() options=() preselected= candidate state label selection option
+    command -v codex >/dev/null 2>&1 && candidates+=(codex)
+    command -v claude >/dev/null 2>&1 && candidates+=(claude)
+    command -v cursor-agent >/dev/null 2>&1 && candidates+=(cursor)
+    grokbot_detected && candidates+=(grokbot)
+    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code, Cursor Agent or Grok Bot, then run this setup command again.'
+    ensure_gum
+    for candidate in "${candidates[@]}"; do
+        state=$(inventory "$candidate")
+        label="$(client_label "$candidate") — $state"
+        options+=("$label|$candidate")
+        case "$state" in
+            'not installed'|'installed but disabled') preselected="$preselected${preselected:+,}$label" ;;
+        esac
+    done
+    selection=$("$gum_bin" choose --no-limit --label-delimiter='|' \
+        --header='Where should Nestor be installed? Apps already set up are marked. x selects, Enter confirms.' \
+        --selected="$preselected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted. Run this setup command again.'
+    while IFS= read -r option; do [ -z "$option" ] || add_client "$option"; done <<EOT
+$selection
+EOT
+    if [ "${#clients[@]}" -eq 0 ]; then
+        printf '%s\n' 'Nothing selected. Run this setup command again to install Nestor.'
+        exit 0
     fi
-fi
-case "$client" in codex|claude|cursor|grokbot) ;; *) fail 'Choose codex, claude, cursor or grokbot.' ;; esac
-[ "$client" != grokbot ] || grokbot_instructions
-if [ "$client" = cursor ]; then binary=$(command -v cursor-agent || command -v agent) || fail 'Cursor Agent CLI not found.'
-else binary=$(command -v "$client") || fail "Client not found: $client."; fi
-case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
-umask 077
-scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-install.XXXXXX") || fail 'Cannot create a temporary folder.'
-cd "$scratch" || exit 1
-ensure_jq
-capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
-if [ "$client" = cursor ]; then
-    capture 15 "$scratch/help" "$binary" mcp login --help || fail 'This Cursor Agent version cannot connect to Nestor.'
-    capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
-    cursor_state
-    if [ "$check_only" = false ] && [ "$installed" = false ]; then cursor_install; fi
+}
+
+# Runs in a subshell per app: fail and incomplete end that app only, and the
+# exit code becomes the app's result in the summary.
+run_client() {
+    client=$1
+    trap cleanup_processes EXIT
+    scratch="$scratch/$client"
+    mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
+    [ "$client" != grokbot ] || grokbot_instructions
+    binary=$(client_binary "$client") || fail "Client not found: $client."
+    capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
+    if [ "$client" = cursor ]; then
+        capture 15 "$scratch/help" "$binary" mcp login --help || fail 'This Cursor Agent version cannot connect to Nestor.'
+        capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
+        cursor_state
+        if [ "$check_only" = false ] && [ "$installed" = false ]; then cursor_install; fi
+        verify; verification_status=$?
+        if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
+        [ "$verification_status" -ne 3 ] || incomplete retry
+        [ "$verification_status" -eq 2 ] || fail "$verification_error"
+        if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
+        ask_login || incomplete
+        login || incomplete
+        verify && { printf '%s\n' 'Installation complete'; exit 0; }
+        incomplete
+    fi
+    for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
+        # Capability names are fixed here, never supplied by the caller.
+        capture 15 "$scratch/help" "$binary" $capability --help || fail 'This app version is not supported. Update your app, then run this setup command again.'
+    done
+    if [ "$client" = codex ]; then
+        capture 15 "$scratch/help" "$binary" plugin add --help || fail 'This app version cannot install plugins. Update your app and try again.'
+        capture 15 "$scratch/help" "$binary" app-server --help || fail 'This Codex version has no app-server command. Update Codex and try again.'
+    else
+        capture 15 "$scratch/help" "$binary" plugin install --help || fail 'This app version cannot install plugins. Update your app and try again.'
+        capture 15 "$scratch/help" "$binary" plugin enable --help || fail 'This app version cannot enable plugins. Update your app and try again.'
+        capture 15 "$scratch/help" "$binary" plugin details --help || fail 'This app version cannot list skills. Update your app and try again.'
+    fi
+    plugin_state || fail 'Cannot read the installed plugins in your app.'
+    marketplace_state || abort_installation 'Cannot read the marketplaces in your app.'
+    server_collision || abort_installation 'Cannot check the MCP server configuration.'
+    if [ "$check_only" = false ]; then
+        if [ "$marketplace" = false ]; then
+            capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Cannot add the marketplace. Check the error below, then run this setup command again.'
+            marketplace_state && [ "$marketplace" = true ] || abort_installation 'The marketplace is still missing after setup tried to add it.'
+        fi
+        if [ "$installed" = false ] || [ "$enabled" = false ]; then
+            if [ "$client" = codex ]; then
+                # The native add command also enables an existing plugin; it does not run OAuth.
+                capture 120 "$scratch/add-plugin" "$binary" plugin add "$plugin" --json
+            elif [ "$installed" = true ]; then
+                capture 120 "$scratch/add-plugin" "$binary" plugin enable "$plugin" --scope user
+            else
+                capture 120 "$scratch/add-plugin" "$binary" plugin install "$plugin" --scope user
+            fi
+            result=$?
+            [ "$result" -eq 0 ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
+            installed=true
+            plugin_state || abort_installation 'Cannot check Nestor after installing it.'
+            [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
+        fi
+    fi
     verify; verification_status=$?
     if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
     [ "$verification_status" -ne 3 ] || incomplete retry
     [ "$verification_status" -eq 2 ] || fail "$verification_error"
     if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
-    printf '%s' 'Open your browser to connect Nestor? (y/N): ' >&3
-    IFS= read -r answer <&3 || incomplete
-    case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
+    ask_login || incomplete
     login || incomplete
-    verify && { printf '%s\n' 'Installation complete'; exit 0; }
+    verify; verification_status=$?
+    if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
+    [ "$verification_status" -ne 3 ] || incomplete retry
+    [ "$verification_status" -eq 2 ] || fail "$verification_error"
     incomplete
-fi
-for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
-    # Capability names are fixed here, never supplied by the caller.
-    capture 15 "$scratch/help" "$binary" $capability --help || fail 'This app version is not supported. Update your app, then run this setup command again.'
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --client)
+            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor or grokbot.'
+            IFS=, read -r -a names <<< "$2"
+            for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
+            shift 2 ;;
+        --check) check_only=true; shift ;;
+        --no-login) no_login=true; shift ;;
+        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|grokbot]... [--check] [--no-login]'; exit 0 ;;
+        *) fail "Unknown option: $1" ;;
+    esac
 done
-if [ "$client" = codex ]; then
-    capture 15 "$scratch/help" "$binary" plugin add --help || fail 'This app version cannot install plugins. Update your app and try again.'
-    capture 15 "$scratch/help" "$binary" app-server --help || fail 'This Codex version has no app-server command. Update Codex and try again.'
-else
-    capture 15 "$scratch/help" "$binary" plugin install --help || fail 'This app version cannot install plugins. Update your app and try again.'
-    capture 15 "$scratch/help" "$binary" plugin enable --help || fail 'This app version cannot enable plugins. Update your app and try again.'
-    capture 15 "$scratch/help" "$binary" plugin details --help || fail 'This app version cannot list skills. Update your app and try again.'
+for name in ${clients[@]+"${clients[@]}"}; do
+    [ "$name" = grokbot ] || client_binary "$name" >/dev/null || fail "Client not found: $name."
+done
+{ exec 3<>/dev/tty; } 2>/dev/null && terminal=true
+if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
+    fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
 fi
-plugin_state || fail 'Cannot read the installed plugins in your app.'
-marketplace_state || abort_installation 'Cannot read the marketplaces in your app.'
-server_collision || abort_installation 'Cannot check the MCP server configuration.'
-if [ "$check_only" = false ]; then
-    if [ "$marketplace" = false ]; then
-        capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Cannot add the marketplace. Check the error below, then run this setup command again.'
-        marketplace_state && [ "$marketplace" = true ] || abort_installation 'The marketplace is still missing after setup tried to add it.'
-    fi
-    if [ "$installed" = false ] || [ "$enabled" = false ]; then
-        if [ "$client" = codex ]; then
-            # The native add command also enables an existing plugin; it does not run OAuth.
-            capture 120 "$scratch/add-plugin" "$binary" plugin add "$plugin" --json
-        elif [ "$installed" = true ]; then
-            capture 120 "$scratch/add-plugin" "$binary" plugin enable "$plugin" --scope user
-        else
-            capture 120 "$scratch/add-plugin" "$binary" plugin install "$plugin" --scope user
-        fi
-        result=$?
-        [ "$result" -eq 0 ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
-        installed=true
-        plugin_state || abort_installation 'Cannot check Nestor after installing it.'
-        [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
-    fi
+case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
+umask 077
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-install.XXXXXX") || fail 'Cannot create a temporary folder.'
+cd "$scratch" || exit 1
+ensure_jq
+[ "${#clients[@]}" -gt 0 ] || choose_clients
+failed=false
+pending=false
+summary=
+for name in "${clients[@]}"; do
+    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_label "$name")"
+    ( run_client "$name" ); status=$?
+    case "$status" in
+        0) line='Installation complete' ;;
+        2) pending=true
+           if [ "$name" = grokbot ]; then line='finish the steps in the app'; else line='finish connecting your account'; fi ;;
+        *) failed=true; line='not set up — see the message above' ;;
+    esac
+    summary="$summary$(client_label "$name"): $line
+"
+done
+if [ "${#clients[@]}" -gt 1 ]; then
+    printf '\n%s\n' 'Summary'
+    printf '%s' "$summary"
 fi
-verify; verification_status=$?
-if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
-[ "$verification_status" -ne 3 ] || incomplete retry
-[ "$verification_status" -eq 2 ] || fail "$verification_error"
-if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
-printf '%s' 'Open your browser to connect Nestor? (y/N): ' >&3
-IFS= read -r answer <&3 || incomplete
-case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
-login || incomplete
-verify; verification_status=$?
-if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
-[ "$verification_status" -ne 3 ] || incomplete retry
-[ "$verification_status" -eq 2 ] || fail "$verification_error"
-incomplete
+[ "$failed" = false ] || exit 1
+[ "$pending" = false ] || exit 2
+exit 0

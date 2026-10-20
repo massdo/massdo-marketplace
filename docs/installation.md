@@ -53,12 +53,19 @@ try {
 }
 ```
 
-Use `claude`, `cursor`, or `grokbot` instead of `codex` as needed. The Bash wizard
-detects installed Codex, Claude Code and Cursor Agent CLIs, plus the Grok Bot
-desktop app in standard locations. If only one is found, it selects it; if
-several are found, it asks for a choice. Bash reads
-the terminal separately from piped script content. Without a terminal, the client
-selection is required and the installer leaves OAuth for a later native login.
+Use `claude`, `cursor`, or `grokbot` instead of `codex` as needed. `--client` may
+be repeated or given a comma-separated list; every listed app is set up in turn,
+and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
+Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, plus the
+Grok Bot desktop app in standard locations, reads each app's plugin inventory
+without changing it, and shows one multi-select menu: apps that already have
+Nestor are marked with their version, apps without it are preselected. The menu
+is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 2.0.2
+and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
+no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
+Bash reads the terminal separately from piped script content. Without a terminal,
+the client selection is required and the installer leaves OAuth for a later native
+login.
 With a terminal, the installer asks before opening native OAuth. Answer `y` to
 continue. `--no-login` or `-NoLogin` skips that prompt.
 The Windows command downloads the file without decoding its UTF-8 BOM, then starts
@@ -169,8 +176,10 @@ On macOS, Linux or WSL:
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
 ```
 
-Use `bash uninstall.sh --client codex|claude|cursor|grokbot` to select a client
-without a terminal. The wizard removes the exact Codex or Claude Code plugin
+Use `bash uninstall.sh --client codex|claude|cursor|grokbot` to select clients
+without a terminal; `--client` may be repeated. With a terminal and no `--client`,
+the wizard shows the same gum menu as setup, with the apps that have Nestor
+preselected. The wizard removes the exact Codex or Claude Code plugin
 and clears its native Nestor OAuth connection when available. It removes a
 Cursor local plugin only when the marker from this installer is present; it
 never deletes an unmarked plugin or symlink. For Grok Bot it gives the manual
