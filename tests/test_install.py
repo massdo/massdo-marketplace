@@ -37,6 +37,9 @@ class Installer(unittest.TestCase):
                 path = self.bin / client
                 path.write_text('#!/usr/bin/env python3\n' + fixture.split('\n', 1)[1])
                 path.chmod(0o755)
+            menu = (ROOT / 'tests/fixtures/gum.py').read_text(encoding='utf-8')
+            (self.bin / 'gum').write_text('#!/usr/bin/env python3\n' + menu.split('\n', 1)[1])
+            (self.bin / 'gum').chmod(0o755)
             git = self.bin / 'git'
             git.write_text('#!/usr/bin/env python3\n'
                            'import os, shutil, sys\n'
@@ -83,6 +86,13 @@ class Installer(unittest.TestCase):
 
     def calls(self):
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
+
+    def menu(self):
+        return next(call for call in self.calls() if call[:2] == ['gum', 'choose'] and '--help' not in call)
+
+    def assert_only_inventory_reads(self):
+        self.assertTrue(all(call[0] == 'gum' or call[1:3] == ['plugin', 'list'] for call in self.calls()),
+                        self.calls())
 
     def assert_no_mutations(self):
         self.assertFalse(any(any(word in call for word in ('login', 'add', 'install', 'enable'))
@@ -187,10 +197,79 @@ class Installer(unittest.TestCase):
     def test_grokbot_app_is_detected_in_interactive_menu(self):
         app = Path(self.env['HOME']) / 'Applications/Grok Bot.app'
         app.mkdir(parents=True)
-        code, output = self.run_interactive(self.command(None, ()), [('Choose your app', 'grokbot')])
+        code, output = self.run_interactive(self.command(None, ()), [('Where should Nestor be installed', 'grokbot')])
         self.assertEqual(code, 2, output)
-        self.assertIn('grokbot', output)
         self.assertIn('Connect apps', output)
+        self.assertIn('Grok Bot — manual steps in the app|grokbot', self.menu())
+        self.assert_only_inventory_reads()
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
+    def test_menu_marks_installed_apps_and_preselects_the_missing_ones(self):
+        app = Path(self.env['HOME']) / 'Applications/Grok Bot.app'
+        app.mkdir(parents=True)
+        self.state.write_text(json.dumps({'installed': True, 'connected': True}))
+        code, output = self.run_interactive(self.command(None, ()), [('Where should Nestor be installed', '')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Nothing selected', output)
+        menu = self.menu()
+        self.assertIn('Codex — installed 0.9.1|codex', menu)
+        self.assertIn('Claude Code — installed 0.9.1|claude', menu)
+        self.assertIn('Cursor Agent — not installed|cursor', menu)
+        self.assertIn('Grok Bot — manual steps in the app|grokbot', menu)
+        self.assertIn('--selected=Cursor Agent — not installed', menu)
+        self.assert_only_inventory_reads()
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
+    def test_menu_sets_up_every_selected_app(self):
+        self.state.write_text(json.dumps({'installed': False, 'marketplace': False, 'connected': False}))
+        code, output = self.run_interactive(self.command(None, ()),
+                                            [('Where should Nestor be installed', 'codex,claude'), ('browser', 'y')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('--selected=Codex — not installed,Claude Code — not installed,Cursor Agent — not installed',
+                      self.menu())
+        self.assertGreaterEqual(output.count('Installation complete'), 2, output)
+        self.assertIn('Summary', output)
+        self.assertTrue(any(call[1:3] in (['plugin', 'add'], ['plugin', 'install']) for call in self.calls()),
+                        self.calls())
+        state = json.loads(self.state.read_text())
+        self.assertTrue(state['installed'] and state['connected'])
+
+    @unittest.skipIf(POWERSHELL, 'Several --client values are a Bash option')
+    def test_several_clients_report_each_result_and_the_worst_exit_code(self):
+        result = self.run_installer(None, {}, ('--client', 'codex', '--client', 'claude', '--check'))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count('Installation complete'), 4, result.stdout)
+        self.assertIn('Summary', result.stdout)
+        result = self.run_installer(None, {'connected': False}, ('--client', 'codex,claude', '--check'))
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('Codex: finish connecting your account', result.stdout)
+        self.assertIn('Claude Code: finish connecting your account', result.stdout)
+        result = self.run_installer(None, {'disabled_skill': True}, ('--client', 'codex', '--client', 'claude', '--check'))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertNotIn('Installation complete', result.stdout)
+        self.assert_no_mutations()
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu tool is downloaded by the Bash wizard')
+    def test_downloaded_menu_tool_with_wrong_checksum_is_never_executed(self):
+        utilities = self.root / 'utilities'
+        utilities.mkdir()
+        for name in ('uname', 'mktemp', 'mkdir', 'rm', 'sha256sum', 'shasum', 'jq', 'env', 'python3'):
+            source = shutil.which(name)
+            if source:
+                (utilities / name).symlink_to(source)
+        (utilities / 'codex').symlink_to(self.bin / 'codex')
+        curl = utilities / 'curl'
+        curl.write_text('#!/bin/bash\nwhile [ "$#" -gt 0 ]; do\n'
+                        'if [ "$1" = -o ]; then printf invalid > "$2"; exit 0; fi\nshift\ndone\nexit 1\n')
+        curl.chmod(0o755)
+        self.env['PATH'] = str(utilities)
+        temporary = self.root / 'temporary'
+        temporary.mkdir()
+        self.env['TMPDIR'] = str(temporary)
+        code, output = self.run_interactive(self.command(None, ()), [])
+        self.assertEqual(code, 1, output)
+        self.assertIn('SHA-256', output)
+        self.assertEqual(list(temporary.iterdir()), [])
         self.assertEqual(self.calls(), [])
 
     @unittest.skipIf(POWERSHELL, 'The uninstall wizard is the Bash entry point')
@@ -531,7 +610,8 @@ function Invoke-WebRequest {
             command = self.command(None, ())
         else:
             command = ['/bin/bash', '-c', 'cat "$1" | /bin/bash -s --', 'installer', str(ROOT / 'install.sh')]
-        code, output = self.run_interactive(command, [('Choose your app', 'claude'), ('browser', 'y')])
+        prompt = 'Choose your app' if POWERSHELL else 'Where should Nestor be installed'
+        code, output = self.run_interactive(command, [(prompt, 'claude'), ('browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
 
