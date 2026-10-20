@@ -148,7 +148,15 @@ elif args[:2] == ['mcp', 'login']:
         sys.exit(1)
     if state.get('refuse_oauth'):
         sys.exit(1)
-    state['connected'] = True
+    if client == 'codex':
+        # Like Codex: a terminal is read for a pasted callback URL, hidden, and a
+        # bare Enter cancels the sign-in; any other input stays unread.
+        print('Callback URL (input hidden): ', file=sys.stderr, flush=True)
+        if sys.stdin.isatty() and not sys.stdin.readline().strip():
+            print('Error: No OAuth callback URL entered', file=sys.stderr)
+            sys.exit(1)
+    if not state.get('stay_logged_out'):
+        state['connected'] = True
     save()
 elif args[:2] == ['mcp', 'logout']:
     expected = 'plugin:nestor:nestor' if client == 'claude' else 'nestor'

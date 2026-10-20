@@ -85,12 +85,15 @@ that already have Nestor. Move with the arrow keys, press **x** to select or cle
 an app, then press **Enter**. Windows setup asks you to type `codex` or `claude` instead.
 If it asks to open your browser, press **y**.
 Follow the instructions in your browser to sign in and allow the connection.
-Then return to the terminal window.
+Then return to the terminal window. For Codex, the terminal also shows a
+`Callback URL` prompt while the browser is open: leave it alone, the sign-in
+completes on its own.
 
 If you already connected Nestor, setup may finish without opening your browser.
 
 ### 3. Start a new conversation
 
+Each app ends with a **✔** line once Nestor is installed and connected.
 When you see **`Installation complete`**, Nestor is ready.
 For Cursor, reload the app or start a new Agent session if the new plugin is not
 visible yet.
@@ -101,6 +104,7 @@ Show my tasks.
 ```
 
 **Setup did not finish?** If you see **`Nestor is installed — finish connecting your account`**,
+the line above it says why (sign-in skipped, not finished, or not recognized yet):
 follow the message shown. You can paste the same setup command again to continue.
 If your internet connection stopped, reconnect before trying again.
 

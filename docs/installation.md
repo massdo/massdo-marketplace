@@ -70,18 +70,30 @@ Bash reads the terminal separately from piped script content. Without a terminal
 the client selection is required and the installer leaves OAuth for a later native
 login.
 With a terminal, the installer asks before opening native OAuth. Answer `y` to
-continue. `--no-login` or `-NoLogin` skips that prompt.
+continue. `--no-login` or `-NoLogin` skips that prompt. Keystrokes typed before
+the prompt and before the sign-in are discarded. `codex mcp login` also reads a
+pasted callback URL from a terminal and cancels the sign-in on a bare Enter, so
+the wizard gives it a pipe held open instead: the browser callback alone
+completes the sign-in, and its `Callback URL (input hidden)` prompt can be ignored.
 The Windows command downloads the file without decoding its UTF-8 BOM, then starts
 a child PowerShell process. Its exit code cannot close the calling console. The
 temporary file is removed when that child process ends.
 
 ## Result and recovery
 
-| Exit code | Result | Next action |
+Each app prints its own result under its name: what was found (`Nestor 0.9.1 is
+already installed.`) or done (`Nestor installed.`), then `✔ Nestor is installed
+and connected to your account.` or `⚠ Nestor is installed — finish connecting
+your account`, preceded by the reason (`Browser sign-in skipped.`, `The browser
+sign-in did not finish.`, `Codex still reports Nestor as not signed in.`). With
+several apps, a `Summary` repeats one line per app. The last line gives the
+overall result:
+
+| Exit code | Last line | Next action |
 | --- | --- | --- |
-| 0 | `Installation complete` | Start a new client session to use Nestor. |
-| 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
-| 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
+| 0 | `Installation complete`, then the app(s) to open | Start a new client session to use Nestor. |
+| 2 | `Nestor is installed but not connected to your account yet.` | Complete authentication, or restore server access and rerun the installer, as indicated above it. |
+| 1 | `Setup did not finish.` after the error on stderr | Resolve the displayed cause, then rerun the installer. |
 
 For Cursor, the wizard installs a tagged local copy at
 `~/.cursor/plugins/local/nestor` and, because Cursor Agent only connects to

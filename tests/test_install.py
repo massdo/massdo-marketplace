@@ -227,7 +227,9 @@ class Installer(unittest.TestCase):
         selected = next(flag for flag in self.menu() if flag.startswith('--selected='))
         for name in ('Codex — not installed', 'Claude Code — not installed', 'Cursor Agent — not installed'):
             self.assertIn(name, selected)
-        self.assertGreaterEqual(output.count('Installation complete'), 2, output)
+        self.assertIn('Installation complete', output)
+        self.assertIn('Codex: installed and connected', output)
+        self.assertIn('Claude Code: installed and connected', output)
         self.assertIn('Summary', output)
         self.assertTrue(any(call[1:3] in (['plugin', 'add'], ['plugin', 'install']) for call in self.calls()),
                         self.calls())
@@ -238,7 +240,11 @@ class Installer(unittest.TestCase):
     def test_several_clients_report_each_result_and_the_worst_exit_code(self):
         result = self.run_installer(None, {}, ('--client', 'codex', '--client', 'claude', '--check'))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.count('Installation complete'), 4, result.stdout)
+        self.assertEqual(result.stdout.count('Installation complete'), 1, result.stdout)
+        self.assertEqual(result.stdout.count('Nestor is installed and connected to your account'), 2, result.stdout)
+        self.assertIn('✔ Codex: installed and connected', result.stdout)
+        self.assertIn('✔ Claude Code: installed and connected', result.stdout)
+        self.assertIn('Open a new conversation in Codex or Claude Code and type: Show my tasks.', result.stdout)
         self.assertIn('Summary', result.stdout)
         result = self.run_installer(None, {'connected': False}, ('--client', 'codex,claude', '--check'))
         self.assertEqual(result.returncode, 2, result.stderr)
@@ -611,6 +617,36 @@ function Invoke-WebRequest {
                     self.assertEqual(len(logins), 1 if answer == 'y' else 0)
                     if expected:
                         self.assertIn('Nestor is installed — finish connecting your account', output)
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The Codex sign-in pipe is a Bash feature')
+    def test_stray_enter_during_codex_sign_in_does_not_cancel_it(self):
+        self.state.write_text(json.dumps({'installed': True, 'connected': False}))
+        code, output = self.run_interactive(self.command('codex', ()), [('browser', 'y'), ('Callback URL', '')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Nestor 0.9.1 is already installed.', output)
+        self.assertIn('Nestor is not connected to your account yet.', output)
+        self.assertIn('Opening your browser.', output)
+        self.assertIn('Nestor is installed and connected to your account.', output)
+        self.assertIn('Installation complete', output)
+        self.assertIn('Open a new conversation in Codex and type: Show my tasks.', output)
+        self.assertEqual(len([call for call in self.calls() if call[1:4] == ['mcp', 'login', 'nestor']]),
+                         1, self.calls())
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Interactive sign-in results are a Bash feature')
+    def test_each_sign_in_outcome_is_explained(self):
+        for state, answer, reason in (({'refuse_oauth': True}, 'y', 'The browser sign-in did not finish.'),
+                                      ({}, 'n', 'Browser sign-in skipped.'),
+                                      ({'stay_logged_out': True}, 'y', 'Codex still reports Nestor as not signed in.')):
+            with self.subTest(reason=reason):
+                self.log.write_text('')
+                self.state.write_text(json.dumps({'installed': True, 'connected': False, **state}))
+                code, output = self.run_interactive(self.command('codex', ()), [('browser', answer)])
+                self.assertEqual(code, 2, output)
+                self.assertIn(reason, output)
+                self.assertIn('Nestor is installed — finish connecting your account', output)
+                self.assertIn('To continue, run: codex mcp login nestor', output)
+                self.assertIn('Nestor is installed but not connected to your account yet.', output)
+                self.assertNotIn('Installation complete', output)
 
     @unittest.skipIf(os.name == 'nt', 'Interactive terminal scenarios run on macOS and Linux')
     def test_client_choice_and_piped_script_keep_terminal_input_separate(self):
