@@ -27,10 +27,7 @@ You will copy a setup command, connect your account in your browser, then start 
 [Codex for the terminal](https://learn.chatgpt.com/docs/codex/cli) or
 [Claude Code](https://code.claude.com/docs/en/quickstart). On Mac or Linux,
 [Cursor Agent](https://docs.cursor.com/en/cli/installation) is also supported.
-If you use [Grok Bot](https://docs.x.ai/grok-bot/overview), setup shows the
-steps to connect Nestor in your Grok account.
-For Codex, Claude Code and Cursor Agent, you also need
-[Git](https://git-scm.com/install/) to download Nestor.
+You also need [Git](https://git-scm.com/install/), which setup uses to download Nestor.
 
 ### 1. Copy the setup command
 
@@ -96,8 +93,7 @@ If you already connected Nestor, setup may finish without opening your browser.
 
 When you see **`Installation complete`**, Nestor is ready.
 For Cursor, reload the app or start a new Agent session if the new plugin is not
-visible yet. Grok Bot setup remains pending until you add Nestor as a custom
-connector on [grok.com/connectors](https://grok.com/connectors) and sign in.
+visible yet.
 Open a **new conversation** in the app you chose, then type:
 
 ```text
@@ -120,9 +116,8 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/unin
 ```
 
 It lists the apps found on your computer, preselects the ones that have Nestor,
-and removes it from the apps you confirm. For Grok Bot it shows the steps on
-grok.com, because its connectors live in your Grok account. The shared
-marketplace stays available for any other plugins you use.
+and removes it from the apps you confirm. The shared marketplace stays available
+for any other plugins you use.
 
 ### Manual installation
 

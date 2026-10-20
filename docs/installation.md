@@ -3,13 +3,13 @@
 For Codex and Claude Code, the installer adds `nestor@massdo-marketplace` through
 native marketplace and plugin commands. For Cursor Agent on Mac or Linux, it
 copies `plugins/nestor/` into Cursor's user-local plugin directory and checks
-MCP tool access with the native CLI. Grok Bot runs plugins in a cloud account;
-the wizard detects its desktop app and gives the account-side connection steps,
-returning exit code 2 until those steps are complete. It installs Nestor only.
+MCP tool access with the native CLI. It installs Nestor only. Apps whose
+connectors live in an online account, such as Grok Bot or claude.ai, are set up
+in their own interface and are not offered by the wizard.
 
 ## Prerequisites
 
-- Install Codex, Claude Code, or Cursor Agent first, or the Grok Bot desktop app.
+- Install Codex, Claude Code, or Cursor Agent first.
   On Windows, the PowerShell wizard currently supports Codex and Claude Code;
   expose their native executable on
   `PATH`; `.cmd`, `.bat` and `.ps1` launchers are refused without running a shell.
@@ -53,11 +53,11 @@ try {
 }
 ```
 
-Use `claude`, `cursor`, or `grokbot` instead of `codex` as needed. `--client` may
+Use `claude` or `cursor` instead of `codex` as needed. `--client` may
 be repeated or given a comma-separated list; every listed app is set up in turn,
 and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
-Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, plus the
-Grok Bot desktop app in standard locations, reads each app's plugin inventory
+Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, reads
+each app's plugin inventory
 without changing it, and shows one multi-select menu: apps that already have
 Nestor are marked with their version, apps without it are preselected. Each app
 check, download and installation step shows a spinner. The menu
@@ -82,13 +82,6 @@ temporary file is removed when that child process ends.
 | 0 | `Installation complete` | Start a new client session to use Nestor. |
 | 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
-
-For Grok Bot, exit code 2 means the wizard has shown the steps to add a custom
-connector on [grok.com/connectors](https://grok.com/connectors) (**New
-Connector**, then **Custom**) with URL `https://journal.mcp-marketplace.org/mcp`,
-then to check **Connect apps** in Grok Bot. Connectors live in the Grok account,
-so the local script can neither add one nor confirm sign-in, and this path does
-not install the local Nestor skill files.
 
 For Cursor, the wizard installs a tagged local copy at
 `~/.cursor/plugins/local/nestor` and, because Cursor Agent only connects to
@@ -184,7 +177,7 @@ On macOS, Linux or WSL:
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
 ```
 
-Use `bash uninstall.sh --client codex|claude|cursor|grokbot` to select clients
+Use `bash uninstall.sh --client codex|claude|cursor` to select clients
 without a terminal; `--client` may be repeated. With a terminal and no `--client`,
 the wizard shows the same gum menu as setup, with the apps that have Nestor
 preselected. The wizard removes the exact Codex or Claude Code plugin
@@ -192,8 +185,7 @@ and clears its native Nestor OAuth connection when available. It removes a
 Cursor local plugin only when the marker from this installer is present, and the
 `~/.cursor/mcp.json` entry only when the `.massdo-mcp-server` marker shows the
 installer added it; it never deletes an unmarked plugin, symlink or server entry.
-For Grok Bot it points to the connector on grok.com and returns exit code 2. The
-shared marketplace and other plugins are preserved. A new app session or
+The shared marketplace and other plugins are preserved. A new app session or
 reload may be needed after removal.
 
 ## Validation before publication

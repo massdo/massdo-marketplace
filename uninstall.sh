@@ -110,14 +110,6 @@ plugin_present() {
     fi
 }
 
-grokbot_detected() {
-    [ -d '/Applications/Grok Bot.app' ] || [ -d "$HOME/Applications/Grok Bot.app" ] ||
-        [ -f "$HOME/.local/share/applications/grok-bot.desktop" ] ||
-        [ -f "$HOME/.local/share/applications/grokbot.desktop" ] ||
-        [ -f '/usr/share/applications/grok-bot.desktop' ] ||
-        [ -f '/usr/share/applications/grokbot.desktop' ]
-}
-
 cursor_owned() {
     [ -d "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] &&
         [ "$(cat "$cursor_plugin/.massdo-installer" 2>/dev/null)" = 'massdo/massdo-marketplace:install.sh:v1' ]
@@ -128,7 +120,6 @@ client_label() {
         codex) printf '%s' 'Codex' ;;
         claude) printf '%s' 'Claude Code' ;;
         cursor) printf '%s' 'Cursor' ;;
-        grokbot) printf '%s' 'Grok Bot' ;;
     esac
 }
 
@@ -137,7 +128,6 @@ client_icon() {
         codex) printf '\033[38;5;36m◉\033[0m' ;;
         claude) printf '\033[38;5;173m✳\033[0m' ;;
         cursor) printf '\033[38;5;33m⬢\033[0m' ;;
-        grokbot) printf '\033[1;38;5;245mX\033[0m' ;;
     esac
 }
 
@@ -154,8 +144,8 @@ cursor_remove_server() {
 add_client() {
     local existing
     case "$1" in
-        codex|claude|cursor|grokbot) ;;
-        *) fail 'Choose codex, claude, cursor or grokbot.' ;;
+        codex|claude|cursor) ;;
+        *) fail 'Choose codex, claude or cursor.' ;;
     esac
     for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
     clients+=("$1")
@@ -165,7 +155,6 @@ add_client() {
 inventory() {
     local target=$1 file
     case "$target" in
-        grokbot) printf '%s' 'set up in your Grok account'; return ;;
         cursor)
             if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then printf '%s' 'not installed'
             elif cursor_owned; then printf '%s' 'installed by this setup'
@@ -189,7 +178,6 @@ choose_clients() {
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     if command -v cursor-agent >/dev/null 2>&1 ||
         [ -e "$cursor_plugin" ] || [ -L "$cursor_plugin" ]; then candidates+=(cursor); fi
-    grokbot_detected && candidates+=(grokbot)
     [ "${#candidates[@]}" -gt 0 ] || fail 'No supported app detected.'
     ensure_gum
     for candidate in "${candidates[@]}"; do
@@ -222,13 +210,6 @@ remove_client() {
     client=$1
     scratch="$scratch/$client"
     mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
-    if [ "$client" = grokbot ]; then
-        printf '%s\n' 'Grok Bot keeps its connectors in your Grok account, so this command cannot remove Nestor for you.'
-        printf '%s\n' '1. Open https://grok.com/connectors and remove the custom connector that uses:'
-        printf '%s\n' "   $endpoint"
-        printf '%s\n' '2. In Grok Bot, open Connect apps and check that nestor is gone.'
-        exit 2
-    fi
     if [ "$client" = cursor ]; then
         if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then
             printf '%s\n' 'No wizard-managed Nestor plugin is installed in Cursor.'
@@ -283,27 +264,25 @@ while [ "$#" -gt 0 ]; do
             IFS=, read -r -a names <<< "$2"
             for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
             shift 2 ;;
-        --help|-h) printf '%s\n' 'Usage: uninstall.sh [--client codex|claude|cursor|grokbot]...'; exit 0 ;;
+        --help|-h) printf '%s\n' 'Usage: uninstall.sh [--client codex|claude|cursor]...'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
 if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
-    fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
+    fail 'Without a terminal, specify --client codex, claude or cursor.'
 fi
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-uninstall.XXXXXX") || fail 'Cannot create a temporary folder.'
 ensure_jq
 [ "${#clients[@]}" -gt 0 ] || choose_clients
 failed=false
-pending=false
 summary=
 for name in "${clients[@]}"; do
     [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( remove_client "$name" ); status=$?
     case "$status" in
         0) line='removed or already absent' ;;
-        2) pending=true; line='finish the steps on grok.com' ;;
         *) failed=true; line='not removed — see the message above' ;;
     esac
     summary="$summary$(client_label "$name"): $line
@@ -314,5 +293,4 @@ if [ "${#clients[@]}" -gt 1 ]; then
     printf '%s' "$summary"
 fi
 [ "$failed" = false ] || exit 1
-[ "$pending" = false ] || exit 2
 exit 0

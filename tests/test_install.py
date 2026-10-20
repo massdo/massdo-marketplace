@@ -191,37 +191,27 @@ class Installer(unittest.TestCase):
         self.assertEqual(len([call for call in self.calls() if call[1:4] == ['mcp', 'login', 'nestor']]),
                          1, self.calls())
 
-    @unittest.skipIf(POWERSHELL, 'Grok Bot is supported by the Bash entry point')
-    def test_grokbot_is_an_explicit_manual_handoff(self):
+    @unittest.skipIf(POWERSHELL, 'The Bash wizard refuses unknown apps by name')
+    def test_unsupported_app_name_is_refused_without_mutation(self):
         result = self.run_installer('grokbot', options=())
-        self.assertEqual(result.returncode, 2)
-        self.assertIn('Connect apps', result.stdout)
-        self.assertIn('https://journal.mcp-marketplace.org/mcp', result.stdout)
-        self.assertNotIn('Installation complete', result.stdout)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Choose codex, claude or cursor.', result.stderr)
         self.assertEqual(self.calls(), [])
-
-    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Grok Bot detection uses the Bash wizard')
-    def test_grokbot_app_is_detected_in_interactive_menu(self):
-        app = Path(self.env['HOME']) / 'Applications/Grok Bot.app'
-        app.mkdir(parents=True)
-        code, output = self.run_interactive(self.command(None, ()), [('Where should Nestor be installed', 'grokbot')])
-        self.assertEqual(code, 2, output)
-        self.assertIn('Connect apps', output)
-        self.assertTrue(any(option.endswith('Grok Bot — set up in your Grok account|grokbot') for option in self.menu()))
-        self.assert_only_inventory_reads()
+        result = self.run_uninstaller('grokbot', {})
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(self.calls(), [])
 
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
     def test_menu_marks_installed_apps_and_preselects_the_missing_ones(self):
-        app = Path(self.env['HOME']) / 'Applications/Grok Bot.app'
-        app.mkdir(parents=True)
         self.state.write_text(json.dumps({'installed': True, 'connected': True}))
         code, output = self.run_interactive(self.command(None, ()), [('Where should Nestor be installed', '')])
         self.assertEqual(code, 0, output)
         self.assertIn('Nothing selected', output)
         menu = self.menu()
         for ending in ('Codex — \x1b[32minstalled 0.9.1\x1b[0m|codex', 'Claude Code — \x1b[32minstalled 0.9.1\x1b[0m|claude',
-                       'Cursor Agent — not installed|cursor', 'Grok Bot — set up in your Grok account|grokbot'):
+                       'Cursor Agent — not installed|cursor'):
             self.assertTrue(any(option.endswith(ending) for option in menu), (ending, menu))
+        self.assertFalse(any('grokbot' in option for option in menu), menu)
         selected = next(flag for flag in menu if flag.startswith('--selected='))
         self.assertIn('Cursor Agent — not installed', selected)
         self.assertNotIn('Codex', selected)
@@ -342,13 +332,6 @@ class Installer(unittest.TestCase):
                                             [('Remove Nestor from which app', 'cursor')])
         self.assertEqual(code, 0, output)
         self.assertIn('Nestor removed from Cursor', output)
-
-    @unittest.skipIf(POWERSHELL, 'The uninstall wizard is the Bash entry point')
-    def test_grokbot_uninstall_requires_cloud_account_action(self):
-        result = self.run_uninstaller('grokbot')
-        self.assertEqual(result.returncode, 2)
-        self.assertIn('Connect apps', result.stdout)
-        self.assertEqual(self.calls(), [])
 
     def test_failed_checks_never_report_complete(self):
         cases = [{'connected': False}, {'disabled_skill': True}, {'enabled': False},

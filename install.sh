@@ -333,25 +333,6 @@ cursor_install() {
     if ! mv -- "$stage" "$cursor_plugin"; then rm -rf -- "$stage"; fail 'Cannot activate the Cursor plugin.'; fi
 }
 
-grokbot_detected() {
-    [ -d '/Applications/Grok Bot.app' ] || [ -d "$HOME/Applications/Grok Bot.app" ] ||
-        [ -f "$HOME/.local/share/applications/grok-bot.desktop" ] ||
-        [ -f "$HOME/.local/share/applications/grokbot.desktop" ] ||
-        [ -f '/usr/share/applications/grok-bot.desktop' ] ||
-        [ -f '/usr/share/applications/grokbot.desktop' ]
-}
-
-grokbot_instructions() {
-    printf '%s\n' 'Grok Bot keeps its connectors in your Grok account, so this command cannot set it up for you.'
-    printf '%s\n' 'Do it once in your browser:'
-    printf '%s\n' '1. Open https://grok.com/connectors'
-    printf '%s\n' '2. Choose New Connector, then Custom.'
-    printf '%s\n' "3. Paste this server URL: $endpoint"
-    printf '%s\n' '4. Sign in to Nestor when asked.'
-    printf '%s\n' '5. In Grok Bot, open Connect apps and check that nestor is listed.'
-    exit 2
-}
-
 plugin_state() {
     if [ "$client" = codex ]; then
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
@@ -448,7 +429,6 @@ client_label() {
         codex) printf '%s' 'Codex' ;;
         claude) printf '%s' 'Claude Code' ;;
         cursor) printf '%s' 'Cursor Agent' ;;
-        grokbot) printf '%s' 'Grok Bot' ;;
     esac
 }
 
@@ -457,7 +437,6 @@ client_icon() {
         codex) printf '\033[38;5;36m◉\033[0m' ;;
         claude) printf '\033[38;5;173m✳\033[0m' ;;
         cursor) printf '\033[38;5;33m⬢\033[0m' ;;
-        grokbot) printf '\033[1;38;5;245mX\033[0m' ;;
     esac
 }
 
@@ -468,8 +447,8 @@ client_binary() {
 add_client() {
     local name existing
     case "$1" in
-        codex|claude|cursor|grokbot) ;;
-        *) fail 'Choose codex, claude, cursor or grokbot.' ;;
+        codex|claude|cursor) ;;
+        *) fail 'Choose codex, claude or cursor.' ;;
     esac
     for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
     clients+=("$1")
@@ -481,7 +460,6 @@ add_client() {
 inventory() {
     local target=$1 state
     case "$target" in
-        grokbot) printf '%s' 'set up in your Grok account'; return ;;
         cursor)
             state=$( scratch="$scratch/menu-$target"; mkdir -p "$scratch" || exit 1; client=$target
                      cursor_state 2>/dev/null && printf '%s' "$installed" )
@@ -512,8 +490,7 @@ choose_clients() {
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     command -v cursor-agent >/dev/null 2>&1 && candidates+=(cursor)
-    grokbot_detected && candidates+=(grokbot)
-    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code, Cursor Agent or Grok Bot, then run this setup command again.'
+    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code or Cursor Agent, then run this setup command again.'
     ensure_gum
     for candidate in "${candidates[@]}"; do
         spinner_start "Checking $(client_label "$candidate")"
@@ -547,7 +524,6 @@ run_client() {
     trap cleanup_processes EXIT
     scratch="$scratch/$client"
     mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
-    [ "$client" != grokbot ] || grokbot_instructions
     binary=$(client_binary "$client") || fail "Client not found: $client."
     spinner_start "Checking $(client_label "$client")"
     capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
@@ -637,22 +613,22 @@ run_client() {
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --client)
-            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor or grokbot.'
+            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude or cursor.'
             IFS=, read -r -a names <<< "$2"
             for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
             shift 2 ;;
         --check) check_only=true; shift ;;
         --no-login) no_login=true; shift ;;
-        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|grokbot]... [--check] [--no-login]'; exit 0 ;;
+        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor]... [--check] [--no-login]'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 for name in ${clients[@]+"${clients[@]}"}; do
-    [ "$name" = grokbot ] || client_binary "$name" >/dev/null || fail "Client not found: $name."
+    client_binary "$name" >/dev/null || fail "Client not found: $name."
 done
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
 if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
-    fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
+    fail 'Without a terminal, specify --client codex, claude or cursor.'
 fi
 case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
 umask 077
@@ -668,8 +644,7 @@ for name in "${clients[@]}"; do
     ( run_client "$name" ); status=$?
     case "$status" in
         0) line='Installation complete' ;;
-        2) pending=true
-           if [ "$name" = grokbot ]; then line='finish the steps on grok.com'; else line='finish connecting your account'; fi ;;
+        2) pending=true; line='finish connecting your account' ;;
         *) failed=true; line='not set up — see the message above' ;;
     esac
     summary="$summary$(client_label "$name"): $line
