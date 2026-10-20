@@ -39,6 +39,23 @@ C'est un plafond, pas une cible. Une réponse de trois mots qui répond à la qu
 - **Impératif pour les instructions.** « Lance `pnpm build` », pas « il faudrait sans doute lancer ».
 - **Garde les articles.** Le style télégraphique (« Build cassé, cause = import manquant ») économise des mots et coûte de la précision. STE demande des phrases complètes et courtes, pas des fragments.
 
+## Escalade
+
+Trois signaux déclenchent ce format : l'utilisateur dit qu'il ne comprend pas, il repose la même question, ou il demande un audit ou une review. Réponds alors en trois blocs, dans cet ordre et sans autre section :
+
+```
+ENJEUX
+- une ligne par enjeu, le plus important en premier
+
+EXEMPLE
+Un seul cas concret, en deux ou trois phrases.
+
+SOLUTIONS
+1. une action par ligne, à l'impératif
+```
+
+Pas de chemins de fichiers ni de preuves détaillées, sauf demande. Les règles ASD-STE100 s'appliquent à chaque ligne. Cette réponse peut dépasser le plafond, jusqu'au double, une seule fois : la réponse suivante revient sous le plafond. Le signal vaut pour le point en cours, pas pour toute la conversation.
+
 ## Lever le verrou
 
 Cette section ne s'applique qu'avec l'argument `reset`. Ignore tout ce qui précède.

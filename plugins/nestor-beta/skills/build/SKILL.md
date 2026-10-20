@@ -1,7 +1,7 @@
 ---
 name: build
 description: Build one approved Nestor code Task or an approved Plan subtree into a shared open pull request, using the server's build reservation and progression decisions. Invoke only on the user's direct request with an explicit item id or slug; agents, plans, tasks and other skills cannot invoke it. Stop after verified delivery; never merge, wait for CI or deployment, publish a release, or tag.
-argument-hint: "<plan-or-task-id-or-slug> [prod] [target:<branch>]"
+argument-hint: "<plan-or-task-id-or-slug> [prod] [target:<branch>] [--worktree]"
 disable-model-invocation: true
 ---
 
@@ -14,21 +14,23 @@ The server owns approval, selection, ordering, reservation and status transition
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "25ec3d080cf1830fa" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2ede0426ee06206cd" }` on every Nestor MCP call.
 
 ## Arguments
 
-Accept `<id-or-slug> [prod] [target:<branch>]` only from a direct user invocation or an
-explicit request for this process. A task mentioned in conversation is insufficient.
-With an empty argument string, reply exactly and stop without searching:
+Accept `<id-or-slug> [prod] [target:<branch>] [--worktree]` only from a direct user
+invocation or an explicit request for this process. A task mentioned in conversation is
+insufficient. With an empty argument string, reply exactly and stop without searching:
 
 > id or task slug is needed to build ! :)
 
 The first argument identifies a Plan or code Task. The literal `prod` defaults the target
 to `main`; a non-empty `target:<branch>` overrides it. Preserve everything after the first
-colon, including `/`. An empty `target:` leaves the target unspecified. Reject unknown
-arguments and multiple `target:` arguments, naming the invalid input. Without a resolved
-target, ask for `target:<branch>` during preparation and wait.
+colon, including `/`. An empty `target:` leaves the target unspecified. The literal
+`--worktree` moves the work into a linked Git worktree, as section 2 describes; without it,
+the build works in the current checkout. Reject unknown arguments and a repeated `target:`
+or `--worktree`, naming the invalid input. Without a resolved target, ask for
+`target:<branch>` during preparation and wait.
 
 ## 1. Read and prepare before Git
 
@@ -80,7 +82,9 @@ apply. Branch names, commit subjects and PR titles describe changes without Nest
 slugs. Commit subjects, PR titles and PR descriptions are in English.
 
 1. Check the checkout's `origin` URL, in HTTPS form without `.git`, against the effective
-   repository. Confirm a clean working tree; never stash or discard user changes.
+   repository. Confirm a clean working tree; never stash or discard user changes. With
+   `--worktree`, the clean tree is the linked worktree's, chosen below; the user's checkout
+   may stay dirty and on any branch.
 2. Run `git fetch --prune origin`, then
    `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`, excluding symbolic
    `HEAD`. Resolve the requested target exactly. Without one, show available branches and
@@ -116,7 +120,7 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    `details.id` and `details.dependencyId` when supplied for recovery, and use the closing
    rule below without an automatic inspect.
    Never skip a refused child, reorder work or patch status to bypass the core. Only after
-   success may you create or switch a work branch or edit code.
+   success may you create or switch a work branch, add a worktree or edit code.
 
 Retain ownership immediately on success. Use `reservation.contextId` for the shared Git
 context, `selectionId` for this invocation and `taskIds` as the server's ordered selection.
@@ -146,6 +150,18 @@ root Plan only when neither recorded references nor a matching PR supply a work 
 record `git.workBranch` on its context through an owned `update_item` patch. A reserved Git
 patch may update workBranch and pullRequestUrl; repository, target, planned work, membership and
 dependencies stay frozen. Revalidate the checkout and anchors before the first edit.
+
+With `--worktree`, never switch or edit the user's checkout: work in a linked worktree of
+the same repository. Read `git worktree list --porcelain` first. A worktree already on the
+work branch is reused when its tree is clean, since Git refuses a second checkout of that
+branch; a dirty one stops the build. Otherwise create one on the work branch, or on the new
+descriptive branch from `origin/<targetBranch>`, through the client's own worktree
+mechanism when it offers one, else with `git worktree add` at a path outside the user's
+working tree or in a directory Git ignores. Run every Git, verification and commit command
+in that worktree, install the dependencies the repository's checks need there, and leave
+it in place after delivery: its branch is the open PR's head. Without `--worktree`, a work
+branch that `git worktree list --porcelain` shows checked out in another worktree is
+continued there rather than switched to, for the same Git reason.
 
 For every MCP mutation, use the matched pair belonging to the addressed item. Keep each
 successful response's item version and ETag together. If a needed object's content or pair
@@ -235,7 +251,9 @@ rebuild them or recreate children. If the selected work is already completed, re
 retained reservation with the current context pair and ownership, then stop before Git.
 Otherwise reconcile the held reservation's `contextId`, `selectionId` and ordered `taskIds`
 with those reads. Validate the repository, current checkout, pushed head and open PR against
-the shared Git references again, including section 2.4's prerequisite checks. Do not call
+the shared Git references again, including section 2.4's prerequisite checks. With
+`--worktree`, find the worktree on the work branch through `git worktree list --porcelain`
+first, and recreate it from the pushed work branch when none remains. Do not call
 reserve again or insert an automatic inspect into a continuation. Review still requires
 explicit acceptance or correction authorisation; otherwise keep the build suspended.
 Use the retained private ownership. If another execution must take over, require explicit
@@ -272,5 +290,6 @@ commands, real outputs and completion evidence in completionEvidence and the PR.
 
 Do not narrate reservation, release, transfer, approval, revocation, inspection, Nestor
 statuses, item counts, versions/ETags, ownership, proofs, commits or SHAs, branches,
-successful checks, CI not awaited or the local checkout. Execution and evidence rules
-above remain unchanged.
+successful checks, CI not awaited or the local checkout. The one exception is `--worktree`:
+name the worktree path once in the closing message, since the code is not in the user's
+checkout. Execution and evidence rules above remain unchanged.

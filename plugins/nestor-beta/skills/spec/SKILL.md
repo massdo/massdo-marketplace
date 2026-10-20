@@ -18,7 +18,7 @@ Never ask for approval again to get around that choice.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "25ec3d080cf1830fa" }` on every Nestor MCP call.
+Pass `{ "version_hash": "2ede0426ee06206cd" }` on every Nestor MCP call.
 
 ## Starting point
 

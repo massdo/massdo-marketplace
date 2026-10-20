@@ -1,4 +1,4 @@
 {
-  "version": "0.11.3",
-  "changelog": "Response style and text extraction skills run independently, without external service calls or version identity requirements."
+  "version": "0.11.4",
+  "changelog": "Answer-short gains an escalation format: when the user says they do not understand, asks the same question again or requests an audit, the reply comes in three blocks, ENJEUX, EXEMPLE and SOLUTIONS, and may exceed the word cap once."
 }
