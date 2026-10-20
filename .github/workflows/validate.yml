@@ -71,3 +71,45 @@ jobs:
       - run: python3 scripts/publish_plugin_releases.py
         env:
           JOURNAL_MCP_PLUGIN_RELEASE_SECRET: ${{ secrets.JOURNAL_MCP_PLUGIN_RELEASE_SECRET }}
+
+  tag-plugin-releases:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - validate
+      - notify-plugin-releases
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: tag-plugin-releases
+      cancel-in-progress: false
+    env:
+      DISABLE_AUTOUPDATER: "1"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    steps:
+      # Each push tags the versions its own commit carries, at that commit:
+      # a queued run must not tag a later bump at a later head and leave
+      # the version in between without a tag.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install the pinned Claude CLI
+        run: npm install --global @anthropic-ai/claude-code@2.1.275
+      # `claude plugin tag` is the only thing that creates a release tag: it
+      # derives the name and version from plugin.json and gets the separator
+      # right. A version already tagged on origin is skipped, so re-running
+      # the job or a push that bumps nothing creates nothing.
+      - name: Tag the plugin releases missing on origin
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for manifest in plugins/*/.claude-plugin/plugin.json; do
+            plugin=$(dirname "$(dirname "$manifest")")
+            tag="$(jq -r .name "$manifest")--v$(jq -r .version "$manifest")"
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+              echo "$tag already exists on origin."
+              continue
+            fi
+            claude plugin tag "$plugin" --push
+          done
