@@ -60,9 +60,11 @@ Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, plus the
 Grok Bot desktop app in standard locations, reads each app's plugin inventory
 without changing it, and shows one multi-select menu: apps that already have
 Nestor are marked with their version, apps without it are preselected. The menu
-is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 2.0.2
+is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
 no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
+Keystrokes typed while the apps are being checked are discarded before the menu
+opens, so a stray Enter cannot submit the preselection.
 Bash reads the terminal separately from piped script content. Without a terminal,
 the client selection is required and the installer leaves OAuth for a later native
 login.

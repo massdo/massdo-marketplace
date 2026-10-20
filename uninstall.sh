@@ -8,7 +8,7 @@ client=
 terminal=false
 scratch=
 gum_bin=
-gum_version=2.0.2
+gum_version=0.17.0
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 
 cleanup() { [ -z "$scratch" ] || rm -rf -- "$scratch"; }
@@ -50,14 +50,15 @@ ensure_gum() {
     fi
     local asset digest directory
     case "$(uname -s)-$(uname -m)" in
-        Darwin-arm64) asset=Darwin_arm64; digest=4777a69b1170b8db23c95d5889fb32186cfda1a3ac950d339aa17e3513633890 ;;
-        Darwin-x86_64) asset=Darwin_x86_64; digest=5374966c7c7199ea879fcaa525ddc6d447a098d3d35496e430a9a1ef38d30485 ;;
-        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=8ebf8b54ec1e8c81f2bb58b59ff9b70998186a4d11375f0cf357b80e0ccfa1d5 ;;
-        Linux-x86_64) asset=Linux_x86_64; digest=d842e06d93dbed90af48cb8dd10698db6f22e331fc40346bb37bbc753109edc2 ;;
+        Darwin-arm64) asset=Darwin_arm64; digest=e2a4b8596efa05821d8c58d0c1afbcd7ad1699ba69c689cc3ff23a4a99c8b237 ;;
+        Darwin-x86_64) asset=Darwin_x86_64; digest=cd66576aeebe6cd19c771863c7e8d696e0e1d5387d1e7075666baa67c2052e53 ;;
+        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=b0b9ed95cbf7c8b7073f17b9591811f5c001e33c7cfd066ca83ce8a07c576f9c ;;
+        Linux-x86_64) asset=Linux_x86_64; digest=69ee169bd6387331928864e94d47ed01ef649fbfe875baed1bbf27b5377a6fdb ;;
         *) fail 'This computer architecture is not supported.' ;;
     esac
     directory="$scratch/gum"
     mkdir -p "$directory" || fail 'Cannot create a temporary folder.'
+    printf '%s\n' 'Downloading the menu tool…' >&3
     curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
         "https://github.com/charmbracelet/gum/releases/download/v$gum_version/gum_${gum_version}_$asset.tar.gz" \
         -o "$directory/gum.tar.gz" || fail 'Cannot download the menu tool. Check your internet connection and try again.'
@@ -68,6 +69,14 @@ ensure_gum() {
 }
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
+
+# Keystrokes typed while the apps were being checked would otherwise reach the
+# menu as answers; they are discarded first.
+flush_terminal_input() {
+    local junk timeout=1
+    [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.2
+    while IFS= read -r -t "$timeout" -n 1 junk <&3; do :; done
+}
 
 plugin_present() {
     local file=$1
@@ -133,7 +142,9 @@ inventory() {
 }
 
 choose_clients() {
-    local candidates=() options=() preselected= candidate state label selection option
+    local candidates=() options=() preselected= candidate state shown label selection option
+    local green=$'\033[32m' reset=$'\033[0m'
+    printf '%s\n' 'Looking for your apps…' >&3
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     if command -v cursor-agent >/dev/null 2>&1 ||
@@ -142,15 +153,19 @@ choose_clients() {
     [ "${#candidates[@]}" -gt 0 ] || fail 'No supported app detected.'
     ensure_gum
     for candidate in "${candidates[@]}"; do
+        printf 'Checking %s…\n' "$(client_label "$candidate")" >&3
         state=$(inventory "$candidate")
-        label="$(client_label "$candidate") — $state"
+        case "$state" in installed*) shown="$green$state$reset" ;; *) shown=$state ;; esac
+        label="$(client_label "$candidate") — $shown"
         options+=("$label|$candidate")
         case "$state" in
             installed|'installed by this setup') preselected="$preselected${preselected:+,}$label" ;;
         esac
     done
+    flush_terminal_input
     selection=$("$gum_bin" choose --no-limit --label-delimiter='|' \
-        --header='Remove Nestor from which apps? x selects, Enter confirms.' \
+        --header='Remove Nestor from which apps?' \
+        --header.foreground=117 --cursor.foreground=117 --selected.foreground=117 \
         --selected="$preselected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted.'
     while IFS= read -r option; do [ -z "$option" ] || add_client "$option"; done <<EOT
 $selection
