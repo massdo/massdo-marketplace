@@ -36,6 +36,7 @@ jobs:
         shell: bash
         run: |
           bash -n install.sh
+          bash -n uninstall.sh
           python3 -m unittest discover -s tests -p test_install.py -v
 
   powershell:

@@ -16,6 +16,7 @@ installed=false
 enabled=false
 verification_error=
 client_error=
+cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 
 stop_process() {
     kill "$1" 2>/dev/null || :
@@ -41,11 +42,18 @@ fail() { printf '%s\n' "$*" >&2; show_client_error; exit 1; }
 incomplete() {
     printf '%s\n' 'Nestor is installed — finish connecting your account'
     local command='codex mcp login nestor'
-    [ "$client" = codex ] || command='claude mcp login plugin:nestor:nestor'
+    case "$client" in
+        claude) command='claude mcp login plugin:nestor:nestor' ;;
+        cursor) command="${binary##*/} mcp login nestor" ;;
+    esac
     if [ "${1:-}" = retry ]; then
         printf '%s\n' "$verification_error" >&2
         show_client_error
-        printf '%s\n' 'Try again: restore your connection to Nestor, then run this setup command again.'
+        if [ "$client" = cursor ]; then
+            printf '%s\n' 'Try again: reload Cursor or restore your Nestor connection, then run this setup command again.'
+        else
+            printf '%s\n' 'Try again: restore your connection to Nestor, then run this setup command again.'
+        fi
         printf '%s\n' "If you are asked to sign in afterward, run: $command"
         exit 2
     fi
@@ -183,6 +191,72 @@ claude_check() {
     [ "$result" -eq 0 ] && grep -Eq '^[[:space:]]*Status: ✔ Connected[[:space:]]*$' "$scratch/connection-plain"
 }
 
+cursor_state() {
+    installed=false
+    if [ -f "$HOME/.cursor/mcp.json" ]; then
+        json -e --arg url "$endpoint" '.mcpServers.nestor == null or .mcpServers.nestor.url == $url' \
+            "$HOME/.cursor/mcp.json" >/dev/null ||
+            fail 'Collision: the existing Cursor nestor server has a different configuration.'
+    fi
+    if [ -e "$cursor_plugin" ] || [ -L "$cursor_plugin" ]; then
+        [ -d "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] &&
+            [ "$(cat "$cursor_plugin/.massdo-installer" 2>/dev/null)" = 'massdo/massdo-marketplace:install.sh:v1' ] ||
+            fail 'Collision: the Cursor Nestor plugin was not installed by this setup command.'
+        installed=true
+    fi
+}
+
+cursor_check() {
+    verification_error='The Nestor plugin is missing from Cursor.'
+    cursor_state
+    [ "$installed" = true ] || return 1
+    verification_error='The Cursor Nestor plugin is incomplete or has a different server URL.'
+    json -e '.name == "nestor"' "$cursor_plugin/.cursor-plugin/plugin.json" >/dev/null || return 1
+    json -e --arg url "$endpoint" '.mcpServers.nestor.url == $url' "$cursor_plugin/mcp.json" >/dev/null || return 1
+    local skill
+    for skill in $(printf '%s' "$required_skills" | json -r '.[]'); do
+        [ -f "$cursor_plugin/skills/$skill/SKILL.md" ] || return 1
+    done
+    verification_error='Cannot reach Nestor or load its tools in Cursor.'
+    if ! capture 45 "$scratch/tools" "$binary" mcp list-tools nestor; then
+        if grep -Eiq 'needs authentication|not authenticated|authentication required|login required' "$scratch/tools" "$scratch/tools.err"; then return 2; fi
+        return 3
+    fi
+    verification_error='Required Nestor tools are missing from Cursor.'
+    grep -Eq '(^|[^[:alnum:]_])get_item([^[:alnum:]_]|$)' "$scratch/tools"
+}
+
+cursor_install() {
+    command -v git >/dev/null 2>&1 || fail 'Git is required to install Nestor for Cursor.'
+    capture 120 "$scratch/clone-log" git clone --depth 1 --quiet https://github.com/massdo/massdo-marketplace.git "$scratch/repo" ||
+        fail 'Cannot download the Nestor plugin.'
+    [ -f "$scratch/repo/plugins/nestor/.cursor-plugin/plugin.json" ] || fail 'The downloaded Cursor plugin is incomplete.'
+    local parent stage
+    parent=${cursor_plugin%/*}
+    mkdir -p "$parent" || fail 'Cannot create the Cursor plugin directory.'
+    stage=$(mktemp -d "$parent/.nestor-install.XXXXXX") || fail 'Cannot stage the Cursor plugin.'
+    if ! cp -R "$scratch/repo/plugins/nestor/." "$stage/"; then rm -rf -- "$stage"; fail 'Cannot copy the Cursor plugin.'; fi
+    printf '%s\n' 'massdo/massdo-marketplace:install.sh:v1' >"$stage/.massdo-installer"
+    if ! mv -- "$stage" "$cursor_plugin"; then rm -rf -- "$stage"; fail 'Cannot activate the Cursor plugin.'; fi
+}
+
+grokbot_detected() {
+    [ -d '/Applications/Grok Bot.app' ] || [ -d "$HOME/Applications/Grok Bot.app" ] ||
+        [ -f "$HOME/.local/share/applications/grok-bot.desktop" ] ||
+        [ -f "$HOME/.local/share/applications/grokbot.desktop" ] ||
+        [ -f '/usr/share/applications/grok-bot.desktop' ] ||
+        [ -f '/usr/share/applications/grokbot.desktop' ]
+}
+
+grokbot_instructions() {
+    printf '%s\n' 'Grok Bot detected. Finish Nestor setup in the Grok Bot app:'
+    printf '%s\n' '1. Open Connect apps and add a custom Remote HTTPS MCP server named nestor.'
+    printf '%s\n' "2. Use this server URL: $endpoint"
+    printf '%s\n' '3. Sign in to Nestor in the browser, then verify that get_item is available.'
+    printf '%s\n' 'This installer cannot read or change plugins in your Grok Bot cloud account.'
+    exit 2
+}
+
 plugin_state() {
     if [ "$client" = codex ]; then
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
@@ -234,7 +308,7 @@ abort_installation() {
 
 login() {
     local server=nestor deadline=$((SECONDS + 300)) result
-    [ "$client" = codex ] || server=plugin:nestor:nestor
+    [ "$client" != claude ] || server=plugin:nestor:nestor
     NO_COLOR=1 "$binary" mcp login "$server" <&3 >&3 2>&3 &
     command_pid=$!
     while kill -0 "$command_pid" 2>/dev/null; do
@@ -251,6 +325,7 @@ login() {
 }
 
 verify() {
+    if [ "$client" = cursor ]; then cursor_check; return $?; fi
     verification_error='Cannot read the installed plugins in your app.'
     plugin_state || return 1
     verification_error='The Nestor plugin is not installed.'
@@ -262,32 +337,56 @@ verify() {
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --client) [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex or claude.'; client=$2; shift 2 ;;
+        --client) [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor or grokbot.'; client=$2; shift 2 ;;
         --check) check_only=true; shift ;;
         --no-login) no_login=true; shift ;;
-        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude] [--check] [--no-login]'; exit 0 ;;
+        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|grokbot] [--check] [--no-login]'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
 if [ -z "$client" ]; then
-    [ "$terminal" = true ] || fail 'Without a terminal, specify --client codex or --client claude.'
-    if command -v codex >/dev/null 2>&1 && command -v claude >/dev/null 2>&1; then
-        printf '%s' 'Choose your app (codex/claude): ' >&3
+    [ "$terminal" = true ] || fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
+    choices=()
+    command -v codex >/dev/null 2>&1 && choices+=(codex)
+    command -v claude >/dev/null 2>&1 && choices+=(claude)
+    command -v cursor-agent >/dev/null 2>&1 && choices+=(cursor)
+    grokbot_detected && choices+=(grokbot)
+    [ "${#choices[@]}" -gt 0 ] || fail 'Install Codex, Claude Code, Cursor Agent or Grok Bot, then run this setup command again.'
+    if [ "${#choices[@]}" -eq 1 ]; then client=${choices[0]}; else
+        printf 'Choose your app (%s): ' "$(IFS=/; printf '%s' "${choices[*]}")" >&3
         IFS= read -r client <&3 || fail 'App selection was interrupted. Run this setup command again.'
-    elif command -v codex >/dev/null 2>&1; then client=codex
-    elif command -v claude >/dev/null 2>&1; then client=claude
-    else fail 'Install Codex or Claude Code, then run this setup command again.'
+        for choice in "${choices[@]}"; do [ "$client" != "$choice" ] || break; done
+        [ "$client" = "$choice" ] || fail 'Choose one of the detected apps.'
     fi
 fi
-case "$client" in codex|claude) ;; *) fail 'Choose codex or claude.' ;; esac
-binary=$(command -v "$client") || fail "Client not found: $client."
+case "$client" in codex|claude|cursor|grokbot) ;; *) fail 'Choose codex, claude, cursor or grokbot.' ;; esac
+[ "$client" != grokbot ] || grokbot_instructions
+if [ "$client" = cursor ]; then binary=$(command -v cursor-agent || command -v agent) || fail 'Cursor Agent CLI not found.'
+else binary=$(command -v "$client") || fail "Client not found: $client."; fi
 case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
 umask 077
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/nestor-install.XXXXXX") || fail 'Cannot create a temporary folder.'
 cd "$scratch" || exit 1
 ensure_jq
 capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
+if [ "$client" = cursor ]; then
+    capture 15 "$scratch/help" "$binary" mcp login --help || fail 'This Cursor Agent version cannot connect to Nestor.'
+    capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
+    cursor_state
+    if [ "$check_only" = false ] && [ "$installed" = false ]; then cursor_install; fi
+    verify; verification_status=$?
+    if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
+    [ "$verification_status" -ne 3 ] || incomplete retry
+    [ "$verification_status" -eq 2 ] || fail "$verification_error"
+    if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
+    printf '%s' 'Open your browser to connect Nestor? (y/N): ' >&3
+    IFS= read -r answer <&3 || incomplete
+    case "$answer" in o|O|oui|y|Y|yes) ;; *) incomplete ;; esac
+    login || incomplete
+    verify && { printf '%s\n' 'Installation complete'; exit 0; }
+    incomplete
+fi
 for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
     # Capability names are fixed here, never supplied by the caller.
     capture 15 "$scratch/help" "$binary" $capability --help || fail 'This app version is not supported. Update your app, then run this setup command again.'

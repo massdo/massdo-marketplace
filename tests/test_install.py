@@ -33,11 +33,24 @@ class Installer(unittest.TestCase):
                            capture_output=True)
             shutil.copy2(self.bin / 'codex.exe', self.bin / 'claude.exe')
         else:
-            for client in ('codex', 'claude'):
+            for client in ('codex', 'claude', 'cursor-agent'):
                 path = self.bin / client
                 path.write_text('#!/usr/bin/env python3\n' + fixture.split('\n', 1)[1])
                 path.chmod(0o755)
+            git = self.bin / 'git'
+            git.write_text('#!/usr/bin/env python3\n'
+                           'import os, shutil, sys\n'
+                           'from pathlib import Path\n'
+                           'if sys.argv[1] != "clone": sys.exit(1)\n'
+                           'source = Path(os.environ["NESTOR_TEST_REPO"]) / "plugins/nestor"\n'
+                           'target = Path(sys.argv[-1]) / "plugins/nestor"\n'
+                           'target.parent.mkdir(parents=True)\n'
+                           'shutil.copytree(source, target)\n')
+            git.chmod(0o755)
+        home = self.root / 'home'
+        home.mkdir()
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
+                    'HOME': str(home), 'NESTOR_TEST_REPO': str(ROOT),
                     'NESTOR_TEST_STATE': str(self.state), 'NESTOR_TEST_LOG': str(self.log),
                     'NESTOR_TEST_PYTHON': sys.executable, 'PYTHONUTF8': '1',
                     'NESTOR_TEST_FIXTURE': str(ROOT / 'tests/fixtures/installer_client.py')}
@@ -58,6 +71,13 @@ class Installer(unittest.TestCase):
     def run_installer(self, client='codex', state=None, options=('--check',)):
         self.state.write_text(json.dumps(state or {}))
         return subprocess.run(self.command(client, options),
+                              env=self.env, stdin=subprocess.DEVNULL, capture_output=True,
+                              encoding='utf-8', errors='replace', timeout=60, start_new_session=True)
+
+    def run_uninstaller(self, client, state=None):
+        if state is not None:
+            self.state.write_text(json.dumps(state))
+        return subprocess.run(['/bin/bash', str(ROOT / 'uninstall.sh'), '--client', client],
                               env=self.env, stdin=subprocess.DEVNULL, capture_output=True,
                               encoding='utf-8', errors='replace', timeout=60, start_new_session=True)
 
@@ -108,6 +128,122 @@ class Installer(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr + repr(self.calls()))
                 self.assertIn('Installation complete', result.stdout)
         self.assert_no_mutations()
+
+    @unittest.skipIf(POWERSHELL, 'Cursor is supported by the Bash entry point')
+    def test_cursor_install_check_and_collision(self):
+        plugin = Path(self.env['HOME']) / '.cursor/plugins/local/nestor'
+        missing = self.run_installer('cursor')
+        self.assertEqual(missing.returncode, 1, missing.stderr)
+        installed = self.run_installer('cursor', options=())
+        self.assertEqual(installed.returncode, 0, installed.stderr)
+        self.assertIn('Installation complete', installed.stdout)
+        self.assertTrue((plugin / 'skills/nestor/SKILL.md').is_file())
+        self.assertEqual(self.run_installer('cursor').returncode, 0)
+        shutil.rmtree(plugin)
+        plugin.mkdir()
+        (plugin / 'foreign').write_text('keep')
+        collision = self.run_installer('cursor', options=())
+        self.assertEqual(collision.returncode, 1, collision.stderr)
+        self.assertTrue((plugin / 'foreign').exists())
+
+    @unittest.skipIf(POWERSHELL, 'Cursor is supported by the Bash entry point')
+    def test_cursor_existing_server_collision_prevents_install(self):
+        config = Path(self.env['HOME']) / '.cursor/mcp.json'
+        config.parent.mkdir()
+        config.write_text(json.dumps({'mcpServers': {'nestor': {'url': 'https://other.example/mcp'}}}))
+        result = self.run_installer('cursor', options=())
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('Collision', result.stderr)
+        self.assertFalse((config.parent / 'plugins/local/nestor').exists())
+
+    @unittest.skipIf(POWERSHELL, 'Cursor is supported by the Bash entry point')
+    def test_cursor_pending_auth_and_missing_tools(self):
+        pending = self.run_installer('cursor', {'connected': False}, ())
+        self.assertEqual(pending.returncode, 2, pending.stderr)
+        self.assertIn('cursor-agent mcp login nestor', pending.stdout)
+        missing = self.run_installer('cursor', {'missing_tools': True})
+        self.assertEqual(missing.returncode, 1, missing.stderr)
+        self.assertNotIn('Installation complete', missing.stdout)
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Interactive Cursor setup runs on macOS and Linux')
+    def test_cursor_interactive_login_completes(self):
+        self.state.write_text(json.dumps({'connected': False}))
+        code, output = self.run_interactive(self.command('cursor', ()), [('browser', 'y')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Installation complete', output)
+        self.assertEqual(len([call for call in self.calls() if call[1:4] == ['mcp', 'login', 'nestor']]),
+                         1, self.calls())
+
+    @unittest.skipIf(POWERSHELL, 'Grok Bot is supported by the Bash entry point')
+    def test_grokbot_is_an_explicit_manual_handoff(self):
+        result = self.run_installer('grokbot', options=())
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('Connect apps', result.stdout)
+        self.assertIn('https://journal.mcp-marketplace.org/mcp', result.stdout)
+        self.assertNotIn('Installation complete', result.stdout)
+        self.assertEqual(self.calls(), [])
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Grok Bot detection uses the Bash wizard')
+    def test_grokbot_app_is_detected_in_interactive_menu(self):
+        app = Path(self.env['HOME']) / 'Applications/Grok Bot.app'
+        app.mkdir(parents=True)
+        code, output = self.run_interactive(self.command(None, ()), [('Choose your app', 'grokbot')])
+        self.assertEqual(code, 2, output)
+        self.assertIn('grokbot', output)
+        self.assertIn('Connect apps', output)
+        self.assertEqual(self.calls(), [])
+
+    @unittest.skipIf(POWERSHELL, 'The uninstall wizard is the Bash entry point')
+    def test_uninstall_removes_only_the_selected_native_plugin(self):
+        for client in ('codex', 'claude'):
+            with self.subTest(client=client):
+                result = self.run_uninstaller(client, {'installed': True, 'connected': True,
+                                                       'other_settings': ['keep']})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                state = json.loads(self.state.read_text())
+                self.assertFalse(state['installed'])
+                self.assertEqual(state['other_settings'], ['keep'])
+                self.assertTrue(state.get('marketplace', True))
+                self.log.write_text('')
+                again = self.run_uninstaller(client)
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertFalse(any('remove' in call or 'uninstall' in call for call in self.calls()))
+
+    @unittest.skipIf(POWERSHELL, 'The uninstall wizard is the Bash entry point')
+    def test_cursor_uninstall_keeps_foreign_plugin_and_removes_owned_copy(self):
+        plugin = Path(self.env['HOME']) / '.cursor/plugins/local/nestor'
+        plugin.mkdir(parents=True)
+        (plugin / 'foreign').write_text('keep')
+        refused = self.run_uninstaller('cursor')
+        self.assertEqual(refused.returncode, 1)
+        self.assertTrue((plugin / 'foreign').exists())
+        shutil.rmtree(plugin)
+        external = self.root / 'other-plugin'
+        external.mkdir()
+        plugin.symlink_to(external, target_is_directory=True)
+        self.assertEqual(self.run_uninstaller('cursor').returncode, 1)
+        self.assertTrue(external.exists())
+        plugin.unlink()
+        self.assertEqual(self.run_installer('cursor', options=()).returncode, 0)
+        removed = self.run_uninstaller('cursor')
+        self.assertEqual(removed.returncode, 0, removed.stderr)
+        self.assertFalse(plugin.exists())
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Interactive removal uses the Bash wizard')
+    def test_uninstall_wizard_selects_cursor(self):
+        self.state.write_text('{}')
+        self.assertEqual(self.run_installer('cursor', options=()).returncode, 0)
+        code, output = self.run_interactive(['/bin/bash', str(ROOT / 'uninstall.sh')],
+                                            [('Remove Nestor from which app', 'cursor')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Nestor removed from Cursor', output)
+
+    @unittest.skipIf(POWERSHELL, 'The uninstall wizard is the Bash entry point')
+    def test_grokbot_uninstall_requires_cloud_account_action(self):
+        result = self.run_uninstaller('grokbot')
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('Connect apps', result.stdout)
+        self.assertEqual(self.calls(), [])
 
     def test_failed_checks_never_report_complete(self):
         cases = [{'connected': False}, {'disabled_skill': True}, {'enabled': False},
@@ -191,7 +327,8 @@ function Invoke-WebRequest {
                                  'other_settings': ['keep']}
                         result = self.run_installer(client, state, options)
                         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-                        self.assertIn('Nestor is installed — finish connecting your account', result.stdout)
+                        self.assertIn('Nestor is installed — finish connecting your account', result.stdout,
+                                      result.stderr + repr(self.calls()))
                         self.assertIn('Try again:', result.stdout)
                         self.assertIn('If you are asked to sign in afterward', result.stdout)
                         server = 'nestor' if client == 'codex' else 'plugin:nestor:nestor'
@@ -262,7 +399,8 @@ function Invoke-WebRequest {
             result = self.run_installer(client, {'installed': False, 'marketplace': False,
                                         'connected': False, 'other_settings': {'keep': 42}}, ())
             self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertIn('Nestor is installed — finish connecting your account', result.stdout)
+            self.assertIn('Nestor is installed — finish connecting your account', result.stdout,
+                          result.stderr + repr(self.calls()))
             state = json.loads(self.state.read_text())
             self.assertTrue(state['installed'])
             self.assertTrue(state['marketplace'])
