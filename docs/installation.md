@@ -1,13 +1,17 @@
 # Nestor installation
 
-The installer adds `nestor@massdo-marketplace` through the selected client's native
-marketplace and plugin commands. It uses the skills and MCP configuration already
-shipped in `plugins/nestor/`. It installs Nestor only; the manual README commands
-remain available for the other plugins and clients.
+For Codex and Claude Code, the installer adds `nestor@massdo-marketplace` through
+native marketplace and plugin commands. For Cursor Agent on Mac or Linux, it
+copies `plugins/nestor/` into Cursor's user-local plugin directory and checks
+MCP tool access with the native CLI. Grok Bot runs plugins in a cloud account;
+the wizard detects its desktop app and gives the account-side connection steps,
+returning exit code 2 until those steps are complete. It installs Nestor only.
 
 ## Prerequisites
 
-- Install Codex or Claude Code first. On Windows, expose its native executable on
+- Install Codex, Claude Code, or Cursor Agent first, or the Grok Bot desktop app.
+  On Windows, the PowerShell wizard currently supports Codex and Claude Code;
+  expose their native executable on
   `PATH`; `.cmd`, `.bat` and `.ps1` launchers are refused without running a shell.
 - Install Git, which the clients use to retrieve the marketplace.
 - Bash: macOS or Linux, including WSL, on x86_64 or arm64, with Bash 3.2+ and curl.
@@ -49,8 +53,10 @@ try {
 }
 ```
 
-Use `claude` instead of `codex` for Claude Code. If only one client is installed,
-the installer selects it. If both are installed, it asks for a choice. Bash reads
+Use `claude`, `cursor`, or `grokbot` instead of `codex` as needed. The Bash wizard
+detects installed Codex, Claude Code and Cursor Agent CLIs, plus the Grok Bot
+desktop app in standard locations. If only one is found, it selects it; if
+several are found, it asks for a choice. Bash reads
 the terminal separately from piped script content. Without a terminal, the client
 selection is required and the installer leaves OAuth for a later native login.
 With a terminal, the installer asks before opening native OAuth. Answer `y` to
@@ -67,11 +73,25 @@ temporary file is removed when that child process ends.
 | 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
 
+For Grok Bot, exit code 2 means the wizard has shown the steps to add the
+`nestor` Remote HTTPS MCP server in **Connect apps** with URL
+`https://journal.mcp-marketplace.org/mcp`. The local script cannot inspect its
+cloud account or confirm sign-in. Grok Bot receives the MCP tools through that
+connection; this path does not install the local Nestor skill files.
+
+For Cursor, the wizard installs a tagged local copy at
+`~/.cursor/plugins/local/nestor`, checks the plugin files and asks Cursor Agent
+for `get_item`. A pre-existing untagged directory or symlink is left untouched
+and reported as a collision. Cursor currently has no non-interactive CLI
+command for plugin installation, so the wizard does not write into its synced
+marketplace inventory. Reload Cursor or start a new Agent session if needed.
+
 Native resume commands:
 
 ```bash
 codex mcp login nestor
 claude mcp login plugin:nestor:nestor
+cursor-agent mcp login nestor
 ```
 
 Choose the command for the installed client. The client opens OAuth and owns token
@@ -140,6 +160,23 @@ embedded endpoint, origin and required skills against the plugin files.
 Protocol references: [Codex app-server](https://learn.chatgpt.com/docs/app-server?surface=cli),
 [plugin packaging](https://developers.openai.com/plugins/build/plugins), and
 [Claude Code MCP](https://code.claude.com/docs/en/mcp).
+
+## Remove Nestor
+
+On macOS, Linux or WSL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
+```
+
+Use `bash uninstall.sh --client codex|claude|cursor|grokbot` to select a client
+without a terminal. The wizard removes the exact Codex or Claude Code plugin
+and clears its native Nestor OAuth connection when available. It removes a
+Cursor local plugin only when the marker from this installer is present; it
+never deletes an unmarked plugin or symlink. For Grok Bot it gives the manual
+removal path in **Connect apps → Your plugins** and returns exit code 2. The
+shared marketplace and other plugins are preserved. A new app session or
+reload may be needed after removal.
 
 ## Validation before publication
 

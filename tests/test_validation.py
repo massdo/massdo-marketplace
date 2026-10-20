@@ -607,7 +607,7 @@ class RepositoryValidation(unittest.TestCase):
 
     def add_installers(self):
         shutil.copytree(ROOT / 'plugins/nestor', self.root / 'plugins/nestor')
-        for name in ('install.sh', 'install.ps1'):
+        for name in ('install.sh', 'install.ps1', 'uninstall.sh'):
             shutil.copy2(ROOT / name, self.root / name)
         for catalog in ('.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json',
                         '.cursor-plugin/marketplace.json', '.kimi-plugin/marketplace.json'):
@@ -632,6 +632,12 @@ class RepositoryValidation(unittest.TestCase):
                     result = self.run_command(sys.executable, 'scripts/validate.py', ok=False)
                     self.assertIn(name + ': ' + message, result.stderr)
                     path.write_text(source, encoding='utf-8-sig')
+        path = self.root / 'uninstall.sh'
+        source = path.read_text()
+        path.write_text(source.replace('endpoint=https://journal.mcp-marketplace.org/mcp',
+                                       'endpoint=https://other.example/mcp'))
+        result = self.run_command(sys.executable, 'scripts/validate.py', ok=False)
+        self.assertIn('uninstall.sh: endpoint must match', result.stderr)
 
     def test_plugin_skill_rename_requires_installer_probe_updates(self):
         self.add_installers()

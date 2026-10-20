@@ -55,6 +55,10 @@ elif args[:3] == ['plugin', 'marketplace', 'list']:
 elif args[:3] == ['plugin', 'marketplace', 'add']:
     state['marketplace'] = True
     save()
+elif args[:2] in (['plugin', 'remove'], ['plugin', 'uninstall']):
+    state['installed'] = False
+    save()
+    emit({'removed': True})
 elif args[:2] in (['plugin', 'add'], ['plugin', 'install'], ['plugin', 'enable']):
     if state.get('install_failure'):
         sys.exit(1)
@@ -76,7 +80,8 @@ elif args[:2] == ['plugin', 'list']:
     entries.append({'id': 'other@other', 'pluginId': 'other@other', 'scope': 'user', 'enabled': True})
     if client == 'claude' and state.get('synced'):
         entries.append({'id': 'nestor@synced', 'scope': 'synced', 'enabled': True})
-    emit({'installed': entries} if client == 'codex' else entries)
+    emit({'installed': entries, 'available': [{'pluginId': 'nestor@massdo-marketplace'}]}
+         if client == 'codex' else entries)
 elif args[:2] == ['mcp', 'list']:
     emit([{'name': 'nestor', 'transport': {'url': state.get('url', endpoint)}}]
          if state.get('installed', True) or state.get('manual_server') else [])
@@ -125,10 +130,30 @@ elif args[:3] == ['mcp', 'get', 'plugin:nestor:nestor']:
     text('  Status: ' + status)
     text('  URL: ' + state.get('url', endpoint))
 elif args[:2] == ['mcp', 'login']:
+    expected = 'plugin:nestor:nestor' if client == 'claude' else 'nestor'
+    if args[2:] != [expected]:
+        print('wrong MCP server', file=sys.stderr)
+        sys.exit(1)
     if state.get('refuse_oauth'):
         sys.exit(1)
     state['connected'] = True
     save()
+elif args[:2] == ['mcp', 'logout']:
+    expected = 'plugin:nestor:nestor' if client == 'claude' else 'nestor'
+    if args[2:] != [expected]:
+        print('wrong MCP server', file=sys.stderr)
+        sys.exit(1)
+    state['connected'] = False
+    save()
+elif client == 'cursor-agent' and args[:3] == ['mcp', 'list-tools', 'nestor']:
+    if state.get('offline'):
+        print('Failed to connect', file=sys.stderr)
+        sys.exit(1)
+    if not state.get('connected', True):
+        print('Needs authentication', file=sys.stderr)
+        sys.exit(1)
+    if not state.get('missing_tools'):
+        text('get_item — Read a Nestor item')
 else:
     print('unsupported test command', file=sys.stderr)
     sys.exit(1)

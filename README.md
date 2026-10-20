@@ -25,8 +25,12 @@ You will copy a setup command, connect your account in your browser, then start 
 
 **Before you start:** install and sign in to
 [Codex for the terminal](https://learn.chatgpt.com/docs/codex/cli) or
-[Claude Code](https://code.claude.com/docs/en/quickstart).
-You also need [Git](https://git-scm.com/install/), which setup uses to download Nestor.
+[Claude Code](https://code.claude.com/docs/en/quickstart). On Mac or Linux,
+[Cursor Agent](https://docs.cursor.com/en/cli/installation) is also supported.
+If you use [Grok Bot](https://docs.x.ai/grok-bot/overview), setup shows the
+steps to connect Nestor in its cloud account.
+For Codex, Claude Code and Cursor Agent, you also need
+[Git](https://git-scm.com/install/) to download Nestor.
 
 ### 1. Copy the setup command
 
@@ -79,7 +83,8 @@ If you use Linux through WSL on Windows, use the **Mac or Linux** command in you
 
 ### 2. Connect Nestor
 
-If setup asks which app to use, type `codex` or `claude`, then press **Enter**.
+If setup asks which app to use, type `codex`, `claude`, `cursor` or `grokbot`,
+then press **Enter**. Windows setup currently accepts Codex and Claude Code.
 If it asks to open your browser, type `y`, then press **Enter**.
 Follow the instructions in your browser to sign in and allow the connection.
 Then return to the terminal window.
@@ -89,6 +94,9 @@ If you already connected Nestor, setup may finish without opening your browser.
 ### 3. Start a new conversation
 
 When you see **`Installation complete`**, Nestor is ready.
+For Cursor, reload the app or start a new Agent session if the new plugin is not
+visible yet. Grok Bot setup remains pending until you add the Nestor MCP server
+and sign in from **Connect apps** in Grok Bot.
 Open a **new conversation** in the app you chose, then type:
 
 ```text
@@ -100,7 +108,19 @@ follow the message shown. You can paste the same setup command again to continue
 If your internet connection stopped, reconnect before trying again.
 
 For any other error, [ask for help](https://github.com/massdo/massdo-marketplace/issues/new).
-Tell us whether you use Mac, Windows or Linux, and whether you chose Codex or Claude Code.
+Tell us whether you use Mac, Windows or Linux, and which app you chose.
+
+### Remove Nestor
+
+On Mac or Linux, run the removal wizard:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
+```
+
+It removes Nestor from the selected app. For Grok Bot it shows the steps in
+**Connect apps**, because its plugins live in your cloud account. The shared
+marketplace stays available for any other plugins you use.
 
 ### Manual installation
 
@@ -141,9 +161,9 @@ codex plugin add massdo-skills@massdo-marketplace
 ```bash
 git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketplace"
 mkdir -p "$HOME/.cursor/plugins/local"
-ln -sfn "$HOME/massdo-marketplace/plugins/nestor" "$HOME/.cursor/plugins/local/nestor"
-ln -sfn "$HOME/massdo-marketplace/plugins/nestor-beta" "$HOME/.cursor/plugins/local/nestor-beta"
-ln -sfn "$HOME/massdo-marketplace/plugins/massdo-skills" "$HOME/.cursor/plugins/local/massdo-skills"
+cp -R "$HOME/massdo-marketplace/plugins/nestor" "$HOME/.cursor/plugins/local/nestor"
+cp -R "$HOME/massdo-marketplace/plugins/nestor-beta" "$HOME/.cursor/plugins/local/nestor-beta"
+cp -R "$HOME/massdo-marketplace/plugins/massdo-skills" "$HOME/.cursor/plugins/local/massdo-skills"
 ```
 
 Then run **Developer: Reload Window**.

@@ -548,6 +548,12 @@ if any(path.is_file() for path in installers):
               and len(required) == len(set(required))
               and set(required) == plugin_skills.get("nestor", set()),
               f"{path.name}: required skills must match plugins/nestor/skills")
+    uninstaller = ROOT / "uninstall.sh"
+    check(uninstaller.is_file(), "installers: uninstall.sh is missing")
+    if uninstaller.is_file():
+        source = uninstaller.read_text(encoding="utf-8")
+        check(re.findall(r"^endpoint=(\S+)$", source, re.MULTILINE) == [expected_endpoint],
+              "uninstall.sh: endpoint must match plugins/nestor/mcp.json")
 
 # --- Journal-integrated skills declare their plugin's identity. ------------
 
