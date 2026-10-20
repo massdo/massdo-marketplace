@@ -599,10 +599,9 @@ run_client() {
         capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
         cursor_state
         spinner_stop
+        [ "$installed" = false ] || say "  Nestor$(installed_version) is already installed."
         if [ "$check_only" = false ]; then
-            if [ "$installed" = true ]; then
-                say "  Nestor$(installed_version) is already installed."
-            else
+            if [ "$installed" = false ]; then
                 spinner_start 'Installing Nestor in Cursor'
                 cursor_install
                 spinner_stop
@@ -628,10 +627,10 @@ run_client() {
     marketplace_state || abort_installation 'Cannot read the marketplaces in your app.'
     server_collision || abort_installation 'Cannot check the MCP server configuration.'
     spinner_stop
+    if [ "$installed" = true ] && [ "$enabled" = true ]; then say "  Nestor$(installed_version) is already installed."; fi
     if [ "$check_only" = false ]; then
         action=
         if [ "$installed" = false ]; then action=installed; elif [ "$enabled" = false ]; then action=enabled; fi
-        [ -n "$action" ] || [ "$marketplace" = false ] || say "  Nestor$(installed_version) is already installed."
         spinner_start "Installing Nestor in $(client_label "$client")"
         if [ "$marketplace" = false ]; then
             capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Cannot add the marketplace. Check the error below, then run this setup command again.'
