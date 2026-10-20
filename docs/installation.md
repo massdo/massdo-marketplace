@@ -59,7 +59,8 @@ and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
 Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, plus the
 Grok Bot desktop app in standard locations, reads each app's plugin inventory
 without changing it, and shows one multi-select menu: apps that already have
-Nestor are marked with their version, apps without it are preselected. The menu
+Nestor are marked with their version, apps without it are preselected. Each app
+check, download and installation step shows a spinner. The menu
 is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
 no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
@@ -82,18 +83,23 @@ temporary file is removed when that child process ends.
 | 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
 | 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
 
-For Grok Bot, exit code 2 means the wizard has shown the steps to add the
-`nestor` Remote HTTPS MCP server in **Connect apps** with URL
-`https://journal.mcp-marketplace.org/mcp`. The local script cannot inspect its
-cloud account or confirm sign-in. Grok Bot receives the MCP tools through that
-connection; this path does not install the local Nestor skill files.
+For Grok Bot, exit code 2 means the wizard has shown the steps to add a custom
+connector on [grok.com/connectors](https://grok.com/connectors) (**New
+Connector**, then **Custom**) with URL `https://journal.mcp-marketplace.org/mcp`,
+then to check **Connect apps** in Grok Bot. Connectors live in the Grok account,
+so the local script can neither add one nor confirm sign-in, and this path does
+not install the local Nestor skill files.
 
 For Cursor, the wizard installs a tagged local copy at
-`~/.cursor/plugins/local/nestor`, checks the plugin files and asks Cursor Agent
-for `get_item`. A pre-existing untagged directory or symlink is left untouched
-and reported as a collision. Cursor currently has no non-interactive CLI
-command for plugin installation, so the wizard does not write into its synced
-marketplace inventory. Reload Cursor or start a new Agent session if needed.
+`~/.cursor/plugins/local/nestor` and, because Cursor Agent only connects to
+servers listed in `~/.cursor/mcp.json`, adds a `nestor` entry there when none
+exists, remembered by a `.massdo-mcp-server` marker in the plugin copy. It then
+checks the plugin files and asks Cursor Agent for `get_item`. A pre-existing
+untagged directory or symlink, or a `nestor` entry with another URL, is left
+untouched and reported as a collision. Cursor currently has no non-interactive
+CLI command for plugin installation, so the wizard does not write into its
+synced marketplace inventory. Reload Cursor or start a new Agent session if
+needed.
 
 Native resume commands:
 
@@ -183,9 +189,10 @@ without a terminal; `--client` may be repeated. With a terminal and no `--client
 the wizard shows the same gum menu as setup, with the apps that have Nestor
 preselected. The wizard removes the exact Codex or Claude Code plugin
 and clears its native Nestor OAuth connection when available. It removes a
-Cursor local plugin only when the marker from this installer is present; it
-never deletes an unmarked plugin or symlink. For Grok Bot it gives the manual
-removal path in **Connect apps → Your plugins** and returns exit code 2. The
+Cursor local plugin only when the marker from this installer is present, and the
+`~/.cursor/mcp.json` entry only when the `.massdo-mcp-server` marker shows the
+installer added it; it never deletes an unmarked plugin, symlink or server entry.
+For Grok Bot it points to the connector on grok.com and returns exit code 2. The
 shared marketplace and other plugins are preserved. A new app session or
 reload may be needed after removal.
 

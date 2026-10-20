@@ -9,11 +9,32 @@ terminal=false
 scratch=
 gum_bin=
 gum_version=0.17.0
+spinner_pid=
+spinner_flag=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
+cursor_mcp="$HOME/.cursor/mcp.json"
+cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
 
-cleanup() { [ -z "$scratch" ] || rm -rf -- "$scratch"; }
+# A spinner is gum spin waiting for a flag file; stopping it creates the file.
+spinner_start() {
+    [ -n "$gum_bin" ] && [ "$terminal" = true ] || return 0
+    spinner_flag="$scratch/spinner-$$-$RANDOM"
+    rm -f "$spinner_flag"
+    "$gum_bin" spin --spinner dot --spinner.foreground=117 --title="$1" \
+        -- sh -c 'while [ ! -e "$1" ]; do sleep 0.1; done' _ "$spinner_flag" </dev/null 2>&3 >/dev/null &
+    spinner_pid=$!
+}
+
+spinner_stop() {
+    [ -n "$spinner_pid" ] || return 0
+    : >"$spinner_flag"
+    wait "$spinner_pid" 2>/dev/null || :
+    spinner_pid=
+}
+
+cleanup() { spinner_stop; [ -z "$scratch" ] || rm -rf -- "$scratch"; }
 trap cleanup EXIT
-fail() { printf '%s\n' "$*" >&2; exit 1; }
+fail() { spinner_stop; printf '%s\n' "$*" >&2; exit 1; }
 
 sha256_of() {
     if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi
@@ -58,10 +79,10 @@ ensure_gum() {
     esac
     directory="$scratch/gum"
     mkdir -p "$directory" || fail 'Cannot create a temporary folder.'
-    printf '%s\n' 'Downloading the menu tool…' >&3
-    curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
+    printf '%s\n' 'Downloading the menu tool' >&3
+    curl --fail --progress-bar --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
         "https://github.com/charmbracelet/gum/releases/download/v$gum_version/gum_${gum_version}_$asset.tar.gz" \
-        -o "$directory/gum.tar.gz" || fail 'Cannot download the menu tool. Check your internet connection and try again.'
+        -o "$directory/gum.tar.gz" 2>&3 || fail 'Cannot download the menu tool. Check your internet connection and try again.'
     verify_checksum "$directory/gum.tar.gz" "$digest" 'The menu tool download failed its SHA-256 checksum check.'
     tar -xzf "$directory/gum.tar.gz" -C "$directory" || fail 'Cannot unpack the menu tool.'
     gum_bin="$directory/gum_${gum_version}_$asset/gum"
@@ -111,6 +132,25 @@ client_label() {
     esac
 }
 
+client_icon() {
+    case "$1" in
+        codex) printf '\033[38;5;36m◉\033[0m' ;;
+        claude) printf '\033[38;5;173m✳\033[0m' ;;
+        cursor) printf '\033[38;5;33m⬢\033[0m' ;;
+        grokbot) printf '\033[1;38;5;245mX\033[0m' ;;
+    esac
+}
+
+# Removes the ~/.cursor/mcp.json entry only when install.sh added it.
+cursor_remove_server() {
+    local updated
+    [ -f "$cursor_server_marker" ] && [ -f "$cursor_mcp" ] || return 0
+    json -e --arg url "$endpoint" '.mcpServers.nestor.url == $url' "$cursor_mcp" >/dev/null || return 0
+    updated=$(json 'del(.mcpServers.nestor)' "$cursor_mcp") || fail 'Cannot update the Cursor MCP configuration.'
+    printf '%s\n' "$updated" >"$cursor_mcp.nestor-tmp" && mv -- "$cursor_mcp.nestor-tmp" "$cursor_mcp" ||
+        fail 'Cannot write the Cursor MCP configuration.'
+}
+
 add_client() {
     local existing
     case "$1" in
@@ -125,7 +165,7 @@ add_client() {
 inventory() {
     local target=$1 file
     case "$target" in
-        grokbot) printf '%s' 'manual steps in the app'; return ;;
+        grokbot) printf '%s' 'set up in your Grok account'; return ;;
         cursor)
             if [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ]; then printf '%s' 'not installed'
             elif cursor_owned; then printf '%s' 'installed by this setup'
@@ -153,10 +193,11 @@ choose_clients() {
     [ "${#candidates[@]}" -gt 0 ] || fail 'No supported app detected.'
     ensure_gum
     for candidate in "${candidates[@]}"; do
-        printf 'Checking %s…\n' "$(client_label "$candidate")" >&3
+        spinner_start "Checking $(client_label "$candidate")"
         state=$(inventory "$candidate")
+        spinner_stop
         case "$state" in installed*) shown="$green$state$reset" ;; *) shown=$state ;; esac
-        label="$(client_label "$candidate") — $shown"
+        label="$(client_icon "$candidate") $(client_label "$candidate") — $shown"
         options+=("$label|$candidate")
         case "$state" in
             installed|'installed by this setup') preselected="$preselected${preselected:+,}$label" ;;
@@ -182,9 +223,10 @@ remove_client() {
     scratch="$scratch/$client"
     mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
     if [ "$client" = grokbot ]; then
-        printf '%s\n' 'To remove Nestor from Grok Bot, open Connect apps → Your plugins.'
-        printf '%s\n' 'Remove the custom Remote HTTPS MCP server named nestor and confirm it disappears from Installed.'
-        printf '%s\n' 'Grok Bot stores plugins in your cloud account; this local command cannot remove them.'
+        printf '%s\n' 'Grok Bot keeps its connectors in your Grok account, so this command cannot remove Nestor for you.'
+        printf '%s\n' '1. Open https://grok.com/connectors and remove the custom connector that uses:'
+        printf '%s\n' "   $endpoint"
+        printf '%s\n' '2. In Grok Bot, open Connect apps and check that nestor is gone.'
         exit 2
     fi
     if [ "$client" = cursor ]; then
@@ -193,6 +235,7 @@ remove_client() {
             exit 0
         fi
         cursor_owned || fail 'The Cursor Nestor plugin was not installed by this wizard; it was left untouched.'
+        cursor_remove_server
         rm -rf -- "$cursor_plugin" || fail 'Cannot remove the Cursor Nestor plugin.'
         [ ! -e "$cursor_plugin" ] && [ ! -L "$cursor_plugin" ] || fail 'The Cursor Nestor plugin is still present.'
         printf '%s\n' 'Nestor removed from Cursor. Reload Cursor or start a new Cursor Agent session.'
@@ -201,11 +244,13 @@ remove_client() {
     fi
     local binary
     binary=$(command -v "$client") || fail "Client not found: $client."
+    spinner_start "Removing Nestor from $(client_label "$client")"
     "$binary" plugin list --json >"$scratch/plugins.json" 2>"$scratch/error" || {
         tail -n 12 "$scratch/error" >&2
         fail 'Cannot inspect installed plugins.'
     }
     if ! plugin_present "$scratch/plugins.json"; then
+        spinner_stop
         printf '%s\n' "Nestor is already absent from $client."
         exit 0
     fi
@@ -227,6 +272,7 @@ remove_client() {
     fi
     "$binary" plugin list --json >"$scratch/after.json" 2>"$scratch/error" || fail 'Nestor removal could not be verified.'
     if plugin_present "$scratch/after.json"; then fail 'Nestor is still installed.'; fi
+    spinner_stop
     printf '%s\n' "Nestor removed from $client. Start a new session to apply the change."
 }
 
@@ -253,11 +299,11 @@ failed=false
 pending=false
 summary=
 for name in "${clients[@]}"; do
-    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_label "$name")"
+    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( remove_client "$name" ); status=$?
     case "$status" in
         0) line='removed or already absent' ;;
-        2) pending=true; line='finish the steps in the app' ;;
+        2) pending=true; line='finish the steps on grok.com' ;;
         *) failed=true; line='not removed — see the message above' ;;
     esac
     summary="$summary$(client_label "$name"): $line
