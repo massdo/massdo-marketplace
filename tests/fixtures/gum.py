@@ -41,6 +41,9 @@ elif command == 'confirm':
     sys.stderr.flush()
     line = sys.stdin.readline()
     sys.exit(0 if line.strip().lower() in ('y', 'yes') else 1)
+elif command == 'spin':
+    import subprocess
+    sys.exit(subprocess.run(args[args.index('--') + 1:], stdin=subprocess.DEVNULL).returncode if '--' in args else 1)
 elif command in ('style', 'format', 'log'):
     print(' '.join(positional))
 elif command == '--version':

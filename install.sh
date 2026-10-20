@@ -18,8 +18,12 @@ enabled=false
 verification_error=
 client_error=
 gum_bin=
-gum_version=2.0.2
+gum_version=0.17.0
+spinner_pid=
+spinner_flag=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
+cursor_mcp="$HOME/.cursor/mcp.json"
+cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
 
 # The braces also silence the shell's own "Terminated" notice for the job.
 stop_process() {
@@ -31,7 +35,26 @@ stop_process() {
     } 2>/dev/null
 }
 
+# A spinner is gum spin waiting for a flag file; stopping it creates the file,
+# so it ends cleanly even from a shell that is not its parent.
+spinner_start() {
+    [ -n "$gum_bin" ] && [ "$terminal" = true ] || return 0
+    spinner_flag="$scratch/spinner-$$-$RANDOM"
+    rm -f "$spinner_flag"
+    "$gum_bin" spin --spinner dot --spinner.foreground=117 --title="$1" \
+        -- sh -c 'while [ ! -e "$1" ]; do sleep 0.1; done' _ "$spinner_flag" </dev/null 2>&3 >/dev/null &
+    spinner_pid=$!
+}
+
+spinner_stop() {
+    [ -n "$spinner_pid" ] || return 0
+    : >"$spinner_flag"
+    wait "$spinner_pid" 2>/dev/null || :
+    spinner_pid=
+}
+
 cleanup_processes() {
+    spinner_stop
     [ -z "$app_pid" ] || stop_process "$app_pid"
     [ -z "$command_pid" ] || stop_process "$command_pid"
 }
@@ -48,8 +71,9 @@ show_client_error() {
     if [ -n "$client_error" ] && [ -s "$client_error" ]; then tail -n 12 "$client_error" >&2; fi
 }
 
-fail() { printf '%s\n' "$*" >&2; show_client_error; exit 1; }
+fail() { spinner_stop; printf '%s\n' "$*" >&2; show_client_error; exit 1; }
 incomplete() {
+    spinner_stop
     printf '%s\n' 'Nestor is installed — finish connecting your account'
     local command='codex mcp login nestor'
     case "$client" in
@@ -135,17 +159,18 @@ ensure_gum() {
     fi
     local asset digest directory
     case "$(uname -s)-$(uname -m)" in
-        Darwin-arm64) asset=Darwin_arm64; digest=4777a69b1170b8db23c95d5889fb32186cfda1a3ac950d339aa17e3513633890 ;;
-        Darwin-x86_64) asset=Darwin_x86_64; digest=5374966c7c7199ea879fcaa525ddc6d447a098d3d35496e430a9a1ef38d30485 ;;
-        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=8ebf8b54ec1e8c81f2bb58b59ff9b70998186a4d11375f0cf357b80e0ccfa1d5 ;;
-        Linux-x86_64) asset=Linux_x86_64; digest=d842e06d93dbed90af48cb8dd10698db6f22e331fc40346bb37bbc753109edc2 ;;
+        Darwin-arm64) asset=Darwin_arm64; digest=e2a4b8596efa05821d8c58d0c1afbcd7ad1699ba69c689cc3ff23a4a99c8b237 ;;
+        Darwin-x86_64) asset=Darwin_x86_64; digest=cd66576aeebe6cd19c771863c7e8d696e0e1d5387d1e7075666baa67c2052e53 ;;
+        Linux-aarch64|Linux-arm64) asset=Linux_arm64; digest=b0b9ed95cbf7c8b7073f17b9591811f5c001e33c7cfd066ca83ce8a07c576f9c ;;
+        Linux-x86_64) asset=Linux_x86_64; digest=69ee169bd6387331928864e94d47ed01ef649fbfe875baed1bbf27b5377a6fdb ;;
         *) fail 'This computer architecture is not supported.' ;;
     esac
     directory="$scratch/gum"
     mkdir -p "$directory" || fail 'Cannot create a temporary folder.'
-    curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
+    printf '%s\n' 'Downloading the menu tool' >&3
+    curl --fail --progress-bar --show-error --location --proto '=https' --tlsv1.2 --max-time 120 \
         "https://github.com/charmbracelet/gum/releases/download/v$gum_version/gum_${gum_version}_$asset.tar.gz" \
-        -o "$directory/gum.tar.gz" || fail 'Cannot download the menu tool. Check your internet connection and try again.'
+        -o "$directory/gum.tar.gz" 2>&3 || fail 'Cannot download the menu tool. Check your internet connection and try again.'
     verify_checksum "$directory/gum.tar.gz" "$digest" 'The menu tool download failed its SHA-256 checksum check.'
     tar -xzf "$directory/gum.tar.gz" -C "$directory" || fail 'Cannot unpack the menu tool.'
     gum_bin="$directory/gum_${gum_version}_$asset/gum"
@@ -153,6 +178,14 @@ ensure_gum() {
 }
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
+
+# Keystrokes typed while the apps were being checked would otherwise reach the
+# menu as answers; they are discarded first.
+flush_terminal_input() {
+    local junk timeout=1
+    [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.2
+    while IFS= read -r -t "$timeout" -n 1 junk <&3; do :; done
+}
 
 rpc() {
     local id=$1 request=$2 line remaining deadline=$((SECONDS + 45))
@@ -261,11 +294,29 @@ cursor_check() {
     done
     verification_error='Cannot reach Nestor or load its tools in Cursor.'
     if ! capture 45 "$scratch/tools" "$binary" mcp list-tools nestor; then
-        if grep -Eiq 'needs authentication|not authenticated|authentication required|login required' "$scratch/tools" "$scratch/tools.err"; then return 2; fi
+        if grep -Eiq 'needs authentication|requires authentication|not authenticated|authentication required|login required' "$scratch/tools" "$scratch/tools.err"; then return 2; fi
         return 3
     fi
     verification_error='Required Nestor tools are missing from Cursor.'
     grep -Eq '(^|[^[:alnum:]_])get_item([^[:alnum:]_]|$)' "$scratch/tools"
+}
+
+# Cursor Agent only connects to servers listed in ~/.cursor/mcp.json, so the
+# plugin copy alone is invisible to it. The entry is added once, remembered by
+# a marker, and removed by uninstall.sh only when that marker is present.
+cursor_add_server() {
+    local current='{}' updated
+    if [ -f "$cursor_mcp" ]; then
+        json -e 'type == "object"' "$cursor_mcp" >/dev/null || fail 'Cannot read the Cursor MCP configuration (~/.cursor/mcp.json).'
+        current=$(cat "$cursor_mcp")
+        if printf '%s' "$current" | json -e '.mcpServers.nestor != null' >/dev/null; then return 0; fi
+    fi
+    updated=$(printf '%s' "$current" | json --arg url "$endpoint" '.mcpServers = (.mcpServers // {}) + {nestor: {type: "http", url: $url}}') ||
+        fail 'Cannot update the Cursor MCP configuration.'
+    mkdir -p "${cursor_mcp%/*}" || fail 'Cannot create the Cursor configuration directory.'
+    printf '%s\n' "$updated" >"$cursor_mcp.nestor-tmp" && mv -- "$cursor_mcp.nestor-tmp" "$cursor_mcp" ||
+        fail 'Cannot write the Cursor MCP configuration.'
+    printf '%s\n' "$endpoint" >"$cursor_server_marker"
 }
 
 cursor_install() {
@@ -280,23 +331,6 @@ cursor_install() {
     if ! cp -R "$scratch/repo/plugins/nestor/." "$stage/"; then rm -rf -- "$stage"; fail 'Cannot copy the Cursor plugin.'; fi
     printf '%s\n' 'massdo/massdo-marketplace:install.sh:v1' >"$stage/.massdo-installer"
     if ! mv -- "$stage" "$cursor_plugin"; then rm -rf -- "$stage"; fail 'Cannot activate the Cursor plugin.'; fi
-}
-
-grokbot_detected() {
-    [ -d '/Applications/Grok Bot.app' ] || [ -d "$HOME/Applications/Grok Bot.app" ] ||
-        [ -f "$HOME/.local/share/applications/grok-bot.desktop" ] ||
-        [ -f "$HOME/.local/share/applications/grokbot.desktop" ] ||
-        [ -f '/usr/share/applications/grok-bot.desktop' ] ||
-        [ -f '/usr/share/applications/grokbot.desktop' ]
-}
-
-grokbot_instructions() {
-    printf '%s\n' 'Grok Bot detected. Finish Nestor setup in the Grok Bot app:'
-    printf '%s\n' '1. Open Connect apps and add a custom Remote HTTPS MCP server named nestor.'
-    printf '%s\n' "2. Use this server URL: $endpoint"
-    printf '%s\n' '3. Sign in to Nestor in the browser, then verify that get_item is available.'
-    printf '%s\n' 'This installer cannot read or change plugins in your Grok Bot cloud account.'
-    exit 2
 }
 
 plugin_state() {
@@ -395,7 +429,14 @@ client_label() {
         codex) printf '%s' 'Codex' ;;
         claude) printf '%s' 'Claude Code' ;;
         cursor) printf '%s' 'Cursor Agent' ;;
-        grokbot) printf '%s' 'Grok Bot' ;;
+    esac
+}
+
+client_icon() {
+    case "$1" in
+        codex) printf '\033[38;5;36m◉\033[0m' ;;
+        claude) printf '\033[38;5;173m✳\033[0m' ;;
+        cursor) printf '\033[38;5;33m⬢\033[0m' ;;
     esac
 }
 
@@ -406,8 +447,8 @@ client_binary() {
 add_client() {
     local name existing
     case "$1" in
-        codex|claude|cursor|grokbot) ;;
-        *) fail 'Choose codex, claude, cursor or grokbot.' ;;
+        codex|claude|cursor) ;;
+        *) fail 'Choose codex, claude or cursor.' ;;
     esac
     for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
     clients+=("$1")
@@ -419,7 +460,6 @@ add_client() {
 inventory() {
     local target=$1 state
     case "$target" in
-        grokbot) printf '%s' 'manual steps in the app'; return ;;
         cursor)
             state=$( scratch="$scratch/menu-$target"; mkdir -p "$scratch" || exit 1; client=$target
                      cursor_state 2>/dev/null && printf '%s' "$installed" )
@@ -444,23 +484,29 @@ inventory() {
 }
 
 choose_clients() {
-    local candidates=() options=() preselected= candidate state label selection option
+    local candidates=() options=() preselected= candidate state shown label selection option
+    local green=$'\033[32m' reset=$'\033[0m'
+    printf '%s\n' 'Looking for your apps…' >&3
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     command -v cursor-agent >/dev/null 2>&1 && candidates+=(cursor)
-    grokbot_detected && candidates+=(grokbot)
-    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code, Cursor Agent or Grok Bot, then run this setup command again.'
+    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code or Cursor Agent, then run this setup command again.'
     ensure_gum
     for candidate in "${candidates[@]}"; do
+        spinner_start "Checking $(client_label "$candidate")"
         state=$(inventory "$candidate")
-        label="$(client_label "$candidate") — $state"
+        spinner_stop
+        case "$state" in installed*) shown="$green$state$reset" ;; *) shown=$state ;; esac
+        label="$(client_icon "$candidate") $(client_label "$candidate") — $shown"
         options+=("$label|$candidate")
         case "$state" in
             'not installed'|'installed but disabled') preselected="$preselected${preselected:+,}$label" ;;
         esac
     done
+    flush_terminal_input
     selection=$("$gum_bin" choose --no-limit --label-delimiter='|' \
-        --header='Where should Nestor be installed? Apps already set up are marked. x selects, Enter confirms.' \
+        --header='Where should Nestor be installed?' \
+        --header.foreground=117 --cursor.foreground=117 --selected.foreground=117 \
         --selected="$preselected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted. Run this setup command again.'
     while IFS= read -r option; do [ -z "$option" ] || add_client "$option"; done <<EOT
 $selection
@@ -478,22 +524,33 @@ run_client() {
     trap cleanup_processes EXIT
     scratch="$scratch/$client"
     mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
-    [ "$client" != grokbot ] || grokbot_instructions
     binary=$(client_binary "$client") || fail "Client not found: $client."
+    spinner_start "Checking $(client_label "$client")"
     capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
     if [ "$client" = cursor ]; then
         capture 15 "$scratch/help" "$binary" mcp login --help || fail 'This Cursor Agent version cannot connect to Nestor.'
         capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
         cursor_state
-        if [ "$check_only" = false ] && [ "$installed" = false ]; then cursor_install; fi
+        if [ "$check_only" = false ]; then
+            spinner_stop
+            spinner_start 'Installing Nestor in Cursor'
+            [ "$installed" = true ] || cursor_install
+            cursor_add_server
+        fi
+        spinner_stop
+        spinner_start 'Verifying the Nestor connection'
         verify; verification_status=$?
+        spinner_stop
         if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
         [ "$verification_status" -ne 3 ] || incomplete retry
         [ "$verification_status" -eq 2 ] || fail "$verification_error"
         if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
         ask_login || incomplete
         login || incomplete
-        verify && { printf '%s\n' 'Installation complete'; exit 0; }
+        spinner_start 'Verifying the Nestor connection'
+        verify; verification_status=$?
+        spinner_stop
+        [ "$verification_status" -ne 0 ] || { printf '%s\n' 'Installation complete'; exit 0; }
         incomplete
     fi
     for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
@@ -511,7 +568,9 @@ run_client() {
     plugin_state || fail 'Cannot read the installed plugins in your app.'
     marketplace_state || abort_installation 'Cannot read the marketplaces in your app.'
     server_collision || abort_installation 'Cannot check the MCP server configuration.'
+    spinner_stop
     if [ "$check_only" = false ]; then
+        spinner_start "Installing Nestor in $(client_label "$client")"
         if [ "$marketplace" = false ]; then
             capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Cannot add the marketplace. Check the error below, then run this setup command again.'
             marketplace_state && [ "$marketplace" = true ] || abort_installation 'The marketplace is still missing after setup tried to add it.'
@@ -531,15 +590,20 @@ run_client() {
             plugin_state || abort_installation 'Cannot check Nestor after installing it.'
             [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
         fi
+        spinner_stop
     fi
+    spinner_start 'Verifying the Nestor connection'
     verify; verification_status=$?
+    spinner_stop
     if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
     [ "$verification_status" -ne 3 ] || incomplete retry
     [ "$verification_status" -eq 2 ] || fail "$verification_error"
     if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
     ask_login || incomplete
     login || incomplete
+    spinner_start 'Verifying the Nestor connection'
     verify; verification_status=$?
+    spinner_stop
     if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
     [ "$verification_status" -ne 3 ] || incomplete retry
     [ "$verification_status" -eq 2 ] || fail "$verification_error"
@@ -549,22 +613,22 @@ run_client() {
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --client)
-            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor or grokbot.'
+            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude or cursor.'
             IFS=, read -r -a names <<< "$2"
             for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
             shift 2 ;;
         --check) check_only=true; shift ;;
         --no-login) no_login=true; shift ;;
-        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|grokbot]... [--check] [--no-login]'; exit 0 ;;
+        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor]... [--check] [--no-login]'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 for name in ${clients[@]+"${clients[@]}"}; do
-    [ "$name" = grokbot ] || client_binary "$name" >/dev/null || fail "Client not found: $name."
+    client_binary "$name" >/dev/null || fail "Client not found: $name."
 done
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
 if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
-    fail 'Without a terminal, specify --client codex, claude, cursor or grokbot.'
+    fail 'Without a terminal, specify --client codex, claude or cursor.'
 fi
 case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
 umask 077
@@ -576,12 +640,11 @@ failed=false
 pending=false
 summary=
 for name in "${clients[@]}"; do
-    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_label "$name")"
+    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( run_client "$name" ); status=$?
     case "$status" in
         0) line='Installation complete' ;;
-        2) pending=true
-           if [ "$name" = grokbot ]; then line='finish the steps in the app'; else line='finish connecting your account'; fi ;;
+        2) pending=true; line='finish connecting your account' ;;
         *) failed=true; line='not set up — see the message above' ;;
     esac
     summary="$summary$(client_label "$name"): $line

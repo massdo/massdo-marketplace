@@ -24,6 +24,15 @@ def save():
     state_path.write_text(json.dumps(state))
 
 
+def cursor_server_configured():
+    """Cursor Agent only knows servers listed in ~/.cursor/mcp.json."""
+    config = Path(os.environ['HOME']) / '.cursor/mcp.json'
+    try:
+        return 'nestor' in json.loads(config.read_text()).get('mcpServers', {})
+    except (OSError, ValueError):
+        return False
+
+
 def emit(value):
     print(json.dumps(value), flush=True)
 
@@ -134,6 +143,9 @@ elif args[:2] == ['mcp', 'login']:
     if args[2:] != [expected]:
         print('wrong MCP server', file=sys.stderr)
         sys.exit(1)
+    if client == 'cursor-agent' and not cursor_server_configured():
+        print('MCP client "nestor" not found in config', file=sys.stderr)
+        sys.exit(1)
     if state.get('refuse_oauth'):
         sys.exit(1)
     state['connected'] = True
@@ -146,6 +158,9 @@ elif args[:2] == ['mcp', 'logout']:
     state['connected'] = False
     save()
 elif client == 'cursor-agent' and args[:3] == ['mcp', 'list-tools', 'nestor']:
+    if not cursor_server_configured():
+        print('Failed to list tools: Failed to load MCP \'nestor\': MCP client "nestor" not found in config', file=sys.stderr)
+        sys.exit(1)
     if state.get('offline'):
         print('Failed to connect', file=sys.stderr)
         sys.exit(1)
