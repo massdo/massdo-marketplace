@@ -17,6 +17,7 @@ installed=false
 enabled=false
 verification_error=
 client_error=
+pending_reason=
 gum_bin=
 gum_version=0.17.0
 spinner_pid=
@@ -71,10 +72,23 @@ show_client_error() {
     if [ -n "$client_error" ] && [ -s "$client_error" ]; then tail -n 12 "$client_error" >&2; fi
 }
 
+# Result lines go to stdout; the marks are colored only on a terminal.
+tint() { if [ -t 1 ]; then printf '\033[%sm%s\033[0m' "$1" "$2"; else printf '%s' "$2"; fi; }
+say() { printf '%s\n' "$*"; }
+
 fail() { spinner_stop; printf '%s\n' "$*" >&2; show_client_error; exit 1; }
+
+# Each app ends with one of these two results, in its own subshell.
+succeed() {
+    spinner_stop
+    say "  $(tint 32 '✔') Nestor is installed and connected to your account."
+    exit 0
+}
+
 incomplete() {
     spinner_stop
-    printf '%s\n' 'Nestor is installed — finish connecting your account'
+    [ -z "$pending_reason" ] || say "  $pending_reason"
+    say "  $(tint 33 '⚠') Nestor is installed — finish connecting your account"
     local command='codex mcp login nestor'
     case "$client" in
         claude) command='claude mcp login plugin:nestor:nestor' ;;
@@ -84,15 +98,15 @@ incomplete() {
         printf '%s\n' "$verification_error" >&2
         show_client_error
         if [ "$client" = cursor ]; then
-            printf '%s\n' 'Try again: reload Cursor or restore your Nestor connection, then run this setup command again.'
+            say '  Try again: reload Cursor or restore your Nestor connection, then run this setup command again.'
         else
-            printf '%s\n' 'Try again: restore your connection to Nestor, then run this setup command again.'
+            say '  Try again: restore your connection to Nestor, then run this setup command again.'
         fi
-        printf '%s\n' "If you are asked to sign in afterward, run: $command"
+        say "  If you are asked to sign in afterward, run: $command"
         exit 2
     fi
-    printf '%s\n' "To continue, run: $command"
-    printf '%s\n' 'Then run this setup command again to check the connection.'
+    say "  To continue, run: $command"
+    say '  Then run this setup command again to check the connection.'
     exit 2
 }
 
@@ -382,21 +396,34 @@ abort_installation() {
     fail "$*"
 }
 
+# Keystrokes typed before the sign-in are discarded first. Codex also reads a
+# pasted callback URL from a terminal and cancels the sign-in on a bare Enter,
+# so it gets a pipe held open instead: nothing to read, and the browser
+# callback alone completes the sign-in.
 login() {
     local server=nestor deadline=$((SECONDS + 300)) result
     [ "$client" != claude ] || server=plugin:nestor:nestor
-    NO_COLOR=1 "$binary" mcp login "$server" <&3 >&3 2>&3 &
+    flush_terminal_input
+    if [ "$client" = codex ]; then
+        mkfifo "$scratch/login-input" || return 1
+        exec 6<>"$scratch/login-input"
+        NO_COLOR=1 "$binary" mcp login "$server" <&6 >&3 2>&3 &
+    else
+        NO_COLOR=1 "$binary" mcp login "$server" <&3 >&3 2>&3 &
+    fi
     command_pid=$!
     while kill -0 "$command_pid" 2>/dev/null; do
         if [ "$SECONDS" -ge "$deadline" ]; then
             stop_process "$command_pid"
             command_pid=
+            exec 6>&-
             return 124
         fi
         sleep 0.1
     done
     wait "$command_pid"; result=$?
     command_pid=
+    exec 6>&-
     return "$result"
 }
 
@@ -517,8 +544,48 @@ EOT
     fi
 }
 
-# Runs in a subshell per app: fail and incomplete end that app only, and the
-# exit code becomes the app's result in the summary.
+installed_version() {
+    local version
+    if [ "$client" = cursor ]; then
+        version=$(json -r '.version // ""' "$cursor_plugin/.cursor-plugin/plugin.json")
+    else
+        version=$(json -r '.[0].version // ""' "$scratch/selected.json")
+    fi
+    [ -z "$version" ] || printf ' %s' "$version"
+}
+
+# Checks the connection, offers the native sign-in once, and ends the app with
+# its result: connected, installed but not connected, or failed.
+finish() {
+    local status
+    spinner_start 'Verifying the Nestor connection'
+    verify; status=$?
+    spinner_stop
+    case "$status" in
+        0) succeed ;;
+        2) ;;
+        3) incomplete retry ;;
+        *) fail "$verification_error" ;;
+    esac
+    say '  Nestor is not connected to your account yet.'
+    if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
+    flush_terminal_input
+    ask_login || { pending_reason='Browser sign-in skipped.'; incomplete; }
+    say '  Opening your browser. Sign in, allow the connection, then come back to this window.'
+    login || { pending_reason='The browser sign-in did not finish.'; incomplete; }
+    spinner_start 'Verifying the Nestor connection'
+    verify; status=$?
+    spinner_stop
+    case "$status" in
+        0) succeed ;;
+        2) pending_reason="$(client_label "$client") still reports Nestor as not signed in."; incomplete ;;
+        3) incomplete retry ;;
+        *) fail "$verification_error" ;;
+    esac
+}
+
+# Runs in a subshell per app: fail, incomplete and succeed end that app only,
+# and the exit code becomes the app's result in the summary.
 run_client() {
     client=$1
     trap cleanup_processes EXIT
@@ -531,27 +598,19 @@ run_client() {
         capture 15 "$scratch/help" "$binary" mcp login --help || fail 'This Cursor Agent version cannot connect to Nestor.'
         capture 15 "$scratch/help" "$binary" mcp list-tools --help || fail 'This Cursor Agent version cannot check Nestor tools.'
         cursor_state
+        spinner_stop
         if [ "$check_only" = false ]; then
-            spinner_stop
-            spinner_start 'Installing Nestor in Cursor'
-            [ "$installed" = true ] || cursor_install
+            if [ "$installed" = true ]; then
+                say "  Nestor$(installed_version) is already installed."
+            else
+                spinner_start 'Installing Nestor in Cursor'
+                cursor_install
+                spinner_stop
+                say '  Nestor installed.'
+            fi
             cursor_add_server
         fi
-        spinner_stop
-        spinner_start 'Verifying the Nestor connection'
-        verify; verification_status=$?
-        spinner_stop
-        if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
-        [ "$verification_status" -ne 3 ] || incomplete retry
-        [ "$verification_status" -eq 2 ] || fail "$verification_error"
-        if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
-        ask_login || incomplete
-        login || incomplete
-        spinner_start 'Verifying the Nestor connection'
-        verify; verification_status=$?
-        spinner_stop
-        [ "$verification_status" -ne 0 ] || { printf '%s\n' 'Installation complete'; exit 0; }
-        incomplete
+        finish
     fi
     for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
         # Capability names are fixed here, never supplied by the caller.
@@ -570,6 +629,9 @@ run_client() {
     server_collision || abort_installation 'Cannot check the MCP server configuration.'
     spinner_stop
     if [ "$check_only" = false ]; then
+        action=
+        if [ "$installed" = false ]; then action=installed; elif [ "$enabled" = false ]; then action=enabled; fi
+        [ -n "$action" ] || [ "$marketplace" = false ] || say "  Nestor$(installed_version) is already installed."
         spinner_start "Installing Nestor in $(client_label "$client")"
         if [ "$marketplace" = false ]; then
             capture 120 "$scratch/add-marketplace" "$binary" plugin marketplace add massdo/massdo-marketplace || abort_installation 'Cannot add the marketplace. Check the error below, then run this setup command again.'
@@ -591,23 +653,9 @@ run_client() {
             [ "$installed" = true ] && [ "$enabled" = true ] || abort_installation 'Cannot install or enable Nestor. Check the error below, then run this setup command again.'
         fi
         spinner_stop
+        [ -z "$action" ] || say "  Nestor $action."
     fi
-    spinner_start 'Verifying the Nestor connection'
-    verify; verification_status=$?
-    spinner_stop
-    if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
-    [ "$verification_status" -ne 3 ] || incomplete retry
-    [ "$verification_status" -eq 2 ] || fail "$verification_error"
-    if [ "$check_only" = true ] || [ "$no_login" = true ] || [ "$terminal" = false ]; then incomplete; fi
-    ask_login || incomplete
-    login || incomplete
-    spinner_start 'Verifying the Nestor connection'
-    verify; verification_status=$?
-    spinner_stop
-    if [ "$verification_status" -eq 0 ]; then printf '%s\n' 'Installation complete'; exit 0; fi
-    [ "$verification_status" -ne 3 ] || incomplete retry
-    [ "$verification_status" -eq 2 ] || fail "$verification_error"
-    incomplete
+    finish
 }
 
 while [ "$#" -gt 0 ]; do
@@ -639,21 +687,36 @@ ensure_jq
 failed=false
 pending=false
 summary=
+apps=
 for name in "${clients[@]}"; do
-    [ "${#clients[@]}" -eq 1 ] || printf '\n%s\n' "$(client_icon "$name") $(client_label "$name")"
+    printf '%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( run_client "$name" ); status=$?
+    printf '\n'
     case "$status" in
-        0) line='Installation complete' ;;
-        2) pending=true; line='finish connecting your account' ;;
-        *) failed=true; line='not set up — see the message above' ;;
+        0) line="$(tint 32 '✔') $(client_label "$name"): installed and connected" ;;
+        2) pending=true; line="$(tint 33 '⚠') $(client_label "$name"): finish connecting your account" ;;
+        *) failed=true; line="$(tint 31 '✖') $(client_label "$name"): not set up — see the message above" ;;
     esac
-    summary="$summary$(client_label "$name"): $line
+    summary="$summary$line
 "
+    case "$apps" in
+        '') apps=$(client_label "$name") ;;
+        *) apps="$apps, $(client_label "$name")" ;;
+    esac
 done
+apps=$(printf '%s' "$apps" | sed 's/\(.*\), /\1 or /')
 if [ "${#clients[@]}" -gt 1 ]; then
-    printf '\n%s\n' 'Summary'
-    printf '%s' "$summary"
+    printf '%s\n' 'Summary'
+    printf '%s\n' "$summary"
 fi
-[ "$failed" = false ] || exit 1
-[ "$pending" = false ] || exit 2
+if [ "$failed" = true ]; then
+    printf '%s\n' 'Setup did not finish. Fix the problem shown above, then run this setup command again.'
+    exit 1
+fi
+if [ "$pending" = true ]; then
+    printf '%s\n' 'Nestor is installed but not connected to your account yet. Follow the steps above, then run this setup command again.'
+    exit 2
+fi
+printf '%s\n' "$(tint 32 'Installation complete')"
+printf '%s\n' "Open a new conversation in $apps and type: Show my tasks."
 exit 0
