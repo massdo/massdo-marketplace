@@ -1,5 +1,5 @@
 {
-  "version": "0.12.10",
-  "version_hash": "ede0426ee06206cd",
-  "changelog": "Build accepts a --worktree argument: the work then lands in a linked Git worktree of the same repository, reused when one already holds the work branch, and the user's checkout stays untouched, dirty or not. Without the argument, the build still works in the current checkout."
+  "version": "0.12.11",
+  "version_hash": "312916d3d617b8b3",
+  "changelog": "Spec infers the project from the workspace's Git repository when no project: is given, and asks for it only when that name matches no Nestor project. Next-tasks now words this inference exactly like Doctor."
 }
