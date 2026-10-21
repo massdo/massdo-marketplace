@@ -146,8 +146,20 @@ entry points and their closings.
 Resolve the project during the interview. An existing item keeps its own project, since
 the server refuses writes from another one: when `project:` names a different project,
 say so and ask whether to continue in the item's project before any write. Reuse an
-already resolved project id. Otherwise ask for
-the project only when it is missing, accepting global scope when the user chooses none.
+already resolved project id. An explicit `project:` is authoritative: read no Git to
+confirm or replace it. Without `project:`, infer the project of work started from an
+idea from the workspace's Git repository:
+
+1. Work from the repository root, not from the current directory — a subdirectory and a
+   linked worktree must give the same answer as the root of the reference repository.
+2. Read the `origin` remote and keep the last segment of its URL, without a `.git` suffix.
+   Recognize the usual HTTPS, SSH and SCP forms, with or without the suffix.
+3. With no `origin`, use the name of the repository root directory — never the arbitrary
+   directory name of a linked worktree standing in for another project.
+
+Resolve that inferred name with `get_project(name)` only. When Git yields no reliable
+name or that read reports `NOT_FOUND`, ask for the project in one question, accepting
+global scope when the user chooses none.
 Resolve an explicit name with `get_project(name)` and an id with `get_project(projectId)`.
 For an ambiguous `project:` value, try both exact selectors: proceed only when they
 identify the same project or exactly one succeeds and the other reports `NOT_FOUND` or
@@ -214,7 +226,8 @@ Close with one short message: cite the selection using Nestor's item citation ru
 that it is saved and give its actual status in plain words, then add « Tape detail pour
 voir le détail. » unless the detail is already shown. The statuses are: ready to build;
 draft, not approved; saved, approval postponed. Add no business summary and no build
-command. This closing replaces Nestor's per-mutation report.
+command. This closing replaces Nestor's per-mutation report. When the project was
+inferred from Git rather than named, name it in the status sentence.
 
 When a write fails, say what was not saved or approved and the action needed. Never
 present a failure as a success, duplicate work after it or ask for a replacement
