@@ -41,10 +41,11 @@ current repository, and the argument is how the user reaches a project from anyw
 Without an argument, infer the name from the workspace's Git repository:
 
 1. Work from the repository root, not from the current directory — a subdirectory and a
-   linked worktree must give the same answer as the root.
+   linked worktree must give the same answer as the root of the reference repository.
 2. Read the `origin` remote and keep the last segment of its URL, without a `.git` suffix.
-   Recognize the usual HTTPS, SSH and SCP forms.
-3. With no `origin`, use the name of the repository root directory.
+   Recognize the usual HTTPS, SSH and SCP forms, with or without the suffix.
+3. With no `origin`, use the name of the repository root directory — never the arbitrary
+   directory name of a linked worktree standing in for another project.
 
 When none of this yields a reliable name, ask the user which project to read and stop.
 Never silently reuse a project named in an earlier conversation.
