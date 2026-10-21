@@ -48,8 +48,11 @@ PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your
 
 **2. Pick your apps and sign in.** Press **x** to select an app, then **Enter**.
 When asked to open your browser, press **y** and allow the connection.
+For Codex, ignore the `Callback URL` prompt shown while the browser is open:
+the sign-in completes on its own.
 
-**3. Open a new conversation** once you see **`Installation complete`**, and type:
+**3. Open a new conversation** once each app shows a **✔** line and you see
+**`Installation complete`**, and type:
 
 ```text
 Show my tasks.
@@ -58,9 +61,8 @@ Show my tasks.
 <details>
 <summary>Setup did not finish?</summary>
 
-- **`Nestor is installed — finish connecting your account`**: follow the message, or paste the setup command again to continue.
+- **`Nestor is installed — finish connecting your account`**: the line above it says why. Follow the message, or paste the setup command again to continue.
 - **Cursor** does not show Nestor yet: reload the app or start a new Agent session.
-- **Grok Bot**: setup shows the steps. Add the Nestor MCP server and sign in from **Connect apps** in Grok Bot.
 - **Connection lost**: reconnect to the internet, then paste the setup command again.
 
 For anything else, [ask for help](https://github.com/massdo/massdo-marketplace/issues/new)
@@ -78,9 +80,8 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/unin
 ```
 
 It lists the apps found on your computer, preselects the ones that have Nestor,
-and removes it from the apps you confirm. For Grok Bot it shows the steps in
-**Connect apps**, because its plugins live in your cloud account. The shared
-marketplace stays available for any other plugins you use.
+and removes it from the apps you confirm. The shared marketplace stays available
+for any other plugins you use.
 
 </details>
 

@@ -3,13 +3,13 @@
 For Codex and Claude Code, the installer adds `nestor@massdo-marketplace` through
 native marketplace and plugin commands. For Cursor Agent on Mac or Linux, it
 copies `plugins/nestor/` into Cursor's user-local plugin directory and checks
-MCP tool access with the native CLI. Grok Bot runs plugins in a cloud account;
-the wizard detects its desktop app and gives the account-side connection steps,
-returning exit code 2 until those steps are complete. It installs Nestor only.
+MCP tool access with the native CLI. It installs Nestor only. Apps whose
+connectors live in an online account, such as Grok Bot or claude.ai, are set up
+in their own interface and are not offered by the wizard.
 
 ## Prerequisites
 
-- Install Codex, Claude Code, or Cursor Agent first, or the Grok Bot desktop app.
+- Install Codex, Claude Code, or Cursor Agent first.
   On Windows, the PowerShell wizard currently supports Codex and Claude Code;
   expose their native executable on
   `PATH`; `.cmd`, `.bat` and `.ps1` launchers are refused without running a shell.
@@ -53,45 +53,58 @@ try {
 }
 ```
 
-Use `claude`, `cursor`, or `grokbot` instead of `codex` as needed. `--client` may
+Use `claude` or `cursor` instead of `codex` as needed. `--client` may
 be repeated or given a comma-separated list; every listed app is set up in turn,
 and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
-Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, plus the
-Grok Bot desktop app in standard locations, reads each app's plugin inventory
+Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, reads
+each app's plugin inventory
 without changing it, and shows one multi-select menu: apps that already have
-Nestor are marked with their version, apps without it are preselected. The menu
-is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 2.0.2
+Nestor are marked with their version, apps without it are preselected. Each app
+check, download and installation step shows a spinner. The menu
+is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
 no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
+Keystrokes typed while the apps are being checked are discarded before the menu
+opens, so a stray Enter cannot submit the preselection.
 Bash reads the terminal separately from piped script content. Without a terminal,
 the client selection is required and the installer leaves OAuth for a later native
 login.
 With a terminal, the installer asks before opening native OAuth. Answer `y` to
-continue. `--no-login` or `-NoLogin` skips that prompt.
+continue. `--no-login` or `-NoLogin` skips that prompt. Keystrokes typed before
+the prompt and before the sign-in are discarded. `codex mcp login` also reads a
+pasted callback URL from a terminal and cancels the sign-in on a bare Enter, so
+the wizard gives it a pipe held open instead: the browser callback alone
+completes the sign-in, and its `Callback URL (input hidden)` prompt can be ignored.
 The Windows command downloads the file without decoding its UTF-8 BOM, then starts
 a child PowerShell process. Its exit code cannot close the calling console. The
 temporary file is removed when that child process ends.
 
 ## Result and recovery
 
-| Exit code | Result | Next action |
-| --- | --- | --- |
-| 0 | `Installation complete` | Start a new client session to use Nestor. |
-| 2 | `Nestor is installed — finish connecting your account` | Complete authentication, or restore server access and rerun the installer, as indicated. |
-| 1 | Installation or compatibility error, or configuration collision | Resolve the displayed cause, then rerun the installer. |
+Each app prints its own result under its name: what was found (`Nestor 0.9.1 is
+already installed.`) or done (`Nestor installed.`), then `✔ Nestor is installed
+and connected to your account.` or `⚠ Nestor is installed — finish connecting
+your account`, preceded by the reason (`Browser sign-in skipped.`, `The browser
+sign-in did not finish.`, `Codex still reports Nestor as not signed in.`). With
+several apps, a `Summary` repeats one line per app. The last line gives the
+overall result:
 
-For Grok Bot, exit code 2 means the wizard has shown the steps to add the
-`nestor` Remote HTTPS MCP server in **Connect apps** with URL
-`https://journal.mcp-marketplace.org/mcp`. The local script cannot inspect its
-cloud account or confirm sign-in. Grok Bot receives the MCP tools through that
-connection; this path does not install the local Nestor skill files.
+| Exit code | Last line | Next action |
+| --- | --- | --- |
+| 0 | `Installation complete`, then the app(s) to open | Start a new client session to use Nestor. |
+| 2 | `Nestor is installed but not connected to your account yet.` | Complete authentication, or restore server access and rerun the installer, as indicated above it. |
+| 1 | `Setup did not finish.` after the error on stderr | Resolve the displayed cause, then rerun the installer. |
 
 For Cursor, the wizard installs a tagged local copy at
-`~/.cursor/plugins/local/nestor`, checks the plugin files and asks Cursor Agent
-for `get_item`. A pre-existing untagged directory or symlink is left untouched
-and reported as a collision. Cursor currently has no non-interactive CLI
-command for plugin installation, so the wizard does not write into its synced
-marketplace inventory. Reload Cursor or start a new Agent session if needed.
+`~/.cursor/plugins/local/nestor` and, because Cursor Agent only connects to
+servers listed in `~/.cursor/mcp.json`, adds a `nestor` entry there when none
+exists, remembered by a `.massdo-mcp-server` marker in the plugin copy. It then
+checks the plugin files and asks Cursor Agent for `get_item`. A pre-existing
+untagged directory or symlink, or a `nestor` entry with another URL, is left
+untouched and reported as a collision. Cursor currently has no non-interactive
+CLI command for plugin installation, so the wizard does not write into its
+synced marketplace inventory. Reload Cursor or start a new Agent session if
+needed.
 
 Native resume commands:
 
@@ -176,15 +189,15 @@ On macOS, Linux or WSL:
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
 ```
 
-Use `bash uninstall.sh --client codex|claude|cursor|grokbot` to select clients
+Use `bash uninstall.sh --client codex|claude|cursor` to select clients
 without a terminal; `--client` may be repeated. With a terminal and no `--client`,
 the wizard shows the same gum menu as setup, with the apps that have Nestor
 preselected. The wizard removes the exact Codex or Claude Code plugin
 and clears its native Nestor OAuth connection when available. It removes a
-Cursor local plugin only when the marker from this installer is present; it
-never deletes an unmarked plugin or symlink. For Grok Bot it gives the manual
-removal path in **Connect apps → Your plugins** and returns exit code 2. The
-shared marketplace and other plugins are preserved. A new app session or
+Cursor local plugin only when the marker from this installer is present, and the
+`~/.cursor/mcp.json` entry only when the `.massdo-mcp-server` marker shows the
+installer added it; it never deletes an unmarked plugin, symlink or server entry.
+The shared marketplace and other plugins are preserved. A new app session or
 reload may be needed after removal.
 
 ## Validation before publication
