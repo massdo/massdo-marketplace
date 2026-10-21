@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/hero.svg" width="100%" alt="massdo marketplace: Nestor, the wise old king with a laurel wreath, a staff and a scroll, inside a ring of neon lights over a synthwave grid. nestor is for everyone, nestor-beta is for coders.">
+  <img src=".github/assets/hero.svg" width="100%" alt="massdo marketplace, plugins for your AI agent: Nestor, the wise old king with a laurel wreath, a staff and a scroll, in a round portrait. nestor is for everyone, nestor-beta is for coders. Works with Claude Code, Codex, Cursor and Kimi Code.">
 </p>
 
 <p align="center">
@@ -9,48 +9,25 @@
 
 <br>
 
-## 🏛️ Three plugins
+## Install
 
-<p align="center">
-  <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
-</p>
+**You need** [Claude Code](https://code.claude.com/docs/en/quickstart),
+[Codex](https://learn.chatgpt.com/docs/codex/cli) or
+[Cursor Agent](https://docs.cursor.com/en/cli/installation), installed and signed in,
+plus [Git](https://git-scm.com/install/).
 
-Start with **nestor** to manage your tasks, notes and projects. No coding needed.
-**nestor-beta** adds coding tools. **massdo-skills** changes how your assistant responds.
-Both are optional.
-
-## 🕹️ Install
-
-You will copy a setup command, connect your account in your browser, then start a conversation.
-
-**Before you start:** install and sign in to
-[Codex for the terminal](https://learn.chatgpt.com/docs/codex/cli) or
-[Claude Code](https://code.claude.com/docs/en/quickstart). On Mac or Linux,
-[Cursor Agent](https://docs.cursor.com/en/cli/installation) is also supported.
-You also need [Git](https://git-scm.com/install/), which setup uses to download Nestor.
-
-### 1. Copy the setup command
-
-Choose your computer below. Copy the whole block into the window described, then press **Enter**.
-Use the Terminal or PowerShell window for this step.
-You will open your conversation in step 3.
-
-<details>
-<summary><b>Mac or Linux</b></summary>
-
-On a Mac, press **⌘ Space**, type **Terminal**, then press **Enter**.
-On Linux, open **Terminal** from your applications.
+**1. Paste this in a terminal, then press Enter.**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/install.sh | bash
 ```
 
-</details>
+<sub>On a Mac, press <b>⌘ Space</b>, type <b>Terminal</b>, then press <b>Enter</b> to open one.</sub>
 
 <details>
-<summary><b>Windows</b></summary>
+<summary>On Windows, use PowerShell instead</summary>
 
-Open **Start**, search for **PowerShell**, then open it.
+Open **Start**, search for **PowerShell**, open it, paste this block, then press **Enter**.
 
 ```powershell
 $installerPath = Join-Path ([IO.Path]::GetTempPath()) ('nestor-' + [guid]::NewGuid() + '.ps1')
@@ -62,56 +39,39 @@ try {
 }
 ```
 
-Some Windows installations are not supported yet. If setup says it cannot use your app,
-[ask for help](https://github.com/massdo/massdo-marketplace/issues/new).
-
-<details>
-<summary>Windows compatibility details</summary>
-
-The installer requires `codex.exe` or `claude.exe` on `PATH`.
-It rejects `.cmd`, `.bat` and `.ps1` launchers, including the npm shims
-`codex.cmd` and `claude.cmd`. It supports Windows PowerShell 5.1+ and PowerShell 7.
+Windows setup works with Codex and Claude Code, and asks you to type `codex` or `claude`.
+It needs `codex.exe` or `claude.exe` on `PATH` and rejects `.cmd`, `.bat` and `.ps1`
+launchers, including the npm shims `codex.cmd` and `claude.cmd`. It supports Windows
+PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your WSL terminal.
 
 </details>
 
-</details>
+**2. Pick your apps and sign in.** Press **x** to select an app, then **Enter**.
+When asked to open your browser, press **y** and allow the connection.
+For Codex, ignore the `Callback URL` prompt shown while the browser is open:
+the sign-in completes on its own.
 
-If you use Linux through WSL on Windows, use the **Mac or Linux** command in your WSL terminal.
-
-### 2. Connect Nestor
-
-On Mac or Linux, setup lists the apps found on your computer and marks the ones
-that already have Nestor. Move with the arrow keys, press **x** to select or clear
-an app, then press **Enter**. Windows setup asks you to type `codex` or `claude` instead.
-If it asks to open your browser, press **y**.
-Follow the instructions in your browser to sign in and allow the connection.
-Then return to the terminal window. For Codex, the terminal also shows a
-`Callback URL` prompt while the browser is open: leave it alone, the sign-in
-completes on its own.
-
-If you already connected Nestor, setup may finish without opening your browser.
-
-### 3. Start a new conversation
-
-Each app ends with a **✔** line once Nestor is installed and connected.
-When you see **`Installation complete`**, Nestor is ready.
-For Cursor, reload the app or start a new Agent session if the new plugin is not
-visible yet.
-Open a **new conversation** in the app you chose, then type:
+**3. Open a new conversation** once each app shows a **✔** line and you see
+**`Installation complete`**, and type:
 
 ```text
 Show my tasks.
 ```
 
-**Setup did not finish?** If you see **`Nestor is installed — finish connecting your account`**,
-the line above it says why (sign-in skipped, not finished, or not recognized yet):
-follow the message shown. You can paste the same setup command again to continue.
-If your internet connection stopped, reconnect before trying again.
+<details>
+<summary>Setup did not finish?</summary>
 
-For any other error, [ask for help](https://github.com/massdo/massdo-marketplace/issues/new).
-Tell us whether you use Mac, Windows or Linux, and which app you chose.
+- **`Nestor is installed — finish connecting your account`**: the line above it says why. Follow the message, or paste the setup command again to continue.
+- **Cursor** does not show Nestor yet: reload the app or start a new Agent session.
+- **Connection lost**: reconnect to the internet, then paste the setup command again.
 
-### Remove Nestor
+For anything else, [ask for help](https://github.com/massdo/massdo-marketplace/issues/new)
+and tell us whether you use Mac, Windows or Linux, and which app you chose.
+
+</details>
+
+<details>
+<summary>Remove Nestor</summary>
 
 On Mac or Linux, run the removal wizard:
 
@@ -123,17 +83,16 @@ It lists the apps found on your computer, preselects the ones that have Nestor,
 and removes it from the apps you confirm. The shared marketplace stays available
 for any other plugins you use.
 
-### Manual installation
+</details>
 
 <details>
-<summary>Other ways to install, including the optional plugins</summary>
+<summary>Install by hand, with the optional plugins</summary>
 
-The commands below are an alternative to the setup above. They include all three plugins.
-For Nestor alone, use the marketplace command and the Nestor install command for your app.
+These commands replace the setup above and include all three plugins.
+For Nestor alone, keep the marketplace command and the `nestor` line.
 Connection and recovery instructions are in the [setup reference](docs/installation.md).
 
-<details>
-<summary><b>Claude Code</b></summary>
+**Claude Code**
 
 ```bash
 claude plugin marketplace add massdo/massdo-marketplace
@@ -142,10 +101,7 @@ claude plugin install nestor-beta@massdo-marketplace
 claude plugin install massdo-skills@massdo-marketplace
 ```
 
-</details>
-
-<details>
-<summary><b>Codex</b></summary>
+**Codex**
 
 ```bash
 codex plugin marketplace add massdo/massdo-marketplace
@@ -154,10 +110,7 @@ codex plugin add nestor-beta@massdo-marketplace
 codex plugin add massdo-skills@massdo-marketplace
 ```
 
-</details>
-
-<details>
-<summary><b>Cursor</b></summary>
+**Cursor**, then run **Developer: Reload Window**
 
 ```bash
 git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketplace"
@@ -167,18 +120,11 @@ cp -R "$HOME/massdo-marketplace/plugins/nestor-beta" "$HOME/.cursor/plugins/loca
 cp -R "$HOME/massdo-marketplace/plugins/massdo-skills" "$HOME/.cursor/plugins/local/massdo-skills"
 ```
 
-Then run **Developer: Reload Window**.
-
-</details>
-
-<details>
-<summary><b>Kimi Code</b></summary>
+**Kimi Code**, then the commands below in the TUI
 
 ```bash
 git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketplace"
 ```
-
-Then, in the TUI:
 
 ```text
 /plugins install ~/massdo-marketplace/plugins/nestor
@@ -189,9 +135,17 @@ Then, in the TUI:
 
 </details>
 
-</details>
+## Three plugins
 
-## 🪄 Use
+<p align="center">
+  <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
+</p>
+
+Start with **nestor** to manage your tasks, notes and projects. No coding needed.
+**nestor-beta** adds coding tools. **massdo-skills** changes how your assistant responds.
+Both are optional.
+
+## Use
 
 Tell Nestor what you need in your conversation with Codex or Claude Code. For example:
 
@@ -217,7 +171,7 @@ The command lists below use the Claude Code format.
 
 </details>
 
-### 📜 nestor · for everyone
+### nestor · for everyone
 
 Like the old king of Pylos, it remembers everything. Tasks, notes, projects and hours, in plain words. No code needed: mention a task and it shows up on its own.
 
@@ -236,14 +190,14 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 <details>
 <summary>Show Nestor shortcuts and advanced options</summary>
 
-- 📓 `/nestor:nestor` — tasks, notes, projects, history
-- ⏱️ `/nestor:activity` — start a timer, get your hours
-- 🌳 `/nestor:tree` — draws a project as a tree
-- ⏸️ `/nestor:pause` — saves this chat's work context for later
-- ▶️ `/nestor:resume` — restores this chat's context without changing it
-- 📋 `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
-- 🔖 `/nestor:resume <slug>` — restores that transmission directly
-- 🔄 `/nestor:check-for-updates` — looks for an update
+- `/nestor:nestor` — tasks, notes, projects, history
+- `/nestor:activity` — start a timer, get your hours
+- `/nestor:tree` — draws a project as a tree
+- `/nestor:pause` — saves this chat's work context for later
+- `/nestor:resume` — restores this chat's context without changing it
+- `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
+- `/nestor:resume <slug>` — restores that transmission directly
+- `/nestor:check-for-updates` — looks for an update
 
 Invoke `pause` and `resume` without a project argument: transmissions belong to a chat, not to a project. Pause saves only this chat's work and replaces its previous transmission; text after `pause` tells it what to emphasize. Resume restores this chat's transmission, or the one whose slug you give; otherwise it lists every transmission, newest first, and waits for your choice. Resume preserves transmissions and starts no work. To delete one, ask for it like any item.
 
@@ -252,7 +206,7 @@ Invoke `pause` and `resume` without a project argument: transmissions belong to 
 
 </details>
 
-### 💾 nestor-beta · for coders
+### nestor-beta · for coders
 
 Nestor learned to code. It takes you from an idea to merged pull requests. Install it **on top of** nestor.
 
@@ -262,25 +216,25 @@ Nestor learned to code. It takes you from an idea to merged pull requests. Insta
 
 Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run `next-tasks`: in a repo it finds the project through Git, anywhere else you name it (`/nestor-beta:next-tasks lisbon-trip`), and it lists what to do now.
 
-- 📐 `/nestor-beta:spec` — turns your idea into a task tree, one question at a time
-- 📋 `/nestor-beta:next-tasks` — lists a project’s active tasks
-- 🏗️ `/nestor-beta:build` — turns a task into a pull request
-- 🚢 `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
-- 🩺 `/nestor-beta:doctor` — offers to close tasks that already shipped
-- 🧹 `/nestor-beta:clean-task` — tidies up a task
-- 🔄 `/nestor-beta:check-for-updates` — looks for an update
+- `/nestor-beta:spec` — turns your idea into a task tree, one question at a time
+- `/nestor-beta:next-tasks` — lists a project’s active tasks
+- `/nestor-beta:build` — turns a task into a pull request
+- `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
+- `/nestor-beta:doctor` — offers to close tasks that already shipped
+- `/nestor-beta:clean-task` — tidies up a task
+- `/nestor-beta:check-for-updates` — looks for an update
 
-Behind the scenes, 🔗 `nestor-beta` signs your pull requests with a `nestor tasks:` footer. Nothing to type.
+Behind the scenes, `nestor-beta` signs your pull requests with a `nestor tasks:` footer. Nothing to type.
 
-### 🎭 massdo-skills · for style
+### massdo-skills · for style
 
 Changes how your agent talks to you. A style stays on until `reset`.
 
-- ✂️ `/massdo-skills:answer-short` — short answers, 120 words max
-- ✍️ `/massdo-skills:articulate` — full sentences that connect
-- 🎯 `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
-- 📡 `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
+- `/massdo-skills:answer-short` — short answers, 120 words max
+- `/massdo-skills:articulate` — full sentences that connect
+- `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
+- `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
 
 <br>
 
-<p align="center"><sub>🏛️ Made by massdo</sub></p>
+<p align="center"><sub>Made by massdo</sub></p>
