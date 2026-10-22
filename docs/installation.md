@@ -58,14 +58,17 @@ be repeated or given a comma-separated list; every listed app is set up in turn,
 and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
 Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, reads
 each app's plugin inventory
-without changing it, and shows one multi-select menu: apps that already have
-Nestor are marked with their version, apps without it are preselected. Each app
+without changing it, and shows one menu of checkboxes: apps that already have
+Nestor are marked with their version, apps without it are checked. Enter checks
+or unchecks the app under the cursor, and Enter on the last line, `Launch
+install`, sets up the checked apps. Each app
 check, download and installation step shows a spinner. The menu
 is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
-no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
+no gum with `--label-delimiter` and `--no-show-help` is on `PATH`, and never when
+`--client` is given.
 Keystrokes typed while the apps are being checked are discarded before the menu
-opens, so a stray Enter cannot submit the preselection.
+opens, so a stray Enter cannot change the preselection.
 Bash reads the terminal separately from piped script content. Without a terminal,
 the client selection is required and the installer leaves OAuth for a later native
 login.
@@ -86,7 +89,8 @@ already installed.`) or done (`Nestor installed.`), then `✔ Nestor is installe
 and connected to your account.` or `⚠ Nestor is installed — finish connecting
 your account`, preceded by the reason (`Browser sign-in skipped.`, `The browser
 sign-in did not finish.`, `Codex still reports Nestor as not signed in.`). With
-several apps, a `Summary` repeats one line per app. The last line gives the
+several apps, a `Summary` repeats one line per app, with the icon and name the
+menu showed (`◉ Codex — ✔ installed and connected`). The last line gives the
 overall result:
 
 | Exit code | Last line | Next action |

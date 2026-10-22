@@ -46,7 +46,8 @@ PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your
 
 </details>
 
-**2. Pick your apps and sign in.** Press **x** to select an app, then **Enter**.
+**2. Pick your apps and sign in.** Press **Enter** to check an app, then move to
+**Launch install** and press **Enter** again.
 When asked to open your browser, press **y** and allow the connection.
 For Codex, ignore the `Callback URL` prompt shown while the browser is open:
 the sign-in completes on its own.
