@@ -1,8 +1,9 @@
 {
   "name": "nestor-beta",
   "displayName": "Nestor Beta",
-  "version": "0.12.11",
+  "version": "0.13.0",
   "description": "Nestor skills under test, before they are promoted into the nestor plugin.",
+  "types": "./types/index.d.ts",
   "dependencies": [
     "nestor"
   ],

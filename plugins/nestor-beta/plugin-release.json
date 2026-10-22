@@ -1,5 +1,5 @@
 {
-  "version": "0.12.11",
-  "version_hash": "312916d3d617b8b3",
-  "changelog": "Spec infers the project from the workspace's Git repository when no project: is given, and asks for it only when that name matches no Nestor project. Next-tasks now words this inference exactly like Doctor."
+  "version": "0.13.0",
+  "version_hash": "b4920530586d8360",
+  "changelog": "Adds the Nestor task pane for Claude Code: a side panel that lists the project tasks as next-tasks reads them, with colored status chips, an accordion per task, a detail read, Refresh and Backlog buttons, Spec and Build buttons, live follow-up of the mutations Claude makes, and the /nestor-taches command."
 }
