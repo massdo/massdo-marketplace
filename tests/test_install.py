@@ -13,6 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 POWERSHELL = os.environ.get('NESTOR_TEST_INSTALLER') == 'powershell'
+# Keys sent to the setup menu; each answer is followed by Enter.
+DOWN = '\x1b[B'
+ESCAPE = '\x1b'
 
 
 @unittest.skipIf(os.name == 'nt' and not POWERSHELL, 'Bash is tested on macOS, Linux and WSL')
@@ -86,9 +89,6 @@ class Installer(unittest.TestCase):
 
     def calls(self):
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
-
-    def menu(self):
-        return next(call for call in self.calls() if call[:2] == ['gum', 'choose'] and '--help' not in call)
 
     def assert_only_inventory_reads(self):
         self.assertTrue(all(call[0] == 'gum' or call[1:3] == ['plugin', 'list'] for call in self.calls()),
@@ -204,32 +204,45 @@ class Installer(unittest.TestCase):
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
     def test_menu_marks_installed_apps_and_preselects_the_missing_ones(self):
         self.state.write_text(json.dumps({'installed': True, 'connected': True}))
-        code, output = self.run_interactive(self.command(None, ()), [('Where should Nestor be installed', '')])
-        self.assertEqual(code, 0, output)
-        self.assertIn('Nothing selected', output)
-        menu = self.menu()
-        for ending in ('Codex — \x1b[32minstalled 0.9.1\x1b[0m|codex', 'Claude Code — \x1b[32minstalled 0.9.1\x1b[0m|claude',
-                       'Cursor Agent — not installed|cursor'):
-            self.assertTrue(any(option.endswith(ending) for option in menu), (ending, menu))
-        self.assertFalse(any('grokbot' in option for option in menu), menu)
-        selected = next(flag for flag in menu if flag.startswith('--selected='))
-        self.assertIn('Cursor Agent — not installed', selected)
-        self.assertNotIn('Codex', selected)
-        self.assertNotIn('Claude', selected)
+        prompt = 'Where should Nestor be installed'
+        code, output = self.run_interactive(self.command(None, ()),
+                                            [(prompt, DOWN * 2), (prompt, DOWN), ('Check at least one app', ESCAPE)])
+        self.assertEqual(code, 1, output)
+        self.assertIn('App selection was interrupted', output)
+        for row in ('☐ \x1b[38;5;36m◉\x1b[0m Codex — \x1b[32minstalled 0.9.1\x1b[0m',
+                    '☐ \x1b[38;5;173m✳\x1b[0m Claude Code — \x1b[32minstalled 0.9.1\x1b[0m',
+                    '\x1b[38;5;117m☑\x1b[0m \x1b[38;5;33m⬢\x1b[0m Cursor Agent — not installed',
+                    '\x1b[1m▶ Launch install\x1b[0m'):
+            self.assertIn(row, output)
+        self.assertNotIn('grokbot', output)
+        self.assertFalse(any(call[:2] == ['gum', 'choose'] and '--help' not in call for call in self.calls()),
+                         self.calls())
         self.assert_only_inventory_reads()
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
+    def test_menu_checks_with_enter_keeps_the_cursor_and_launches_from_the_last_line(self):
+        self.state.write_text(json.dumps({'installed': True, 'connected': True}))
+        prompt = 'Where should Nestor be installed'
+        # Down and Enter three times: check Claude Code, uncheck Cursor Agent, launch.
+        code, output = self.run_interactive(self.command(None, ()), [(prompt, DOWN)] * 3)
+        self.assertEqual(code, 0, output)
+        self.assertIn('Open a new conversation in Claude Code and type: Show my tasks.', output)
+        self.assertFalse((self.root / 'home/.cursor/plugins/local/nestor').exists())
 
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
     def test_menu_sets_up_every_selected_app(self):
         self.state.write_text(json.dumps({'installed': False, 'marketplace': False, 'connected': False}))
+        prompt = 'Where should Nestor be installed'
         code, output = self.run_interactive(self.command(None, ()),
-                                            [('Where should Nestor be installed', 'codex,claude'), ('browser', 'y')])
+                                            [(prompt, DOWN * 2), (prompt, DOWN), ('browser', 'y')])
         self.assertEqual(code, 0, output)
-        selected = next(flag for flag in self.menu() if flag.startswith('--selected='))
-        for name in ('Codex — not installed', 'Claude Code — not installed', 'Cursor Agent — not installed'):
-            self.assertIn(name, selected)
+        for row in ('\x1b[38;5;36m◉\x1b[0m Codex — not installed', '\x1b[38;5;173m✳\x1b[0m Claude Code — not installed',
+                    '\x1b[38;5;33m⬢\x1b[0m Cursor Agent — not installed'):
+            self.assertIn('\x1b[38;5;117m☑\x1b[0m ' + row, output)
         self.assertIn('Installation complete', output)
-        self.assertIn('Codex: installed and connected', output)
-        self.assertIn('Claude Code: installed and connected', output)
+        self.assertIn('\x1b[38;5;36m◉\x1b[0m Codex — \x1b[32m✔ installed and connected\x1b[0m', output)
+        self.assertIn('\x1b[38;5;173m✳\x1b[0m Claude Code — \x1b[32m✔ installed and connected\x1b[0m', output)
+        self.assertFalse((self.root / 'home/.cursor/plugins/local/nestor').exists())
         self.assertIn('Summary', output)
         self.assertTrue(any(call[1:3] in (['plugin', 'add'], ['plugin', 'install']) for call in self.calls()),
                         self.calls())
@@ -242,14 +255,15 @@ class Installer(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.count('Installation complete'), 1, result.stdout)
         self.assertEqual(result.stdout.count('Nestor is installed and connected to your account'), 2, result.stdout)
-        self.assertIn('✔ Codex: installed and connected', result.stdout)
-        self.assertIn('✔ Claude Code: installed and connected', result.stdout)
+        self.assertIn('◉ Codex — ✔ installed and connected', result.stdout)
+        self.assertIn('✳ Claude Code — ✔ installed and connected', result.stdout)
+        self.assertNotIn('\x1b[', result.stdout)
         self.assertIn('Open a new conversation in Codex or Claude Code and type: Show my tasks.', result.stdout)
         self.assertIn('Summary', result.stdout)
         result = self.run_installer(None, {'connected': False}, ('--client', 'codex,claude', '--check'))
         self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('Codex: finish connecting your account', result.stdout)
-        self.assertIn('Claude Code: finish connecting your account', result.stdout)
+        self.assertIn('Codex — ⚠ finish connecting your account', result.stdout)
+        self.assertIn('Claude Code — ⚠ finish connecting your account', result.stdout)
         result = self.run_installer(None, {'disabled_skill': True}, ('--client', 'codex', '--client', 'claude', '--check'))
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertNotIn('Installation complete', result.stdout)
@@ -655,8 +669,12 @@ function Invoke-WebRequest {
             command = self.command(None, ())
         else:
             command = ['/bin/bash', '-c', 'cat "$1" | /bin/bash -s --', 'installer', str(ROOT / 'install.sh')]
-        prompt = 'Choose your app' if POWERSHELL else 'Where should Nestor be installed'
-        code, output = self.run_interactive(command, [(prompt, 'claude'), ('browser', 'y')])
+        if POWERSHELL:
+            choices = [('Choose your app', 'claude')]
+        else:
+            prompt = 'Where should Nestor be installed'
+            choices = [(prompt, ''), (prompt, DOWN * 2), (prompt, DOWN)]
+        code, output = self.run_interactive(command, choices + [('browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
 

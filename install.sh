@@ -22,6 +22,7 @@ gum_bin=
 gum_version=0.17.0
 spinner_pid=
 spinner_flag=
+menu_tty=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 cursor_mcp="$HOME/.cursor/mcp.json"
 cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
@@ -62,6 +63,7 @@ cleanup_processes() {
 
 cleanup() {
     cleanup_processes
+    menu_restore
     [ -z "$scratch" ] || rm -rf -- "$scratch"
 }
 trap cleanup EXIT
@@ -72,8 +74,11 @@ show_client_error() {
     if [ -n "$client_error" ] && [ -s "$client_error" ]; then tail -n 12 "$client_error" >&2; fi
 }
 
-# Result lines go to stdout; the marks are colored only on a terminal.
-tint() { if [ -t 1 ]; then printf '\033[%sm%s\033[0m' "$1" "$2"; else printf '%s' "$2"; fi; }
+# Result lines go to stdout; the marks are colored only on a terminal. That is
+# decided once, here: tint mostly runs inside $(...), where stdout is a pipe.
+colors=false
+[ ! -t 1 ] || colors=true
+tint() { if [ "$colors" = true ]; then printf '\033[%sm%s\033[0m' "$1" "$2"; else printf '%s' "$2"; fi; }
 say() { printf '%s\n' "$*"; }
 
 fail() { spinner_stop; printf '%s\n' "$*" >&2; show_client_error; exit 1; }
@@ -163,9 +168,9 @@ ensure_jq() {
     chmod 700 "$jq_bin"
 }
 
-# The menu is drawn by gum (charmbracelet/gum), pinned by version and SHA-256
-# like jq. It is only needed when the setup command has to ask which apps to
-# set up; a run with --client never downloads it.
+# The spinners and the sign-in question are drawn by gum (charmbracelet/gum),
+# pinned by version and SHA-256 like jq. It is only needed when the setup
+# command has to ask which apps to set up; a run with --client never downloads it.
 ensure_gum() {
     if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
         gum_bin=$(command -v gum)
@@ -461,9 +466,9 @@ client_label() {
 
 client_icon() {
     case "$1" in
-        codex) printf '\033[38;5;36m◉\033[0m' ;;
-        claude) printf '\033[38;5;173m✳\033[0m' ;;
-        cursor) printf '\033[38;5;33m⬢\033[0m' ;;
+        codex) tint '38;5;36' '◉' ;;
+        claude) tint '38;5;173' '✳' ;;
+        cursor) tint '38;5;33' '⬢' ;;
     esac
 }
 
@@ -510,9 +515,31 @@ inventory() {
     esac
 }
 
+# The menu is drawn here, not by gum: gum choose cannot check an app with Enter
+# and stay open, and starting it again after each Enter made the menu blink.
+# Each key redraws the same lines in place, with line wrapping off so that a
+# narrow terminal clips them instead of shifting the redraw. Between keys the
+# cursor waits on the first line, so closing the menu erases it from there.
+menu_restore() {
+    [ -n "$menu_tty" ] || return 0
+    printf '\033[J\033[?7h\033[?25h' >&3
+    stty "$menu_tty" <&3 2>/dev/null || :
+    menu_tty=
+}
+
+# Enter on an app checks or unchecks it; Enter on the last line starts the
+# setup of the checked apps.
 choose_clients() {
-    local candidates=() options=() preselected= candidate state shown label selection option
-    local green=$'\033[32m' reset=$'\033[0m'
+    local candidates=() labels=() checked=() rows=() candidate state shown index cursor=0 key rest
+    local frame notice= timeout=1
+    # The menu is drawn on the terminal, whatever stdout is.
+    local colors=true
+    local header help on pointer launch
+    header=$(tint '38;5;117' 'Where should Nestor be installed?')
+    help=$(tint 90 'Use ↑↓ to move and Enter to check an app, then choose Launch install.')
+    on=$(tint '38;5;117' '☑')
+    pointer=$(tint '38;5;117' '> ')
+    launch=$(tint 1 '▶ Launch install')
     printf '%s\n' 'Looking for your apps…' >&3
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
@@ -523,25 +550,64 @@ choose_clients() {
         spinner_start "Checking $(client_label "$candidate")"
         state=$(inventory "$candidate")
         spinner_stop
-        case "$state" in installed*) shown="$green$state$reset" ;; *) shown=$state ;; esac
-        label="$(client_icon "$candidate") $(client_label "$candidate") — $shown"
-        options+=("$label|$candidate")
+        case "$state" in installed*) shown=$(tint 32 "$state") ;; *) shown=$state ;; esac
+        labels+=("$(client_icon "$candidate") $(client_label "$candidate") — $shown")
         case "$state" in
-            'not installed'|'installed but disabled') preselected="$preselected${preselected:+,}$label" ;;
+            'not installed'|'installed but disabled') checked+=(true) ;;
+            *) checked+=(false) ;;
         esac
     done
+    [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.1
     flush_terminal_input
-    selection=$("$gum_bin" choose --no-limit --label-delimiter='|' \
-        --header='Where should Nestor be installed?' \
-        --header.foreground=117 --cursor.foreground=117 --selected.foreground=117 \
-        --selected="$preselected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted. Run this setup command again.'
-    while IFS= read -r option; do [ -z "$option" ] || add_client "$option"; done <<EOT
-$selection
-EOT
-    if [ "${#clients[@]}" -eq 0 ]; then
-        printf '%s\n' 'Nothing selected. Run this setup command again to install Nestor.'
-        exit 0
-    fi
+    menu_tty=$(stty -g <&3) && stty -echo -icanon <&3 || fail 'Cannot read keys from this terminal.'
+    printf '\033[?25l\033[?7l' >&3
+    while :; do
+        rows=()
+        for index in "${!candidates[@]}"; do
+            if [ "${checked[$index]}" = true ]; then rows+=("$on ${labels[$index]}"); else rows+=("☐ ${labels[$index]}"); fi
+        done
+        rows+=("$launch")
+        frame=$'\033[2K'"$header"$'\n\033[2K'"${notice:-$help}"$'\n'
+        for index in "${!rows[@]}"; do
+            if [ "$index" -eq "$cursor" ]; then
+                frame="$frame"$'\033[2K'"$pointer$(tint '38;5;117' "${rows[$index]}")"$'\n'
+            else
+                frame="$frame"$'\033[2K'"  ${rows[$index]}"$'\n'
+            fi
+        done
+        printf '%s' "$frame" >&3
+        # Back to the first line: the next frame overwrites this one.
+        printf '\033[%sA' "$((${#rows[@]} + 2))" >&3
+        IFS= read -rsn1 key <&3 || key=$'\033'
+        case "$key" in
+            $'\033')
+                rest=
+                IFS= read -rsn2 -t "$timeout" rest <&3 || :
+                case "$rest" in
+                    '[A'|OA) cursor=$(((cursor + ${#rows[@]} - 1) % ${#rows[@]})) ;;
+                    '[B'|OB) cursor=$(((cursor + 1) % ${#rows[@]})) ;;
+                    '')
+                        menu_restore
+                        fail 'App selection was interrupted. Run this setup command again.' ;;
+                esac ;;
+            k) cursor=$(((cursor + ${#rows[@]} - 1) % ${#rows[@]})) ;;
+            j) cursor=$(((cursor + 1) % ${#rows[@]})) ;;
+            '')
+                notice=
+                if [ "$cursor" -lt "${#candidates[@]}" ]; then
+                    if [ "${checked[$cursor]}" = true ]; then checked[$cursor]=false; else checked[$cursor]=true; fi
+                    continue
+                fi
+                for index in "${!candidates[@]}"; do
+                    [ "${checked[$index]}" = false ] || add_client "${candidates[$index]}"
+                done
+                if [ "${#clients[@]}" -gt 0 ]; then
+                    menu_restore
+                    return 0
+                fi
+                notice=$(tint 33 'Check at least one app, then choose Launch install.') ;;
+        esac
+    done
 }
 
 installed_version() {
@@ -691,12 +757,13 @@ for name in "${clients[@]}"; do
     printf '%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( run_client "$name" ); status=$?
     printf '\n'
+    # Each line reads like the menu: the app's icon and name, then its state.
     case "$status" in
-        0) line="$(tint 32 '✔') $(client_label "$name"): installed and connected" ;;
-        2) pending=true; line="$(tint 33 '⚠') $(client_label "$name"): finish connecting your account" ;;
-        *) failed=true; line="$(tint 31 '✖') $(client_label "$name"): not set up — see the message above" ;;
+        0) line=$(tint 32 '✔ installed and connected') ;;
+        2) pending=true; line=$(tint 33 '⚠ finish connecting your account') ;;
+        *) failed=true; line=$(tint 31 '✖ not set up — see the message above') ;;
     esac
-    summary="$summary$line
+    summary="$summary$(client_icon "$name") $(client_label "$name") — $line
 "
     case "$apps" in
         '') apps=$(client_label "$name") ;;
@@ -705,7 +772,7 @@ for name in "${clients[@]}"; do
 done
 apps=$(printf '%s' "$apps" | sed 's/\(.*\), /\1 or /')
 if [ "${#clients[@]}" -gt 1 ]; then
-    printf '%s\n' 'Summary'
+    printf '%s\n' "$(tint '38;5;117' 'Summary')"
     printf '%s\n' "$summary"
 fi
 if [ "$failed" = true ]; then
