@@ -22,6 +22,7 @@ gum_bin=
 gum_version=0.17.0
 spinner_pid=
 spinner_flag=
+menu_tty=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 cursor_mcp="$HOME/.cursor/mcp.json"
 cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
@@ -62,6 +63,7 @@ cleanup_processes() {
 
 cleanup() {
     cleanup_processes
+    menu_restore
     [ -z "$scratch" ] || rm -rf -- "$scratch"
 }
 trap cleanup EXIT
@@ -166,12 +168,11 @@ ensure_jq() {
     chmod 700 "$jq_bin"
 }
 
-# The menu is drawn by gum (charmbracelet/gum), pinned by version and SHA-256
-# like jq. It is only needed when the setup command has to ask which apps to
-# set up; a run with --client never downloads it.
+# The spinners and the sign-in question are drawn by gum (charmbracelet/gum),
+# pinned by version and SHA-256 like jq. It is only needed when the setup
+# command has to ask which apps to set up; a run with --client never downloads it.
 ensure_gum() {
-    if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter' &&
-        gum choose --help 2>&1 | grep -q -- 'show-help'; then
+    if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
         gum_bin=$(command -v gum)
         return
     fi
@@ -514,15 +515,31 @@ inventory() {
     esac
 }
 
-# Enter does everything: the menu is a single pick, drawn again after each one
-# with the cursor back on the line just picked. Enter on an app checks or
-# unchecks it; Enter on the last line starts the setup of the checked apps.
+# The menu is drawn here, not by gum: gum choose cannot check an app with Enter
+# and stay open, and starting it again after each Enter made the menu blink.
+# Each key redraws the same lines in place, with line wrapping off so that a
+# narrow terminal clips them instead of shifting the redraw. Between keys the
+# cursor waits on the first line, so closing the menu erases it from there.
+menu_restore() {
+    [ -n "$menu_tty" ] || return 0
+    printf '\033[J\033[?7h\033[?25h' >&3
+    stty "$menu_tty" <&3 2>/dev/null || :
+    menu_tty=
+}
+
+# Enter on an app checks or unchecks it; Enter on the last line starts the
+# setup of the checked apps.
 choose_clients() {
-    local candidates=() labels=() checked=() options=() candidate state shown index box selected pick notice=
+    local candidates=() labels=() checked=() rows=() candidate state shown index cursor=0 key rest
+    local frame notice= timeout=1
     # The menu is drawn on the terminal, whatever stdout is.
     local colors=true
-    local help
+    local header help on pointer launch
+    header=$(tint '38;5;117' 'Where should Nestor be installed?')
     help=$(tint 90 'Use ↑↓ to move and Enter to check an app, then choose Launch install.')
+    on=$(tint '38;5;117' '☑')
+    pointer=$(tint '38;5;117' '> ')
+    launch=$(tint 1 '▶ Launch install')
     printf '%s\n' 'Looking for your apps…' >&3
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
@@ -540,36 +557,56 @@ choose_clients() {
             *) checked+=(false) ;;
         esac
     done
-    pick=${candidates[0]}
+    [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.1
     flush_terminal_input
+    menu_tty=$(stty -g <&3) && stty -echo -icanon <&3 || fail 'Cannot read keys from this terminal.'
+    printf '\033[?25l\033[?7l' >&3
     while :; do
-        options=()
+        rows=()
         for index in "${!candidates[@]}"; do
-            box='☐'
-            [ "${checked[$index]}" = false ] || box=$(tint '38;5;117' '☑')
-            options+=("$box ${labels[$index]}|${candidates[$index]}")
-            [ "${candidates[$index]}" != "$pick" ] || selected=${options[$index]%|*}
+            if [ "${checked[$index]}" = true ]; then rows+=("$on ${labels[$index]}"); else rows+=("☐ ${labels[$index]}"); fi
         done
-        options+=("$(tint 1 '▶ Launch install')|launch")
-        [ "$pick" != launch ] || selected=${options[${#candidates[@]}]%|*}
-        pick=$("$gum_bin" choose --label-delimiter='|' --no-show-help \
-            --header="Where should Nestor be installed?
-${notice:-$help}" \
-            --header.foreground=117 --cursor.foreground=117 \
-            --selected="$selected" "${options[@]}" <&3 2>&3) || fail 'App selection was interrupted. Run this setup command again.'
-        notice=
-        if [ "$pick" = launch ]; then
-            for index in "${!candidates[@]}"; do
-                [ "${checked[$index]}" = false ] || add_client "${candidates[$index]}"
-            done
-            [ "${#clients[@]}" -eq 0 ] || return 0
-            notice=$(tint 33 'Check at least one app, then choose Launch install.')
-            continue
-        fi
-        for index in "${!candidates[@]}"; do
-            [ "${candidates[$index]}" = "$pick" ] || continue
-            if [ "${checked[$index]}" = true ]; then checked[$index]=false; else checked[$index]=true; fi
+        rows+=("$launch")
+        frame=$'\033[2K'"$header"$'\n\033[2K'"${notice:-$help}"$'\n'
+        for index in "${!rows[@]}"; do
+            if [ "$index" -eq "$cursor" ]; then
+                frame="$frame"$'\033[2K'"$pointer$(tint '38;5;117' "${rows[$index]}")"$'\n'
+            else
+                frame="$frame"$'\033[2K'"  ${rows[$index]}"$'\n'
+            fi
         done
+        printf '%s' "$frame" >&3
+        # Back to the first line: the next frame overwrites this one.
+        printf '\033[%sA' "$((${#rows[@]} + 2))" >&3
+        IFS= read -rsn1 key <&3 || key=$'\033'
+        case "$key" in
+            $'\033')
+                rest=
+                IFS= read -rsn2 -t "$timeout" rest <&3 || :
+                case "$rest" in
+                    '[A'|OA) cursor=$(((cursor + ${#rows[@]} - 1) % ${#rows[@]})) ;;
+                    '[B'|OB) cursor=$(((cursor + 1) % ${#rows[@]})) ;;
+                    '')
+                        menu_restore
+                        fail 'App selection was interrupted. Run this setup command again.' ;;
+                esac ;;
+            k) cursor=$(((cursor + ${#rows[@]} - 1) % ${#rows[@]})) ;;
+            j) cursor=$(((cursor + 1) % ${#rows[@]})) ;;
+            '')
+                notice=
+                if [ "$cursor" -lt "${#candidates[@]}" ]; then
+                    if [ "${checked[$cursor]}" = true ]; then checked[$cursor]=false; else checked[$cursor]=true; fi
+                    continue
+                fi
+                for index in "${!candidates[@]}"; do
+                    [ "${checked[$index]}" = false ] || add_client "${candidates[$index]}"
+                done
+                if [ "${#clients[@]}" -gt 0 ]; then
+                    menu_restore
+                    return 0
+                fi
+                notice=$(tint 33 'Check at least one app, then choose Launch install.') ;;
+        esac
     done
 }
 

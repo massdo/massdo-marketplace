@@ -62,11 +62,11 @@ without changing it, and shows one menu of checkboxes: apps that already have
 Nestor are marked with their version, apps without it are checked. Enter checks
 or unchecks the app under the cursor, and Enter on the last line, `Launch
 install`, sets up the checked apps. Each app
-check, download and installation step shows a spinner. The menu
-is drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
+check, download and installation step shows a spinner. The wizard redraws the
+menu in place after each key, so it does not blink. The spinners and the sign-in
+question are drawn by [gum](https://github.com/charmbracelet/gum), pinned to version 0.17.0
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
-no gum with `--label-delimiter` and `--no-show-help` is on `PATH`, and never when
-`--client` is given.
+no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
 Keystrokes typed while the apps are being checked are discarded before the menu
 opens, so a stray Enter cannot change the preselection.
 Bash reads the terminal separately from piped script content. Without a terminal,

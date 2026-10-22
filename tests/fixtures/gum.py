@@ -11,8 +11,7 @@ if log:
         handle.write(json.dumps(['gum', *args]) + '\n')
 command = args[0] if args else ''
 if '--help' in args:
-    print('Usage: gum ' + command + ' [flags]\n      --label-delimiter=""   label:value options\n      --selected=,...\n'
-          '      --[no-]show-help')
+    print('Usage: gum ' + command + ' [flags]\n      --label-delimiter=""   label:value options\n      --selected=,...')
     sys.exit(0)
 flags = {}
 positional = []
@@ -29,17 +28,12 @@ if command == 'choose':
     line = sys.stdin.readline()
     if not line:
         sys.exit(130)
-    if line.strip() == 'esc':
-        sys.exit(1)
-    options = [option.split(delimiter, 1) if delimiter and delimiter in option else (option, option)
-               for option in positional]
-    if '--no-limit' in flags:
-        wanted = [item.strip() for item in line.strip().split(',') if item.strip()]
-        chosen = [value for label, value in options if label in wanted or value in wanted]
-    else:
-        # A single pick: a bare Enter takes the line under the cursor.
-        wanted = line.strip() or flags.get('--selected', options[0][0] if options else '')
-        chosen = [value for label, value in options if wanted in (label, value)][:1]
+    wanted = [item.strip() for item in line.strip().split(',') if item.strip()]
+    chosen = []
+    for option in positional:
+        label, value = (option.split(delimiter, 1) if delimiter and delimiter in option else (option, option))
+        if label in wanted or value in wanted:
+            chosen.append(value)
     if chosen:
         print('\n'.join(chosen))
 elif command == 'confirm':
