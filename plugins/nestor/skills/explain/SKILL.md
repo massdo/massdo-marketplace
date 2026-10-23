@@ -19,7 +19,7 @@ explainer shows.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "10d15cff38fabeb39" }` on every Nestor MCP call.
+Pass `{ "version_hash": "145b48fb8fa488ae0" }` on every Nestor MCP call.
 
 ## Argument
 

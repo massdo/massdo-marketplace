@@ -1,5 +1,5 @@
 {
-  "version": "0.10.0",
-  "version_hash": "0d15cff38fabeb39",
-  "changelog": "New explain skill: /nestor:explain turns a text, a Nestor item or a project into a bespoke explainer. It first asks which formats you want: text, an HTML page that mixes text and diagrams, or a video.\nWithout a tool that renders video, it writes the storytelling instead."
+  "version": "0.10.1",
+  "version_hash": "45b48fb8fa488ae0",
+  "changelog": "When a new decision replaces one already written in an item's body, Nestor now rewrites that passage instead of appending the new decision below the old one, so the body no longer keeps outdated expectations.\nOnly new information is appended, and a request to reword a body rewrites it as a whole."
 }
