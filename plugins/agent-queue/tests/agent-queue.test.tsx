@@ -43,6 +43,8 @@ type World = {
   files: Map<string, string>
   decision?: 'allow' | 'ask' | 'deny'
   isRefused?: boolean
+  /** This session lost the app's tools, as when their MCP server disconnects. */
+  isToolMissing?: boolean
 }
 
 const rowOf = (one: Fake) => ({
@@ -98,7 +100,8 @@ const world = (on: On, state: World) => {
   })
   on('fs.list', (_, e) => ({ value: entriesOf(state.files, e.path) }))
   on('fs.exists', (_, e) => ({ value: state.files.has(e.path) || entriesOf(state.files, e.path).length > 0 }))
-  on('tool.check', () => ({ decision: state.decision ?? 'allow' }))
+  // A tool this session lost falls to the kit's bottom: the check rejects, as the engine's does ("no tool named").
+  on('tool.check', (_, e, next) => (state.isToolMissing ? next(e) : { decision: state.decision ?? 'allow' }))
   on('tool.call', (_, e) => {
     calls.push(String(e.tool))
     if (e.tool === 'AskUserQuestion') return { result: {}, text: state.files.get(`${DIR}/asking/cli-self.json`) }
@@ -402,6 +405,35 @@ test('a refusal nobody retries holds the shortcut queue a minute, then the leade
   state.isRefused = false
   state.others = [THOTH]
   await clock.advance(6000)
+  expect(fileOf(files, 'state.json').problem).toBeNull()
+  expect(fileOf(files, 'queue.json')).toEqual([
+    { id: 'local_b', link: 'claude://claude.ai/epitaxy/local_b', seenAt: seenAt(60) },
+  ])
+})
+
+test('a leader that lost the sessions tool lets the lease go and keeps off it a minute', async ($, on) => {
+  const files = new Map([[`${DIR}/seen.json`, JSON.stringify({ local_b: seenAt(60) })]])
+  const state: World = { self: SELF, shown: ['local_self'], files, others: [THOTH], isToolMissing: true }
+  const { clock, calls } = world(on, state)
+  await $.session.start(STARTED)
+  await clock.settle()
+
+  // Its read failed before calling anything, and it left the lease free for the next session that ticks.
+  expect(fileOf(files, 'state.json').problem.kind).toBe('error')
+  expect(fileOf(files, 'leader.json')).toBeNull()
+  await clock.advance(9000)
+  expect(fileOf(files, 'leader.json')).toBeNull()
+
+  // Another session, which has the tool, takes it, then goes quiet: its lease runs out, this one still keeps off.
+  files.set(`${DIR}/leader.json`, JSON.stringify({ owner: 'cli-other', at: clock.now() }))
+  await clock.advance(MINUTE - 12_000)
+  expect(fileOf(files, 'leader.json').owner).toBe('cli-other')
+  expect(calls).toEqual([])
+
+  // A minute on, it leads again, its tools back.
+  state.isToolMissing = false
+  await clock.advance(3000)
+  expect(fileOf(files, 'leader.json')).toEqual({ owner: 'cli-self', at: NOW + MINUTE })
   expect(fileOf(files, 'state.json').problem).toBeNull()
   expect(fileOf(files, 'queue.json')).toEqual([
     { id: 'local_b', link: 'claude://claude.ai/epitaxy/local_b', seenAt: seenAt(60) },

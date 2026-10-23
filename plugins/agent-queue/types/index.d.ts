@@ -64,6 +64,7 @@ export type Row = {
 /**
  * Why the leader could not read the app: a permission to give, a refusal, or an error.
  * `retryAt`, a refusal's only: when the leader reads again by itself (absent, at once).
+ * Whatever the kind, the session that failed lets the lease go and keeps off it a while: another one leads meanwhile.
  */
 export type Problem = { kind: 'ask' | 'refused' | 'error'; text: string; retryAt?: number }
 

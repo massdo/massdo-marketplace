@@ -9,6 +9,7 @@ const POLL_MS = 3000
 // A leader that misses three polls hands over to whichever session ticks next.
 const LEASE_MS = 10_000
 // A refused read is tried again after this, by itself: the refusal may have been a moment's.
+// A session whose read failed, whatever the cause, keeps off the lease as long.
 const RETRY_MS = 60_000
 const LIST = 'mcp__ccd_session_mgmt__list_sessions'
 const SELF = 'mcp__ccd_session_mgmt__get_session'
@@ -28,6 +29,7 @@ const RANK: Record<Status, number> = { question: 0, done: 1, busy: 2, idle: 3 }
 type $ = EngineInterface
 // When the person last had each session on screen, shared with the shortcut's script.
 type Seen = Record<string, number>
+// The leader's hold, renewed at each tick; null once a leader whose read failed let it go.
 type Lease = { owner: string; at: number }
 
 class Refusal extends Error {}
@@ -239,7 +241,7 @@ const rank = async ($: $, dir: string, sessions: readonly Session[], layout: Lay
   return arrange(list)
 }
 
-// The leader reads the app for every session and shares what it saw in state.json.
+// The leader reads the app for every session and shares what it saw in state.json; failing, it stands down.
 const poll = async ($: $, isAsked: boolean) => {
   const dir = await folder($)
   const held = await readJson<Shared | null>($, `${dir}/state.json`, null)
@@ -263,6 +265,7 @@ const poll = async ($: $, isAsked: boolean) => {
     }
   }
   await writeText($, `${dir}/state.json`, JSON.stringify(shared))
+  if (shared.problem) await standDown($)
 }
 
 // Every session draws what the leader shared, with the marks made since (a click, the shortcut) applied at once.
@@ -285,15 +288,28 @@ const load = async ($: $) => {
   }
 }
 
+// When this session may take the lease again by itself, after a read of its failed (see `standDown`).
+let leadsAgainAt = 0
+
 const holdsLease = async ($: $, isTaken: boolean) => {
   const path = `${await folder($)}/leader.json`
   const me = await $.session.id()
   const now = await $.clock.now()
   const lease = await readJson<Lease | null>($, path, null)
+  if (!isTaken && lease?.owner !== me && now < leadsAgainAt) return false
   if (!isTaken && lease && lease.owner !== me && now - lease.at < LEASE_MS) return false
   await $.fs.write(path, JSON.stringify({ owner: me, at: now }))
 
   return true
+}
+
+// A leader whose read failed lets the lease go and keeps off it RETRY_MS, unless the person presses for it:
+// the failure may be this session's alone (a tool it lost, its project's permissions), so another one reads meanwhile.
+const standDown = async ($: $) => {
+  const path = `${await folder($)}/leader.json`
+  const lease = await readJson<Lease | null>($, path, null)
+  if (lease?.owner === (await $.session.id())) await $.fs.write(path, JSON.stringify(null))
+  leadsAgainAt = (await $.clock.now()) + RETRY_MS
 }
 
 let isTicking = false
