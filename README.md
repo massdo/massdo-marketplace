@@ -14,7 +14,8 @@
 **You need** [Claude Code](https://code.claude.com/docs/en/quickstart),
 [Codex](https://learn.chatgpt.com/docs/codex/cli) or
 [Cursor Agent](https://docs.cursor.com/en/cli/installation), installed and signed in,
-plus [Git](https://git-scm.com/install/).
+plus [Git](https://git-scm.com/install/). For claude.ai or ChatGPT, nothing to
+install: the wizard shows the steps to follow in your browser.
 
 **1. Paste this in a terminal, then press Enter.**
 
@@ -39,7 +40,8 @@ try {
 }
 ```
 
-Windows setup works with Codex and Claude Code, and asks you to type `codex` or `claude`.
+Windows setup works with Codex and Claude Code, and asks you to type `codex`, `claude`,
+`claude-ai` or `chatgpt`.
 It needs `codex.exe` or `claude.exe` on `PATH` and rejects `.cmd`, `.bat` and `.ps1`
 launchers, including the npm shims `codex.cmd` and `claude.cmd`. It supports Windows
 PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your WSL terminal.
@@ -47,7 +49,8 @@ PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your
 </details>
 
 **2. Pick your apps and sign in.** Press **Enter** to check an app, then move to
-**Launch install** and press **Enter** again.
+**Launch install** and press **Enter** again. Check **claude.ai** or **ChatGPT** to
+get the steps to follow in your browser.
 When asked to open your browser, press **y** and allow the connection.
 For Codex, ignore the `Callback URL` prompt shown while the browser is open:
 the sign-in completes on its own.
@@ -82,7 +85,8 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/unin
 
 It lists the apps found on your computer, preselects the ones that have Nestor,
 and removes it from the apps you confirm. The shared marketplace stays available
-for any other plugins you use.
+for any other plugins you use. In claude.ai and ChatGPT, remove Nestor from the
+page where you added it.
 
 </details>
 
@@ -133,6 +137,21 @@ git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketp
 /plugins install ~/massdo-marketplace/plugins/massdo-skills
 /reload
 ```
+
+**claude.ai**, from [Customize › Connectors](https://claude.ai/customize/connectors)
+
+Click **Add**, then **Add custom connector**. Name it `Nestor`, paste the URL
+below, click **Continue** twice, then **Add**, and sign in when asked.
+
+```text
+https://journal.mcp-marketplace.org/mcp
+```
+
+**ChatGPT**, from [Plugins](https://chatgpt.com/plugins)
+
+Click **+**, then **Add custom MCP server**. Name it `Nestor`, paste the same URL
+under **Connection**, keep the OAuth sign-in, then click **Create as a plugin**
+and install it. In a new conversation, type `@` and pick Nestor.
 
 </details>
 

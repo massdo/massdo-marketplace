@@ -1,6 +1,6 @@
 ﻿#requires -Version 5.1
 param(
-    [ValidateSet('codex', 'claude')][string]$Client,
+    [ValidateSet('codex', 'claude', 'claude-ai', 'chatgpt')][string]$Client,
     [switch]$Check,
     [switch]$NoLogin
 )
@@ -9,6 +9,9 @@ $ErrorActionPreference = 'Stop'
 $plugin = 'nestor@massdo-marketplace'
 $endpoint = 'https://journal.mcp-marketplace.org/mcp'
 $origin = 'https://journal.mcp-marketplace.org'
+# claude.ai and ChatGPT have no command line: Nestor is added from these pages.
+$claudeAiPage = 'https://claude.ai/customize/connectors'
+$chatGptPage = 'https://chatgpt.com/plugins'
 $requiredSkills = '["nestor","activity","tree","pause","resume","check-for-updates"]' | ConvertFrom-Json
 $script:VerificationError = ''
 $script:ClientError = ''
@@ -318,6 +321,47 @@ function Test-Claude {
     return 1
 }
 
+# claude.ai and ChatGPT have no command line: Nestor is added from their own
+# page, so the wizard shows the steps, offers to open that page, and cannot
+# check what the browser did.
+function Show-Guide([bool]$Terminal) {
+    if ($Client -ceq 'claude-ai') {
+        $label = 'claude.ai'
+        $page = $claudeAiPage
+        Write-Output 'Nestor is added to claude.ai from its Connectors page. The steps:'
+        Write-Output "1. Open $page and sign in."
+        Write-Output '2. Click Add, then Add custom connector.'
+        Write-Output "3. Name: Nestor — URL: $endpoint — then click Continue."
+        Write-Output '4. Keep the sign-in settings Claude detected and click Continue, then Add.'
+        Write-Output '5. Sign in to Nestor when asked and allow the connection.'
+        Write-Output '6. In a conversation, click +, then Connectors, and turn Nestor on.'
+    } else {
+        $label = 'ChatGPT'
+        $page = $chatGptPage
+        Write-Output 'Nestor is added to ChatGPT from its Plugins page. The steps:'
+        Write-Output "1. Open $page and sign in."
+        Write-Output '2. Click +, then Add custom MCP server.'
+        Write-Output "3. Name: Nestor — under Connection, URL: $endpoint"
+        Write-Output '4. Keep the OAuth sign-in, accept the warning, then click Create as a plugin.'
+        Write-Output '5. Install the plugin, then sign in to Nestor when asked and allow the connection.'
+        Write-Output '6. In a new conversation, type @ and pick Nestor.'
+    }
+    if ($Terminal -and -not $Check -and -not $NoLogin) {
+        [Console]::Write("Open $label in your browser now? (y/N): ")
+        $answer = [Console]::ReadLine()
+        if ($answer -cin @('o', 'O', 'oui', 'y', 'Y', 'yes')) {
+            try {
+                Start-Process $page
+                Write-Output 'Opening your browser. Follow the steps above, then come back to this window.'
+            } catch {
+                Write-Output "Cannot open a browser from here. Open $page yourself."
+            }
+        }
+    }
+    Write-Output "Finish the steps above in your browser, then open a new conversation in $label and type: Show my tasks."
+    exit 0
+}
+
 function Test-Installation {
     try {
         $script:VerificationError = 'Cannot read the installed plugins in your app.'
@@ -343,16 +387,15 @@ try {
     [Console]::SetError($errorWriter)
     $terminal = -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected
     if (-not $Client) {
-        if (-not $terminal) { Stop-Installer 'Without a terminal, specify -Client codex or -Client claude.' }
-        $available = @('codex', 'claude') | Where-Object { Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue }
-        if (@($available).Count -eq 1) { $Client = @($available)[0] }
-        elseif (@($available).Count -eq 2) {
-            [Console]::Write('Choose your app (codex/claude): ')
-            $Client = [Console]::ReadLine()
-        }
-        else { Stop-Installer 'Install Codex or Claude Code, then run this setup command again.' }
+        if (-not $terminal) { Stop-Installer 'Without a terminal, specify -Client codex, claude, claude-ai or chatgpt.' }
+        # The browser apps are always offered: their state cannot be read.
+        $choices = @(@('codex', 'claude') | Where-Object { Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue }) + @('claude-ai', 'chatgpt')
+        [Console]::Write("Choose your app ($($choices -join '/')): ")
+        $Client = [Console]::ReadLine()
+        if ($Client -ceq 'claude.ai') { $Client = 'claude-ai' }
     }
-    if ($Client -cnotin @('codex', 'claude')) { Stop-Installer 'Choose codex or claude.' }
+    if ($Client -cnotin @('codex', 'claude', 'claude-ai', 'chatgpt')) { Stop-Installer 'Choose codex, claude, claude-ai or chatgpt.' }
+    if ($Client -cin @('claude-ai', 'chatgpt')) { Show-Guide $terminal }
     $command = Get-Command $Client -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $command) { Stop-Installer "Client not found: $Client." }
     $binary = $command.Source
