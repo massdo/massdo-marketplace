@@ -8,10 +8,10 @@ disable-model-invocation: true
 # Nestor Explain
 
 Reading something is not understanding it. This skill takes one subject, raw text, one
-Nestor item or one Nestor project, and turns it into a bespoke, discardable explainer in the formats the user
-picks first: text, an HTML page that mixes text and diagrams, or a video, replaced by a
-storytelling script when nothing here can render one. The explainer is for
-understanding; nothing of it goes back into the journal.
+Nestor item or one Nestor project, and turns it into a bespoke, discardable explainer in
+the formats the user picks first: text, an HTML page that mixes text and diagrams, or a
+video, replaced by a storytelling script when nothing here can render one. The explainer
+is for understanding; nothing of it goes back into the journal.
 
 Read journal data through the Nestor MCP server only. Never read a SQLite file or an
 export. Write nothing in the journal: no task, no note, no status change, whatever the
@@ -186,5 +186,6 @@ prose; the reader has it.
 When the user then asks about one item, call `get_item` with that id or slug in `ref`,
 the resolved `scope`, `known` and `version_hash`, under the conditional-read rules above.
 A tree or a list alone supplies no matched pair, so send `known: null` unless the
-necessary content and pair are held from another response. An explainer never becomes a journal write on
-its own: a task or a note the user wants from it is a new, explicit request.
+necessary content and pair are held from another response. An explainer never becomes a
+journal write on its own: a task or a note the user wants from it is a new, explicit
+request.
