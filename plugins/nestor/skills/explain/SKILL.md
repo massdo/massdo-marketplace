@@ -34,8 +34,8 @@ natural language, read it from the user's message. It is one of two things:
   not look items or projects up inside it.
 
 An empty argument is an error: say in one line that the skill needs text to explain, an
-item reference or a project name, and stop. The argument never carries a format: the formats are asked
-below, every time.
+item reference or a project name, and stop. The argument never carries a format: the
+formats are asked below, every time.
 
 ## Ask for the formats first
 
@@ -63,13 +63,14 @@ valid, produce nothing, and stop. An empty answer produces nothing either.
 **A reference.** Resolve it in two exact reads, and stop at the first hit. Project names
 are unique in Nestor, so `get_project { name }` with the token resolves a project or
 returns `NOT_FOUND`; never fall back to `search_project` to guess one. On `NOT_FOUND`,
-call `get_item` with the token in `ref`, the global `scope`, `known` and `version_hash`. Send the matched `{ version, etag }` pair when the necessary item content
-is held; otherwise send `known: null`. With `unchanged: true`, keep the held content and
-pair and refresh the project name; a full response replaces them. Never omit `known` or
-use null to re-read held content with its pair. Global scope reaches every item that
-belongs to no project or to a live project; when this read fails too, say in one line
-that the reference matches no project and no item, and stop. On `AMBIGUOUS`, list the
-candidate ids and stop.
+call `get_item` with the token in `ref`, the global `scope`, `known` and
+`version_hash`. Send the matched `{ version, etag }` pair when the necessary item
+content is held; otherwise send `known: null`. With `unchanged: true`, keep the held
+content and pair and refresh the project name; a full response replaces them. Never omit
+`known` or use null to re-read held content with its pair. Global scope reaches every
+item that belongs to no project or to a live project; when this read fails too, say in
+one line that the reference matches no project and no item, and stop. On `AMBIGUOUS`,
+list the candidate ids and stop.
 
 **A project.** Keep the returned `context` when there is one: it is the project's own
 account of itself. Then two calls with the project scope:
