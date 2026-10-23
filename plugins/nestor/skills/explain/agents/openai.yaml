@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Explain"
+  short_description: "Understand a project or a task through the richest format your app can show — $nestor:explain [project] [format] [focus…]"
+  default_prompt: "Use $nestor:explain [project] [format] [focus…] — or project:x item:id format:text|diagram|html|video — to explain my project as text, a diagram or a web page."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: false

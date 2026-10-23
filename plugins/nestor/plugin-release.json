@@ -1,5 +1,5 @@
 {
-  "version": "0.9.1",
-  "version_hash": "33fa51871e394b96",
-  "changelog": "Resume now shows capture dates in local time. It converts the UTC capture date and compares it with the current local time before writing a relative date such as yesterday.\nWithout a known local time, resume shows the UTC date and time with no relative label."
+  "version": "0.10.0",
+  "version_hash": "0d15cff38fabeb39",
+  "changelog": "New explain skill: /nestor:explain turns a project, a task or the journal as it stands into a bespoke explainer, in the richest format your app can show: controlled plain writing, a diagram or an interactive web page.\nAsk for format:video and it writes the storyboard when no video tool is available."
 }
