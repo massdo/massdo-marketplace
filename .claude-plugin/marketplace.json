@@ -39,6 +39,17 @@
         "marketplace",
         "style"
       ]
+    },
+    {
+      "name": "agent-queue",
+      "source": "./plugins/agent-queue",
+      "description": "A pane of the Claude Code sessions that wait on you, in Claude Code's own colors, and a jump to the next one. Desktop app on macOS.",
+      "category": "productivity",
+      "tags": [
+        "sessions",
+        "desktop",
+        "macos"
+      ]
     }
   ]
 }

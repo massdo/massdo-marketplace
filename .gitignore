@@ -11,3 +11,6 @@ package-lock.json
 .claude/.cc-writes/
 
 CLAUDE.md
+
+# Type declarations Claude Code lays beside a plugin it loads from this folder.
+plugins/*/.claude-plugin/types/

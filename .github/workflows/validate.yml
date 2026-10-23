@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install the pinned Claude validator
-        run: npm install --global @anthropic-ai/claude-code@2.1.275
+        run: npm install --global @anthropic-ai/claude-code@2.1.308
       - name: Report validator versions
         run: |
           python3 --version
@@ -95,7 +95,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install the pinned Claude CLI
-        run: npm install --global @anthropic-ai/claude-code@2.1.275
+        run: npm install --global @anthropic-ai/claude-code@2.1.308
       # `claude plugin tag` is the only thing that creates a release tag: it
       # derives the name and version from plugin.json and gets the separator
       # right. A version already tagged on origin is skipped, so re-running
