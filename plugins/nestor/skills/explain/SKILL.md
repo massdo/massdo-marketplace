@@ -60,17 +60,18 @@ valid, produce nothing, and stop. An empty answer produces nothing either.
 
 **Raw text.** No MCP call. Explain the text the user gave, in the user's language.
 
-**A reference.** Resolve it in two exact reads, and stop at the first hit. Project names
-are unique in Nestor, so `get_project { name }` with the token resolves a project or
-returns `NOT_FOUND`; never fall back to `search_project` to guess one. On `NOT_FOUND`,
-call `get_item` with the token in `ref`, the global `scope`, `known` and
-`version_hash`. Send the matched `{ version, etag }` pair when the necessary item
-content is held; otherwise send `known: null`. With `unchanged: true`, keep the held
-content and pair and refresh the project name; a full response replaces them. Never omit
-`known` or use null to re-read held content with its pair. Global scope reaches every
-item that belongs to no project or to a live project; when this read fails too, say in
-one line that the reference matches no project and no item, and stop. On `AMBIGUOUS`,
-list the candidate ids and stop.
+**A reference.** Resolve it in two exact reads, item first, and stop at the first hit.
+Call `get_item` with the token in `ref`, the global `scope`, `known` and `version_hash`.
+Send the matched `{ version, etag }` pair when the necessary item content is held;
+otherwise send `known: null`. With `unchanged: true`, keep the held content and pair and
+refresh the project name; a full response replaces them. Never omit `known` or use null
+to re-read held content with its pair. Global scope reaches every item that belongs to
+no project or to a live project. On `AMBIGUOUS`, list the candidate ids and stop.
+
+Only when `get_item` returns `NOT_FOUND`, call `get_project { name }` with the token.
+Project names are unique in Nestor, so this read resolves a project or returns
+`NOT_FOUND`; never fall back to `search_project` to guess one. When this read fails too,
+say in one line that the reference matches no item and no project, and stop.
 
 **A project.** Keep the returned `context` when there is one: it is the project's own
 account of itself. Then two calls with the project scope:
