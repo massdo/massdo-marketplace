@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, chat transmissions, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.9.1"
+  pluginVersion: "0.10.0"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.9.1, hashed as `33fa51871e394b96`.
+This plugin version is 0.10.0, hashed as `0d15cff38fabeb39`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "133fa51871e394b96", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "10d15cff38fabeb39", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, tell the user that an update is available for the Nestor plugin when `pluginName` is `nestor`, or for the Nestor Beta plugin when `pluginName` is `nestor-beta`. Without `pluginName`, tell the user that an update is available.
