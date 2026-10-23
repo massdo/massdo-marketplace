@@ -1,5 +1,5 @@
 {
   "version": "0.10.0",
   "version_hash": "0d15cff38fabeb39",
-  "changelog": "New explain skill: /nestor:explain turns a project, a task or the journal as it stands into a bespoke explainer, in the richest format your app can show: controlled plain writing, a diagram or an interactive web page.\nAsk for format:video and it writes the storyboard when no video tool is available."
+  "changelog": "New explain skill: /nestor:explain turns a text or a Nestor item into a bespoke explainer. It first asks which formats you want: text, an HTML page that mixes text and diagrams, or a video.\nWithout a tool that renders video, it writes the storytelling instead."
 }

@@ -1,7 +1,7 @@
 interface:
   display_name: "Nestor Explain"
-  short_description: "Understand a project or a task through the richest format your app can show — $nestor:explain [project] [format] [focus…]"
-  default_prompt: "Use $nestor:explain [project] [format] [focus…] — or project:x item:id format:text|diagram|html|video — to explain my project as text, a diagram or a web page."
+  short_description: "Understand a text or a Nestor item as text, a web page or a video — $nestor:explain <text | item>"
+  default_prompt: "Use $nestor:explain <text to explain | item id or slug> to explain it; you will be asked whether you want text, an HTML page or a video."
 
 dependencies:
   tools:

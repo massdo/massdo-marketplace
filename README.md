@@ -194,7 +194,7 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 - `/nestor:nestor` — tasks, notes, projects, history
 - `/nestor:activity` — start a timer, get your hours
 - `/nestor:tree` — draws a project as a tree
-- `/nestor:explain` — explains a project or a task as text, a diagram or a web page
+- `/nestor:explain` — explains a text or a task as text, a web page or a video
 - `/nestor:pause` — saves this chat's work context for later
 - `/nestor:resume` — restores this chat's context without changing it
 - `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
