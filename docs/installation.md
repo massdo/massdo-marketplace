@@ -3,13 +3,17 @@
 For Codex and Claude Code, the installer adds `nestor@massdo-marketplace` through
 native marketplace and plugin commands. For Cursor Agent on Mac or Linux, it
 copies `plugins/nestor/` into Cursor's user-local plugin directory and checks
-MCP tool access with the native CLI. It installs Nestor only. Apps whose
-connectors live in an online account, such as Grok Bot or claude.ai, are set up
-in their own interface and are not offered by the wizard.
+MCP tool access with the native CLI. It installs Nestor only. claude.ai and
+ChatGPT have no command line: for them the wizard is a guide. It prints the
+steps to follow on their own page (`https://claude.ai/customize/connectors`,
+`https://chatgpt.com/plugins`) with the server URL to paste, offers to open that
+page, and cannot check the result. Other apps whose connectors live in an online
+account, such as Grok Bot, are not offered.
 
 ## Prerequisites
 
-- Install Codex, Claude Code, or Cursor Agent first.
+- Install Codex, Claude Code, or Cursor Agent first. The claude.ai and ChatGPT
+  entries need no app: they only show steps.
   On Windows, the PowerShell wizard currently supports Codex and Claude Code;
   expose their native executable on
   `PATH`; `.cmd`, `.bat` and `.ps1` launchers are refused without running a shell.
@@ -53,13 +57,15 @@ try {
 }
 ```
 
-Use `claude` or `cursor` instead of `codex` as needed. `--client` may
+Use `claude`, `cursor`, `claude-ai` (or `claude.ai`) or `chatgpt` instead of
+`codex` as needed. `--client` may
 be repeated or given a comma-separated list; every listed app is set up in turn,
 and the exit code is the worst result (1 over 2 over 0). Without `--client`, the
 Bash wizard detects installed Codex, Claude Code and Cursor Agent CLIs, reads
 each app's plugin inventory
 without changing it, and shows one menu of checkboxes: apps that already have
-Nestor are marked with their version, apps without it are checked. Enter checks
+Nestor are marked with their version, apps without it are checked. claude.ai and
+ChatGPT are always listed last, unchecked, as `set up in your browser`. Enter checks
 or unchecks the app under the cursor, and Enter on the last line, `Launch
 install`, sets up the checked apps. Each app
 check, download and installation step shows a spinner. The wizard redraws the
@@ -68,12 +74,17 @@ question are drawn by [gum](https://github.com/charmbracelet/gum), pinned to ver
 and checked by SHA-256 like jq; it is downloaded to the temporary folder only when
 no gum with `--label-delimiter` is on `PATH`, and never when `--client` is given.
 Keystrokes typed while the apps are being checked are discarded before the menu
-opens, so a stray Enter cannot change the preselection.
+opens, so a stray Enter cannot change the preselection. Without `-Client`, the
+PowerShell wizard asks you to type the app, among the installed CLIs, `claude-ai`
+and `chatgpt`.
 Bash reads the terminal separately from piped script content. Without a terminal,
 the client selection is required and the installer leaves OAuth for a later native
 login.
 With a terminal, the installer asks before opening native OAuth. Answer `y` to
-continue. `--no-login` or `-NoLogin` skips that prompt. Keystrokes typed before
+continue. `--no-login` or `-NoLogin` skips that prompt. For claude.ai and ChatGPT,
+the same prompt offers to open their page in the browser (`open`, `xdg-open` or
+`wslview` on Bash, `Start-Process` on PowerShell); `--check`, `--no-login` and the
+absence of a terminal skip it. Keystrokes typed before
 the prompt and before the sign-in are discarded. `codex mcp login` also reads a
 pasted callback URL from a terminal and cancels the sign-in on a bare Enter, so
 the wizard gives it a pipe held open instead: the browser callback alone
@@ -98,6 +109,12 @@ overall result:
 | 0 | `Installation complete`, then the app(s) to open | Start a new client session to use Nestor. |
 | 2 | `Nestor is installed but not connected to your account yet.` | Complete authentication, or restore server access and rerun the installer, as indicated above it. |
 | 1 | `Setup did not finish.` after the error on stderr | Resolve the displayed cause, then rerun the installer. |
+
+claude.ai and ChatGPT print their steps, then `➜ Finish the steps above in your
+browser.`; their summary line is `➜ finish the steps in your browser` and they
+count as exit code 0, since the wizard cannot check what the browser did.
+`Installation complete` is printed only when at least one CLI app was set up; a
+last line then names the browser apps whose steps remain to follow.
 
 For Cursor, the wizard installs a tagged local copy at
 `~/.cursor/plugins/local/nestor` and, because Cursor Agent only connects to
@@ -193,6 +210,8 @@ On macOS, Linux or WSL:
 curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/uninstall.sh | bash
 ```
 
+Nestor is removed from claude.ai and ChatGPT on the page where it was added;
+the removal wizard does not list them.
 Use `bash uninstall.sh --client codex|claude|cursor` to select clients
 without a terminal; `--client` may be repeated. With a terminal and no `--client`,
 the wizard shows the same gum menu as setup, with the apps that have Nestor

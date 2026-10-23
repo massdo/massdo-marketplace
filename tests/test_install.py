@@ -53,6 +53,14 @@ class Installer(unittest.TestCase):
                            'target.parent.mkdir(parents=True)\n'
                            'shutil.copytree(source, target)\n')
             git.chmod(0o755)
+            # The browser apps offer to open a page: the opener only records the call.
+            for opener in ('open', 'xdg-open'):
+                double = self.bin / opener
+                double.write_text('#!/usr/bin/env python3\n'
+                                  'import json, os, sys\n'
+                                  'with open(os.environ["NESTOR_TEST_LOG"], "a") as handle:\n'
+                                  '    handle.write(json.dumps([os.path.basename(sys.argv[0]), *sys.argv[1:]]) + "\\n")\n')
+                double.chmod(0o755)
         home = self.root / 'home'
         home.mkdir()
         self.env = {**os.environ, 'PATH': str(self.bin) + os.pathsep + os.environ['PATH'],
@@ -185,7 +193,7 @@ class Installer(unittest.TestCase):
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'Interactive Cursor setup runs on macOS and Linux')
     def test_cursor_interactive_login_completes(self):
         self.state.write_text(json.dumps({'connected': False}))
-        code, output = self.run_interactive(self.command('cursor', ()), [('browser', 'y')])
+        code, output = self.run_interactive(self.command('cursor', ()), [('Open your browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
         self.assertIn('MCP login successful', output)
@@ -197,7 +205,7 @@ class Installer(unittest.TestCase):
     def test_unsupported_app_name_is_refused_without_mutation(self):
         result = self.run_installer('grokbot', options=())
         self.assertEqual(result.returncode, 1)
-        self.assertIn('Choose codex, claude or cursor.', result.stderr)
+        self.assertIn('Choose codex, claude, cursor, claude-ai or chatgpt.', result.stderr)
         self.assertEqual(self.calls(), [])
         result = self.run_uninstaller('grokbot', {})
         self.assertEqual(result.returncode, 1)
@@ -207,13 +215,17 @@ class Installer(unittest.TestCase):
     def test_menu_marks_installed_apps_and_preselects_the_missing_ones(self):
         self.state.write_text(json.dumps({'installed': True, 'connected': True}))
         prompt = 'Where should Nestor be installed'
+        # Down twice and Enter unchecks Cursor Agent; Down three times and Enter
+        # passes the browser apps and launches with nothing checked.
         code, output = self.run_interactive(self.command(None, ()),
-                                            [(prompt, DOWN * 2), (prompt, DOWN), ('Check at least one app', ESCAPE)])
+                                            [(prompt, DOWN * 2), (prompt, DOWN * 3), ('Check at least one app', ESCAPE)])
         self.assertEqual(code, 1, output)
         self.assertIn('App selection was interrupted', output)
         for row in ('☐ \x1b[38;5;36m◉\x1b[0m Codex — \x1b[32minstalled 0.9.1\x1b[0m',
                     '☐ \x1b[38;5;173m✳\x1b[0m Claude Code — \x1b[32minstalled 0.9.1\x1b[0m',
                     '\x1b[38;5;117m☑\x1b[0m \x1b[38;5;33m⬢\x1b[0m Cursor Agent — not installed',
+                    '☐ \x1b[38;5;209m✦\x1b[0m claude.ai — set up in your browser',
+                    '☐ \x1b[38;5;78m◎\x1b[0m ChatGPT — set up in your browser',
                     '\x1b[1m▶ Launch install\x1b[0m'):
             self.assertIn(row, output)
         self.assertNotIn('grokbot', output)
@@ -225,8 +237,10 @@ class Installer(unittest.TestCase):
     def test_menu_checks_with_enter_keeps_the_cursor_and_launches_from_the_last_line(self):
         self.state.write_text(json.dumps({'installed': True, 'connected': True}))
         prompt = 'Where should Nestor be installed'
-        # Down and Enter three times: check Claude Code, uncheck Cursor Agent, launch.
-        code, output = self.run_interactive(self.command(None, ()), [(prompt, DOWN)] * 3)
+        # Down and Enter twice: check Claude Code, uncheck Cursor Agent. Then Down
+        # three times and Enter: past the browser apps, launch from the last line.
+        code, output = self.run_interactive(self.command(None, ()),
+                                            [(prompt, DOWN), (prompt, DOWN), (prompt, DOWN * 3)])
         self.assertEqual(code, 0, output)
         self.assertIn('Open a new conversation in Claude Code and type: Show my tasks.', output)
         self.assertFalse((self.root / 'home/.cursor/plugins/local/nestor').exists())
@@ -236,7 +250,7 @@ class Installer(unittest.TestCase):
         self.state.write_text(json.dumps({'installed': False, 'marketplace': False, 'connected': False}))
         prompt = 'Where should Nestor be installed'
         code, output = self.run_interactive(self.command(None, ()),
-                                            [(prompt, DOWN * 2), (prompt, DOWN), ('browser', 'y')])
+                                            [(prompt, DOWN * 2), (prompt, DOWN * 3), ('Open your browser', 'y')])
         self.assertEqual(code, 0, output)
         for row in ('\x1b[38;5;36m◉\x1b[0m Codex — not installed', '\x1b[38;5;173m✳\x1b[0m Claude Code — not installed',
                     '\x1b[38;5;33m⬢\x1b[0m Cursor Agent — not installed'):
@@ -648,7 +662,7 @@ function Invoke-WebRequest {
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The Codex sign-in pipe is a Bash feature')
     def test_stray_enter_during_codex_sign_in_does_not_cancel_it(self):
         self.state.write_text(json.dumps({'installed': True, 'connected': False}))
-        code, output = self.run_interactive(self.command('codex', ()), [('browser', 'y'), ('Callback URL', '')])
+        code, output = self.run_interactive(self.command('codex', ()), [('Open your browser', 'y'), ('Callback URL', '')])
         self.assertEqual(code, 0, output)
         self.assertIn('Nestor 0.9.1 is already installed.', output)
         self.assertIn('Nestor is not connected to your account yet.', output)
@@ -686,10 +700,78 @@ function Invoke-WebRequest {
             choices = [('Choose your app', 'claude')]
         else:
             prompt = 'Where should Nestor be installed'
-            choices = [(prompt, ''), (prompt, DOWN * 2), (prompt, DOWN)]
-        code, output = self.run_interactive(command, choices + [('browser', 'y')])
+            choices = [(prompt, ''), (prompt, DOWN * 2), (prompt, DOWN * 3)]
+        code, output = self.run_interactive(command, choices + [('Open your browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
+
+    def test_browser_apps_show_their_steps_without_a_terminal_or_a_browser(self):
+        pages = {'claude-ai': 'https://claude.ai/customize/connectors', 'chatgpt': 'https://chatgpt.com/plugins'}
+        for client, page in pages.items():
+            for options in ((), ('--check',), ('--no-login',)):
+                with self.subTest(client=client, options=options):
+                    result = self.run_installer(client, {}, options)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn(page, result.stdout)
+                    self.assertIn('https://journal.mcp-marketplace.org/mcp', result.stdout)
+                    self.assertIn('Finish the steps above in your browser', result.stdout)
+                    self.assertNotIn('Installation complete', result.stdout)
+                    self.assertNotIn('Opening your browser', result.stdout)
+                    self.assertEqual(self.calls(), [])
+
+    @unittest.skipIf(POWERSHELL, 'The claude.ai spelling is a Bash option')
+    def test_browser_app_accepts_its_site_name(self):
+        result = self.run_installer('claude.ai', {}, ())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('✦ claude.ai\n', result.stdout)
+        self.assertIn('claude.ai: finish the steps shown above in your browser', result.stdout)
+
+    @unittest.skipIf(POWERSHELL, 'Several --client values are a Bash option')
+    def test_browser_apps_are_summarized_apart_from_the_installed_ones(self):
+        result = self.run_installer(None, {}, ('--client', 'codex,chatgpt', '--check'))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count('Installation complete'), 1, result.stdout)
+        self.assertIn('◉ Codex — ✔ installed and connected', result.stdout)
+        self.assertIn('◎ ChatGPT — ➜ finish the steps in your browser', result.stdout)
+        self.assertIn('Open a new conversation in Codex and type: Show my tasks.', result.stdout)
+        self.assertIn('ChatGPT: finish the steps shown above in your browser', result.stdout)
+        result = self.run_installer(None, {'connected': False}, ('--client', 'chatgpt,codex', '--check'))
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertNotIn('Installation complete', result.stdout)
+        self.assert_no_mutations()
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The browser is opened by the Bash wizard')
+    def test_browser_app_opens_its_page_only_on_request(self):
+        page = 'https://chatgpt.com/plugins'
+        code, output = self.run_interactive(self.command('chatgpt', ()), [('browser now', 'n')])
+        self.assertEqual(code, 0, output)
+        self.assertNotIn('Opening your browser', output)
+        self.assertEqual(self.calls(), [])
+        code, output = self.run_interactive(self.command('chatgpt', ()), [('browser now', 'y')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('Opening your browser', output)
+        # The opener is detached from the wizard, so its record may land after the exit.
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and [page] not in [call[1:] for call in self.calls()]:
+            time.sleep(0.1)
+        self.assertEqual([call[1:] for call in self.calls()], [[page]])
+
+    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
+    def test_menu_offers_the_browser_apps_without_any_installed_app(self):
+        for client in ('codex', 'claude', 'cursor-agent'):
+            (self.bin / client).unlink()
+        # Only the doubles and the system tools remain, so no real app is found.
+        (self.bin / 'jq').symlink_to(shutil.which('jq'))
+        self.env['PATH'] = os.pathsep.join([str(self.bin), os.path.dirname(sys.executable), '/usr/bin', '/bin'])
+        prompt = 'Where should Nestor be installed'
+        # Enter checks claude.ai, the first row; Down twice and Enter launches from the last line.
+        code, output = self.run_interactive(self.command(None, ()),
+                                            [(prompt, ''), (prompt, DOWN * 2), ('browser now', 'n')])
+        self.assertEqual(code, 0, output)
+        self.assertIn('\x1b[38;5;117m☑\x1b[0m \x1b[38;5;209m✦\x1b[0m claude.ai — set up in your browser', output)
+        self.assertIn('https://claude.ai/customize/connectors', output)
+        self.assertIn('claude.ai: finish the steps shown above in your browser', output)
+        self.assertTrue(all(call[0] == 'gum' for call in self.calls()), self.calls())
 
 
 if __name__ == '__main__':

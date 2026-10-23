@@ -26,6 +26,9 @@ menu_tty=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 cursor_mcp="$HOME/.cursor/mcp.json"
 cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
+# claude.ai and ChatGPT have no command line: Nestor is added from these pages.
+claude_ai_page=https://claude.ai/customize/connectors
+chatgpt_page=https://chatgpt.com/plugins
 
 # The braces also silence the shell's own "Terminated" notice for the job.
 stop_process() {
@@ -459,18 +462,21 @@ login() {
     return "$result"
 }
 
-# Asks before opening the native OAuth flow; the menu tool draws the question
-# when it is available, otherwise the terminal reads one line.
-ask_login() {
+# Asks a yes-or-no question; the menu tool draws it when it is available,
+# otherwise the terminal reads one line.
+ask() {
     local answer
     if [ -n "$gum_bin" ]; then
-        "$gum_bin" confirm 'Open your browser to connect Nestor?' <&3 2>&3
+        "$gum_bin" confirm "$1" <&3 2>&3
         return $?
     fi
-    printf '%s' 'Open your browser to connect Nestor? (y/N): ' >&3
+    printf '%s' "$1 (y/N): " >&3
     IFS= read -r answer <&3 || return 1
     case "$answer" in o|O|oui|y|Y|yes) return 0 ;; *) return 1 ;; esac
 }
+
+# Asks before opening the native OAuth flow.
+ask_login() { ask 'Open your browser to connect Nestor?'; }
 
 verify() {
     if [ "$client" = cursor ]; then cursor_check; return $?; fi
@@ -488,6 +494,8 @@ client_label() {
         codex) printf '%s' 'Codex' ;;
         claude) printf '%s' 'Claude Code' ;;
         cursor) printf '%s' 'Cursor Agent' ;;
+        claude-ai) printf '%s' 'claude.ai' ;;
+        chatgpt) printf '%s' 'ChatGPT' ;;
     esac
 }
 
@@ -496,21 +504,27 @@ client_icon() {
         codex) tint '38;5;36' '◉' ;;
         claude) tint '38;5;173' '✳' ;;
         cursor) tint '38;5;33' '⬢' ;;
+        claude-ai) tint '38;5;209' '✦' ;;
+        chatgpt) tint '38;5;78' '◎' ;;
     esac
 }
+
+# A guided app has no command line: the wizard shows its steps instead.
+client_guided() { case "$1" in claude-ai|chatgpt) return 0 ;; esac; return 1; }
 
 client_binary() {
     if [ "$1" = cursor ]; then command -v cursor-agent || command -v agent; else command -v "$1"; fi
 }
 
 add_client() {
-    local name existing
-    case "$1" in
-        codex|claude|cursor) ;;
-        *) fail 'Choose codex, claude or cursor.' ;;
+    local name=$1 existing
+    case "$name" in
+        claude.ai) name=claude-ai ;;
+        codex|claude|cursor|claude-ai|chatgpt) ;;
+        *) fail 'Choose codex, claude, cursor, claude-ai or chatgpt.' ;;
     esac
-    for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$1" ] || return 0; done
-    clients+=("$1")
+    for existing in ${clients[@]+"${clients[@]}"}; do [ "$existing" != "$name" ] || return 0; done
+    clients+=("$name")
 }
 
 # One line per app for the menu: what the app already has, read without
@@ -571,9 +585,15 @@ choose_clients() {
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     command -v cursor-agent >/dev/null 2>&1 && candidates+=(cursor)
-    [ "${#candidates[@]}" -gt 0 ] || fail 'Install Codex, Claude Code or Cursor Agent, then run this setup command again.'
+    # The browser apps are always offered, unchecked: their state cannot be read.
+    candidates+=(claude-ai chatgpt)
     ensure_gum
     for candidate in "${candidates[@]}"; do
+        if client_guided "$candidate"; then
+            labels+=("$(client_icon "$candidate") $(client_label "$candidate") — set up in your browser")
+            checked+=(false)
+            continue
+        fi
         spinner_start "Checking $(client_label "$candidate")"
         state=$(inventory "$candidate")
         spinner_stop
@@ -677,13 +697,63 @@ finish() {
     esac
 }
 
-# Runs in a subshell per app: fail, incomplete and succeed end that app only,
-# and the exit code becomes the app's result in the summary.
+# Opens a page with the system opener when there is one; the URL stays on
+# screen either way. The opener is detached and outlives this terminal, so the
+# page still opens when the wizard ends or the window closes first.
+open_page() {
+    local opener
+    case "$(uname -s)" in Darwin) opener=open ;; *) opener=xdg-open ;; esac
+    command -v "$opener" >/dev/null 2>&1 || opener=wslview
+    command -v "$opener" >/dev/null 2>&1 || return 1
+    ( nohup "$opener" "$1" >/dev/null 2>&1 </dev/null & )
+}
+
+# claude.ai and ChatGPT have no command line: Nestor is added from their own
+# page, so the wizard shows the steps, offers to open that page, and ends the
+# app with the guided result. It cannot check what the browser did.
+guide_client() {
+    local page
+    if [ "$client" = claude-ai ]; then
+        page=$claude_ai_page
+        say '  Nestor is added to claude.ai from its Connectors page. The steps:'
+        say "  1. Open $page and sign in."
+        say '  2. Click Add, then Add custom connector.'
+        say "  3. Name: Nestor — URL: $endpoint — then click Continue."
+        say '  4. Keep the sign-in settings Claude detected and click Continue, then Add.'
+        say '  5. Sign in to Nestor when asked and allow the connection.'
+        say '  6. In a conversation, click +, then Connectors, and turn Nestor on.'
+    else
+        page=$chatgpt_page
+        say '  Nestor is added to ChatGPT from its Plugins page. The steps:'
+        say "  1. Open $page and sign in."
+        say '  2. Click +, then Add custom MCP server.'
+        say "  3. Name: Nestor — under Connection, URL: $endpoint"
+        say '  4. Keep the OAuth sign-in, accept the warning, then click Create as a plugin.'
+        say '  5. Install the plugin, then sign in to Nestor when asked and allow the connection.'
+        say '  6. In a new conversation, type @ and pick Nestor.'
+    fi
+    if [ "$check_only" = false ] && [ "$no_login" = false ] && [ "$terminal" = true ]; then
+        flush_terminal_input
+        if ask "Open $(client_label "$client") in your browser now?"; then
+            if open_page "$page"; then
+                say '  Opening your browser. Follow the steps above, then come back to this window.'
+            else
+                say "  Cannot open a browser from here. Open $page yourself."
+            fi
+        fi
+    fi
+    say "  $(tint 36 '➜') Finish the steps above in your browser."
+    exit 3
+}
+
+# Runs in a subshell per app: fail, incomplete, succeed and the guided result
+# end that app only, and the exit code becomes the app's result in the summary.
 run_client() {
     client=$1
     trap cleanup_processes EXIT
     scratch="$scratch/$client"
     mkdir -p "$scratch" || fail 'Cannot create a temporary folder.'
+    if client_guided "$client"; then guide_client; fi
     binary=$(client_binary "$client") || fail "Client not found: $client."
     spinner_start "Checking $(client_label "$client")"
     capture 15 "$scratch/version" "$binary" --version || fail 'Cannot read the app version.'
@@ -753,22 +823,22 @@ run_client() {
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --client)
-            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude or cursor.'
+            [ "$#" -ge 2 ] || fail 'Missing value for --client. Choose codex, claude, cursor, claude-ai or chatgpt.'
             IFS=, read -r -a names <<< "$2"
             for name in ${names[@]+"${names[@]}"}; do add_client "$name"; done
             shift 2 ;;
         --check) check_only=true; shift ;;
         --no-login) no_login=true; shift ;;
-        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor]... [--check] [--no-login]'; exit 0 ;;
+        --help|-h) printf '%s\n' 'Usage: install.sh [--client codex|claude|cursor|claude-ai|chatgpt]... [--check] [--no-login]'; exit 0 ;;
         *) fail "Unknown option: $1" ;;
     esac
 done
 for name in ${clients[@]+"${clients[@]}"}; do
-    client_binary "$name" >/dev/null || fail "Client not found: $name."
+    client_guided "$name" || client_binary "$name" >/dev/null || fail "Client not found: $name."
 done
 { exec 3<>/dev/tty; } 2>/dev/null && terminal=true
 if [ "${#clients[@]}" -eq 0 ] && [ "$terminal" = false ]; then
-    fail 'Without a terminal, specify --client codex, claude or cursor.'
+    fail 'Without a terminal, specify --client codex, claude, cursor, claude-ai or chatgpt.'
 fi
 case "$(uname -s)-$(uname -m)" in Darwin-arm64|Darwin-x86_64|Linux-aarch64|Linux-arm64|Linux-x86_64) ;; *) fail 'This computer architecture is not supported.' ;; esac
 umask 077
@@ -780,6 +850,7 @@ failed=false
 pending=false
 summary=
 apps=
+guided=
 for name in "${clients[@]}"; do
     printf '%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( run_client "$name" ); status=$?
@@ -788,10 +859,18 @@ for name in "${clients[@]}"; do
     case "$status" in
         0) line=$(tint 32 '✔ installed and connected') ;;
         2) pending=true; line=$(tint 33 '⚠ finish connecting your account') ;;
+        3) line=$(tint 36 '➜ finish the steps in your browser') ;;
         *) failed=true; line=$(tint 31 '✖ not set up — see the message above') ;;
     esac
     summary="$summary$(client_icon "$name") $(client_label "$name") — $line
 "
+    if client_guided "$name"; then
+        case "$guided" in
+            '') guided=$(client_label "$name") ;;
+            *) guided="$guided and $(client_label "$name")" ;;
+        esac
+        continue
+    fi
     case "$apps" in
         '') apps=$(client_label "$name") ;;
         *) apps="$apps, $(client_label "$name")" ;;
@@ -810,6 +889,11 @@ if [ "$pending" = true ]; then
     printf '%s\n' 'Nestor is installed but not connected to your account yet. Follow the steps above, then run this setup command again.'
     exit 2
 fi
-printf '%s\n' "$(tint 32 'Installation complete')"
-printf '%s\n' "Open a new conversation in $apps and type: Show my tasks."
+if [ -n "$apps" ]; then
+    printf '%s\n' "$(tint 32 'Installation complete')"
+    printf '%s\n' "Open a new conversation in $apps and type: Show my tasks."
+fi
+if [ -n "$guided" ]; then
+    printf '%s\n' "$guided: finish the steps shown above in your browser, then open a new conversation there and type: Show my tasks."
+fi
 exit 0

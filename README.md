@@ -14,7 +14,8 @@
 **You need** [Claude Code](https://code.claude.com/docs/en/quickstart),
 [Codex](https://learn.chatgpt.com/docs/codex/cli) or
 [Cursor Agent](https://docs.cursor.com/en/cli/installation), installed and signed in,
-plus [Git](https://git-scm.com/install/).
+plus [Git](https://git-scm.com/install/). For claude.ai or ChatGPT, nothing to
+install: the wizard shows the steps to follow in your browser.
 
 **1. Paste this in a terminal, then press Enter.**
 
@@ -39,7 +40,8 @@ try {
 }
 ```
 
-Windows setup works with Codex and Claude Code, and asks you to type `codex` or `claude`.
+Windows setup works with Codex and Claude Code, and asks you to type `codex`, `claude`,
+`claude-ai` or `chatgpt`.
 It needs `codex.exe` or `claude.exe` on `PATH` and rejects `.cmd`, `.bat` and `.ps1`
 launchers, including the npm shims `codex.cmd` and `claude.cmd`. It supports Windows
 PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your WSL terminal.
@@ -47,7 +49,8 @@ PowerShell 5.1+ and PowerShell 7. With WSL, run the Mac or Linux command in your
 </details>
 
 **2. Pick your apps and sign in.** Press **Enter** to check an app, then move to
-**Launch install** and press **Enter** again.
+**Launch install** and press **Enter** again. Check **claude.ai** or **ChatGPT** to
+get the steps to follow in your browser.
 When asked to open your browser, press **y** and allow the connection.
 For Codex, ignore the `Callback URL` prompt shown while the browser is open:
 the sign-in completes on its own.
@@ -82,7 +85,8 @@ curl -fsSL https://raw.githubusercontent.com/massdo/massdo-marketplace/main/unin
 
 It lists the apps found on your computer, preselects the ones that have Nestor,
 and removes it from the apps you confirm. The shared marketplace stays available
-for any other plugins you use.
+for any other plugins you use. In claude.ai and ChatGPT, remove Nestor from the
+page where you added it.
 
 </details>
 
@@ -134,9 +138,24 @@ git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketp
 /reload
 ```
 
+**claude.ai**, from [Customize › Connectors](https://claude.ai/customize/connectors)
+
+Click **Add**, then **Add custom connector**. Name it `Nestor`, paste the URL
+below, click **Continue** twice, then **Add**, and sign in when asked.
+
+```text
+https://journal.mcp-marketplace.org/mcp
+```
+
+**ChatGPT**, from [Plugins](https://chatgpt.com/plugins)
+
+Click **+**, then **Add custom MCP server**. Name it `Nestor`, paste the same URL
+under **Connection**, keep the OAuth sign-in, then click **Create as a plugin**
+and install it. In a new conversation, type `@` and pick Nestor.
+
 </details>
 
-## Three plugins
+## Four plugins
 
 <p align="center">
   <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
@@ -144,7 +163,7 @@ git clone https://github.com/massdo/massdo-marketplace.git "$HOME/massdo-marketp
 
 Start with **nestor** to manage your tasks, notes and projects. No coding needed.
 **nestor-beta** adds coding tools. **massdo-skills** changes how your assistant responds.
-Both are optional.
+**agent-queue** shows which Claude Code sessions wait on you. All three are optional.
 
 ## Use
 
@@ -237,6 +256,23 @@ Changes how your agent talks to you. A style stays on until `reset`.
 - `/massdo-skills:articulate` — full sentences that connect
 - `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
 - `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
+
+### agent-queue · for Claude Code on a Mac
+
+Every session of the Claude Code desktop app in one pane, and a jump to the one that waits on you. Claude Code desktop on macOS only.
+
+```bash
+claude plugin install agent-queue@massdo-marketplace
+```
+
+- `/queue` — opens the **Agents** pane, in Claude Code's colors: yellow for a question, with its text, blue for finished, grey for working. A btw or a fork sits under its session, and **Here:** names the project and session you are in
+- `/next` — opens the session that has waited on you longest: finished ones first, then the questions still unanswered, in turn
+
+Optional: a global shortcut, ⌘@ by default, that does `/next` from any app. Build it once, and again after an update. If no key types `@` on your keyboard, give another one, as in `install.sh '§'`.
+
+```bash
+sh "$(ls -td ~/.claude/plugins/cache/massdo-marketplace/agent-queue/*/ | head -1)hotkey/install.sh"
+```
 
 <br>
 
