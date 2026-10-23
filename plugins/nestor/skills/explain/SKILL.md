@@ -1,14 +1,14 @@
 ---
 name: explain
-description: Explain raw text or one Nestor item as a bespoke, discardable explainer, in the formats the user picks before any work starts, text, an HTML page that mixes text and diagrams, or a video, replaced by a storytelling script when nothing can render one. Run only after a direct user invocation, such as /nestor:explain or $nestor:explain; never invoke it autonomously.
-argument-hint: "<text to explain | item id or slug>"
+description: Explain raw text, one Nestor item or one Nestor project as a bespoke, discardable explainer, in the formats the user picks before any work starts, text, an HTML page that mixes text and diagrams, or a video, replaced by a storytelling script when nothing can render one. Run only after a direct user invocation, such as /nestor:explain or $nestor:explain; never invoke it autonomously.
+argument-hint: "<text to explain | item id or slug | project name>"
 disable-model-invocation: true
 ---
 
 # Nestor Explain
 
-Reading something is not understanding it. This skill takes one subject, raw text or one
-Nestor item, and turns it into a bespoke, discardable explainer in the formats the user
+Reading something is not understanding it. This skill takes one subject, raw text, one
+Nestor item or one Nestor project, and turns it into a bespoke, discardable explainer in the formats the user
 picks first: text, an HTML page that mixes text and diagrams, or a video, replaced by a
 storytelling script when nothing here can render one. The explainer is for
 understanding; nothing of it goes back into the journal.
@@ -27,13 +27,14 @@ The argument is the text written after the skill name when it is invoked. Depend
 the client, it may arrive in a final `ARGUMENTS: …` line. For an equivalent request in
 natural language, read it from the user's message. It is one of two things:
 
-- **A reference**: a single token that looks like an item identity, an id, an id prefix
-  or a slug such as `brown_turtle`. The subject is that Nestor item.
+- **A reference**: a single token, or one quoted string, that names a Nestor project or
+  an item: a project name such as `lisbon-trip` or `"my long name"`, an item id, an id
+  prefix or a slug such as `brown_turtle`. The subject is that project or that item.
 - **Raw text**: anything else, taken as is. The subject is that text, nothing more. Do
-  not look items up inside it.
+  not look items or projects up inside it.
 
-An empty argument is an error: say in one line that the skill needs text to explain or
-an item reference, and stop. The argument never carries a format: the formats are asked
+An empty argument is an error: say in one line that the skill needs text to explain, an
+item reference or a project name, and stop. The argument never carries a format: the formats are asked
 below, every time.
 
 ## Ask for the formats first
@@ -59,15 +60,29 @@ valid, produce nothing, and stop. An empty answer produces nothing either.
 
 **Raw text.** No MCP call. Explain the text the user gave, in the user's language.
 
-**A reference.** Call `get_item` with the token in `ref`, the global `scope`, `known` and
-`version_hash`. Send the matched `{ version, etag }` pair when the necessary item content
+**A reference.** Resolve it in two exact reads, and stop at the first hit. Project names
+are unique in Nestor, so `get_project { name }` with the token resolves a project or
+returns `NOT_FOUND`; never fall back to `search_project` to guess one. On `NOT_FOUND`,
+call `get_item` with the token in `ref`, the global `scope`, `known` and `version_hash`. Send the matched `{ version, etag }` pair when the necessary item content
 is held; otherwise send `known: null`. With `unchanged: true`, keep the held content and
 pair and refresh the project name; a full response replaces them. Never omit `known` or
 use null to re-read held content with its pair. Global scope reaches every item that
-belongs to no project or to a live project; on `NOT_FOUND`, say in one line that the
-reference is unknown and stop. On `AMBIGUOUS`, list the candidate ids and stop.
+belongs to no project or to a live project; when this read fails too, say in one line
+that the reference matches no project and no item, and stop. On `AMBIGUOUS`, list the
+candidate ids and stop.
 
-Then add, with the item's project scope, or global when it has none:
+**A project.** Keep the returned `context` when there is one: it is the project's own
+account of itself. Then two calls with the project scope:
+
+- `get_tree` with `views: ["active", "backlog", "completed", "notes"]`, `depth: 6` and
+  `verbose: true`. The explainer needs the wording of the items, so titles are not
+  optional here. The first line of the server's text states the scope, the views, the
+  depth, the item count and `truncated` when the read was incomplete.
+- `list_items` with `view: "active"`, `sort: "updated_desc"`, `limit: 10` and
+  `includeTags: true`. Its `taskViewCounts` are the numbers behind "where it stands",
+  and its page is what moved last.
+
+**An item.** Add, with the item's project scope, or global when it has none:
 
 - `get_tree` with `rootItemId` set to the item's id, `depth: 6` and `verbose: true`,
   when the item is a task. The branch under it is the shape of the work. Views do not
@@ -84,10 +99,13 @@ own.
 Whatever the format, the explainer answers these questions, in this order, and skips a
 question the subject does not answer rather than inventing one:
 
-1. **What it is.** The subject in one paragraph: its goal for an item, its point for a
-   text.
-2. **Where it stands.** For an item, the status, the dates that bite, the last changes.
-   For a text, the facts it rests on.
+1. **What it is.** The subject in one paragraph: its goal for a project or an item,
+   its point for a text. A project's goal comes from its `context`, or from its root
+   items when it has none.
+2. **Where it stands.** For a project, the counts by status and the dates that bite:
+   overdue, due today, due this week. For an item, the status, the dates that bite, the
+   last changes. For a text, the facts it rests on. Numbers go in a short table or on
+   their own line, never inside a sentence.
 3. **What matters.** The two or three things the reader must keep.
 4. **What waits.** What blocks, what is missing, what the subject leaves open or
    contradicts.
@@ -166,6 +184,6 @@ prose; the reader has it.
 
 When the user then asks about one item, call `get_item` with that id or slug in `ref`,
 the resolved `scope`, `known` and `version_hash`, under the conditional-read rules above.
-A tree alone supplies no matched pair, so send `known: null` unless the necessary content
-and pair are held from another response. An explainer never becomes a journal write on
+A tree or a list alone supplies no matched pair, so send `known: null` unless the
+necessary content and pair are held from another response. An explainer never becomes a journal write on
 its own: a task or a note the user wants from it is a new, explicit request.

@@ -1,5 +1,5 @@
 {
   "version": "0.10.0",
   "version_hash": "0d15cff38fabeb39",
-  "changelog": "New explain skill: /nestor:explain turns a text or a Nestor item into a bespoke explainer. It first asks which formats you want: text, an HTML page that mixes text and diagrams, or a video.\nWithout a tool that renders video, it writes the storytelling instead."
+  "changelog": "New explain skill: /nestor:explain turns a text, a Nestor item or a project into a bespoke explainer. It first asks which formats you want: text, an HTML page that mixes text and diagrams, or a video.\nWithout a tool that renders video, it writes the storytelling instead."
 }
