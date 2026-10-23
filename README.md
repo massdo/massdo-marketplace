@@ -244,6 +244,7 @@ Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run 
 - `/nestor-beta:doctor` — offers to close tasks that already shipped
 - `/nestor-beta:clean-task` — tidies up a task
 - `/nestor-beta:check-for-updates` — looks for an update
+- `/nestor-taches` — Claude Code only: a side pane with the project’s tasks as `next-tasks` reads them, colored statuses, and Spec and Build buttons on each task
 
 Behind the scenes, `nestor-beta` signs your pull requests with a `nestor tasks:` footer. Nothing to type.
 
