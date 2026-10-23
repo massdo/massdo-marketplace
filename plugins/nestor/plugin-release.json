@@ -1,5 +1,5 @@
 {
-  "version": "0.9.1",
-  "version_hash": "33fa51871e394b96",
-  "changelog": "Resume now shows capture dates in local time. It converts the UTC capture date and compares it with the current local time before writing a relative date such as yesterday.\nWithout a known local time, resume shows the UTC date and time with no relative label."
+  "version": "0.10.1",
+  "version_hash": "45b48fb8fa488ae0",
+  "changelog": "When a new decision replaces one already written in an item's body, Nestor now rewrites that passage instead of appending the new decision below the old one, so the body no longer keeps outdated expectations.\nOnly new information is appended, and a request to reword a body rewrites it as a whole."
 }

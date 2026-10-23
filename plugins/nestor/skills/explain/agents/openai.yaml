@@ -1,0 +1,15 @@
+interface:
+  display_name: "Nestor Explain"
+  short_description: "Understand a text, a Nestor item or a project as text, a web page or a video — $nestor:explain <text | item | project>"
+  default_prompt: "Use $nestor:explain <text to explain | item id or slug | project name> to explain it; you will be asked whether you want text, an HTML page or a video."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "nestor"
+      description: "Canonical MCP server for the Nestor journal"
+      transport: "streamable_http"
+      url: "https://journal.mcp-marketplace.org/mcp"
+
+policy:
+  allow_implicit_invocation: false

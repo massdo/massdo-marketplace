@@ -12,7 +12,7 @@ $origin = 'https://journal.mcp-marketplace.org'
 # claude.ai and ChatGPT have no command line: Nestor is added from these pages.
 $claudeAiPage = 'https://claude.ai/customize/connectors'
 $chatGptPage = 'https://chatgpt.com/plugins'
-$requiredSkills = '["nestor","activity","tree","pause","resume","check-for-updates"]' | ConvertFrom-Json
+$requiredSkills = '["nestor","activity","tree","explain","pause","resume","check-for-updates"]' | ConvertFrom-Json
 $script:VerificationError = ''
 $script:ClientError = ''
 $script:Installed = $false

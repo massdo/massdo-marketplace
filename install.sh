@@ -4,7 +4,7 @@ set -u
 plugin=nestor@massdo-marketplace
 endpoint=https://journal.mcp-marketplace.org/mcp
 origin=https://journal.mcp-marketplace.org
-required_skills='["nestor","activity","tree","pause","resume","check-for-updates"]'
+required_skills='["nestor","activity","tree","explain","pause","resume","check-for-updates"]'
 clients=()
 client=
 check_only=false

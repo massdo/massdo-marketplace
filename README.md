@@ -155,7 +155,7 @@ and install it. In a new conversation, type `@` and pick Nestor.
 
 </details>
 
-## Three plugins
+## Four plugins
 
 <p align="center">
   <img src=".github/assets/menu.svg" width="100%" alt="nestor is for everyone: tasks, notes, projects and hours, no code needed. nestor-beta is for coders: from an idea to tasks, pull requests and merges. massdo-skills is for style: it changes how your agent talks to you and works on its own.">
@@ -163,7 +163,7 @@ and install it. In a new conversation, type `@` and pick Nestor.
 
 Start with **nestor** to manage your tasks, notes and projects. No coding needed.
 **nestor-beta** adds coding tools. **massdo-skills** changes how your assistant responds.
-Both are optional.
+**agent-queue** shows which Claude Code sessions wait on you. All three are optional.
 
 ## Use
 
@@ -213,6 +213,7 @@ Two ways to find them. **Semantic** search understands what you mean, even with 
 - `/nestor:nestor` — tasks, notes, projects, history
 - `/nestor:activity` — start a timer, get your hours
 - `/nestor:tree` — draws a project as a tree
+- `/nestor:explain` — explains a text, a task or a project as text, a web page or a video
 - `/nestor:pause` — saves this chat's work context for later
 - `/nestor:resume` — restores this chat's context without changing it
 - `/nestor:resume list` — lists saved transmissions, newest first, for explicit selection
@@ -254,6 +255,23 @@ Changes how your agent talks to you. A style stays on until `reset`.
 - `/massdo-skills:articulate` — full sentences that connect
 - `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
 - `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
+
+### agent-queue · for Claude Code on a Mac
+
+Every session of the Claude Code desktop app in one pane, and a jump to the one that waits on you. Claude Code desktop on macOS only.
+
+```bash
+claude plugin install agent-queue@massdo-marketplace
+```
+
+- `/queue` — opens the **Agents** pane, in Claude Code's colors: yellow for a question, with its text, blue for finished, grey for working. A btw or a fork sits under its session, and **Here:** names the project and session you are in
+- `/next` — opens the session that has waited on you longest: finished ones first, then the questions still unanswered, in turn
+
+Optional: a global shortcut, ⌘@ by default, that does `/next` from any app. Build it once, and again after an update. If no key types `@` on your keyboard, give another one, as in `install.sh '§'`.
+
+```bash
+sh "$(ls -td ~/.claude/plugins/cache/massdo-marketplace/agent-queue/*/ | head -1)hotkey/install.sh"
+```
 
 <br>
 
