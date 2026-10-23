@@ -152,6 +152,11 @@ elif args[:2] == ['mcp', 'login']:
         sys.exit(1)
     if state.get('refuse_oauth'):
         sys.exit(1)
+    if client == 'cursor-agent':
+        # Like Cursor Agent: the first characters of the OAuth code are echoed on stdout.
+        print('\u2713 MCP login successful', flush=True)
+        print("Received authorization code 'abcdef...'. You can close the browser. "
+              'Re-running the command should now complete authentication.', flush=True)
     if client == 'codex':
         # Like Codex: a terminal is read for a pasted callback URL, hidden, and a
         # bare Enter cancels the sign-in; any other input stays unread.

@@ -188,6 +188,8 @@ class Installer(unittest.TestCase):
         code, output = self.run_interactive(self.command('cursor', ()), [('browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
+        self.assertIn('MCP login successful', output)
+        self.assertNotIn('authorization code', output)
         self.assertEqual(len([call for call in self.calls() if call[1:4] == ['mcp', 'login', 'nestor']]),
                          1, self.calls())
 
