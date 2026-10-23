@@ -188,6 +188,8 @@ class Installer(unittest.TestCase):
         code, output = self.run_interactive(self.command('cursor', ()), [('browser', 'y')])
         self.assertEqual(code, 0, output)
         self.assertIn('Installation complete', output)
+        self.assertIn('MCP login successful', output)
+        self.assertNotIn('authorization code', output)
         self.assertEqual(len([call for call in self.calls() if call[1:4] == ['mcp', 'login', 'nestor']]),
                          1, self.calls())
 
@@ -462,7 +464,8 @@ function Invoke-WebRequest {
                 (['plugin', 'add', 'nestor@massdo-marketplace', '--json'] if client == 'codex' else
                  ['plugin', 'install', 'nestor@massdo-marketplace', '--scope', 'user'],
                  {'installed': False}, ()),
-                (['plugin', 'list', '--json'], {}, ('--check',)),
+                (['plugin', 'list', '--json', '-m', 'massdo-marketplace'] if client == 'codex' else
+                 ['plugin', 'list', '--json'], {}, ('--check',)),
                 (['mcp', 'get', 'nestor', '--json'] if client == 'codex' else
                  ['plugin', 'details', 'nestor@massdo-marketplace'], {}, ('--check',)),
             ]
@@ -543,6 +546,16 @@ function Invoke-WebRequest {
                     self.assertNotIn('Installation complete', result.stdout)
                     self.assertEqual(json.loads(self.state.read_text()), state)
         self.assert_no_mutations()
+
+    def test_codex_inventory_names_the_marketplace(self):
+        # Without a marketplace name, Codex also refreshes its remote plugin
+        # catalog, which exceeded the inventory time budget on a cold cache.
+        self.run_installer('codex')
+        inventories = [call[1:] for call in self.calls()
+                       if call[1:3] == ['plugin', 'list'] and '--help' not in call]
+        self.assertTrue(inventories, self.calls())
+        self.assertEqual(set(map(tuple, inventories)),
+                         {('plugin', 'list', '--json', '-m', 'massdo-marketplace')})
 
     def test_no_terminal_requires_explicit_client(self):
         result = self.run_installer(None, options=())

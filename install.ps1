@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $plugin = 'nestor@massdo-marketplace'
 $endpoint = 'https://journal.mcp-marketplace.org/mcp'
 $origin = 'https://journal.mcp-marketplace.org'
-$requiredSkills = '["nestor","activity","tree","pause","resume","check-for-updates"]' | ConvertFrom-Json
+$requiredSkills = '["nestor","activity","tree","explain","pause","resume","check-for-updates"]' | ConvertFrom-Json
 $script:VerificationError = ''
 $script:ClientError = ''
 $script:Installed = $false
@@ -156,16 +156,15 @@ function Read-ClientJson([string[]]$Arguments, [switch]$Array) {
 }
 
 function Read-Plugins {
-    $document = Read-ClientJson @('plugin', 'list', '--json') -Array:($Client -ceq 'claude')
     if ($Client -ceq 'codex') {
+        # Without a marketplace name, Codex also refreshes its remote plugin
+        # catalog, which can take longer than the time budget on a cold cache.
+        $document = Read-ClientJson @('plugin', 'list', '--json', '-m', 'massdo-marketplace')
         $entries = Field $document 'installed'
         if ($entries -isnot [array]) { throw 'Invalid plugin inventory.' }
-        $identities = @($entries | Where-Object { ([string](Field $_ 'pluginId')).StartsWith('nestor@') })
-        if (@($identities | Where-Object { $_.pluginId -cne $plugin }).Count) {
-            Stop-Installer "Collision: an existing Nestor plugin comes from a different marketplace."
-        }
-        $selected = @($identities | Where-Object { $_.pluginId -ceq $plugin })
+        $selected = @($entries | Where-Object { ([string](Field $_ 'pluginId')) -ceq $plugin })
     } else {
+        $document = Read-ClientJson @('plugin', 'list', '--json') -Array
         $entries = @($document)
         $identities = @($entries | Where-Object {
             (Field $_ 'scope') -cne 'synced' -and ([string](Field $_ 'id')).StartsWith('nestor@')

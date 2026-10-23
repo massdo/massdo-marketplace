@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, chat transmissions, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.9.1"
+  pluginVersion: "0.10.1"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.9.1, hashed as `33fa51871e394b96`.
+This plugin version is 0.10.1, hashed as `45b48fb8fa488ae0`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "133fa51871e394b96", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "145b48fb8fa488ae0", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, tell the user that an update is available for the Nestor plugin when `pluginName` is `nestor`, or for the Nestor Beta plugin when `pluginName` is `nestor-beta`. Without `pluginName`, tell the user that an update is available.
@@ -111,7 +111,9 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Take that current item from `details.current` when the conflict includes it. That object has the same shape as a `get_item` response: `item.version` and `etag` come from there, so no extra `get_item` is needed. Call `get_item` once only when the rejection has no `details.current`, including a missing precondition and older servers that still return an empty conflict.
 - Never combine values from different responses. After a conflict, discard the pair that was just rejected. After a successful mutation, use the pair that response returns for the next change on that item, whatever operation that change performs.
 - Repeat a rejected mutation only once. Report the conflict when the second attempt also fails.
-- Use `append_body` to add text to a body. Never read an item only to resend an unchanged body.
+- Use `append_body` only for new information that replaces nothing already written.
+- When a decision replaces one already written in the body, rewrite the body with a `patch` of `body`: remove the passage stating the replaced decision, keep the new decision with its date and the user's wording, and leave the rest of the body as it is. A request to reword the body also goes through `patch`, with the complete text. This applies to the body of every task, code task, note and plan.
+- Rewrite from the body held with its matched pair. When the body is not held, one `get_item` to obtain it is legitimate. Never read an item only to resend an unchanged body.
 - Use `update_item` only for requested fields and operations.
 - Treat `need_review` as active work. Use it for review requests and return it to `in_progress` when changes are required.
 

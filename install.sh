@@ -4,7 +4,7 @@ set -u
 plugin=nestor@massdo-marketplace
 endpoint=https://journal.mcp-marketplace.org/mcp
 origin=https://journal.mcp-marketplace.org
-required_skills='["nestor","activity","tree","pause","resume","check-for-updates"]'
+required_skills='["nestor","activity","tree","explain","pause","resume","check-for-updates"]'
 clients=()
 client=
 check_only=false
@@ -354,9 +354,10 @@ cursor_install() {
 
 plugin_state() {
     if [ "$client" = codex ]; then
-        capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
+        # Without a marketplace name, Codex also refreshes its remote plugin
+        # catalog, which can take longer than the time budget on a cold cache.
+        capture 30 "$scratch/plugins.json" "$binary" plugin list --json -m massdo-marketplace || return 1
         json -e '.installed | type == "array"' "$scratch/plugins.json" >/dev/null || return 1
-        json -e '[.installed[] | select((.pluginId | startswith("nestor@")) and .pluginId != "nestor@massdo-marketplace")] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision: an existing Nestor plugin comes from a different marketplace.'
         json -ce '[.installed[] | select(.pluginId == "nestor@massdo-marketplace")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
     else
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
@@ -401,6 +402,27 @@ abort_installation() {
     fail "$*"
 }
 
+# Cursor Agent echoes the first characters of the OAuth authorization code it
+# received; its sign-in output reaches the terminal without that line. A flag
+# file marks the end of the relay, so the wizard's next line waits for it.
+relay_login_output() {
+    local line
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in *'Received authorization code '*) continue ;; esac
+        printf '%s\n' "$line" >&3
+    done
+    : >"$scratch/login-relayed"
+}
+
+relay_login_wait() {
+    local ticks=0
+    [ "$client" = cursor ] || return 0
+    while [ ! -e "$scratch/login-relayed" ] && [ "$ticks" -lt 50 ]; do
+        sleep 0.1
+        ticks=$((ticks + 1))
+    done
+}
+
 # Keystrokes typed before the sign-in are discarded first. Codex also reads a
 # pasted callback URL from a terminal and cancels the sign-in on a bare Enter,
 # so it gets a pipe held open instead: nothing to read, and the browser
@@ -413,6 +435,9 @@ login() {
         mkfifo "$scratch/login-input" || return 1
         exec 6<>"$scratch/login-input"
         NO_COLOR=1 "$binary" mcp login "$server" <&6 >&3 2>&3 &
+    elif [ "$client" = cursor ]; then
+        rm -f "$scratch/login-relayed"
+        NO_COLOR=1 "$binary" mcp login "$server" <&3 > >(relay_login_output) 2>&1 &
     else
         NO_COLOR=1 "$binary" mcp login "$server" <&3 >&3 2>&3 &
     fi
@@ -422,6 +447,7 @@ login() {
             stop_process "$command_pid"
             command_pid=
             exec 6>&-
+            relay_login_wait
             return 124
         fi
         sleep 0.1
@@ -429,6 +455,7 @@ login() {
     wait "$command_pid"; result=$?
     command_pid=
     exec 6>&-
+    relay_login_wait
     return "$result"
 }
 

@@ -89,6 +89,10 @@ elif args[:2] == ['plugin', 'list']:
     entries.append({'id': 'other@other', 'pluginId': 'other@other', 'scope': 'user', 'enabled': True})
     if client == 'claude' and state.get('synced'):
         entries.append({'id': 'nestor@synced', 'scope': 'synced', 'enabled': True})
+    if '-m' in args:
+        # Codex lists that marketplace alone and skips its remote catalog refresh.
+        marketplace = args[args.index('-m') + 1]
+        entries = [entry for entry in entries if entry.get('pluginId', '').endswith('@' + marketplace)]
     emit({'installed': entries, 'available': [{'pluginId': 'nestor@massdo-marketplace'}]}
          if client == 'codex' else entries)
 elif args[:2] == ['mcp', 'list']:
@@ -148,6 +152,11 @@ elif args[:2] == ['mcp', 'login']:
         sys.exit(1)
     if state.get('refuse_oauth'):
         sys.exit(1)
+    if client == 'cursor-agent':
+        # Like Cursor Agent: the first characters of the OAuth code are echoed on stdout.
+        print('\u2713 MCP login successful', flush=True)
+        print("Received authorization code 'abcdef...'. You can close the browser. "
+              'Re-running the command should now complete authentication.', flush=True)
     if client == 'codex':
         # Like Codex: a terminal is read for a pasted callback URL, hidden, and a
         # bare Enter cancels the sign-in; any other input stays unread.
