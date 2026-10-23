@@ -354,9 +354,10 @@ cursor_install() {
 
 plugin_state() {
     if [ "$client" = codex ]; then
-        capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
+        # Without a marketplace name, Codex also refreshes its remote plugin
+        # catalog, which can take longer than the time budget on a cold cache.
+        capture 30 "$scratch/plugins.json" "$binary" plugin list --json -m massdo-marketplace || return 1
         json -e '.installed | type == "array"' "$scratch/plugins.json" >/dev/null || return 1
-        json -e '[.installed[] | select((.pluginId | startswith("nestor@")) and .pluginId != "nestor@massdo-marketplace")] | length == 0' "$scratch/plugins.json" >/dev/null || fail 'Collision: an existing Nestor plugin comes from a different marketplace.'
         json -ce '[.installed[] | select(.pluginId == "nestor@massdo-marketplace")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
     else
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json || return 1
