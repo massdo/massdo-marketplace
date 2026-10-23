@@ -312,6 +312,10 @@ const standDown = async ($: $) => {
   leadsAgainAt = (await $.clock.now()) + RETRY_MS
 }
 
+// Only a session of the desktop app has the app's session tools: one in a terminal, even on the same transcript,
+// never leads. Asked at each tick, since a surface may attach after the start.
+const canLead = async ($: $) => (await $.session.surfaces()).includes('desktop')
+
 let isTicking = false
 
 // `isAsked`: the person pressed for it, so this session leads and may show a permission dialog.
@@ -319,7 +323,7 @@ const tick = async ($: $, isAsked = false) => {
   if (isTicking && !isAsked) return
   isTicking = true
   try {
-    if (await holdsLease($, isAsked)) await poll($, isAsked)
+    if ((await canLead($)) && (await holdsLease($, isAsked))) await poll($, isAsked)
     await load($)
   } finally {
     isTicking = false

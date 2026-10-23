@@ -45,6 +45,8 @@ type World = {
   isRefused?: boolean
   /** This session lost the app's tools, as when their MCP server disconnects. */
   isToolMissing?: boolean
+  /** Where this session draws; absent, the desktop app. */
+  surfaces?: ('terminal' | 'desktop')[]
 }
 
 const rowOf = (one: Fake) => ({
@@ -80,7 +82,8 @@ const world = (on: On, state: World) => {
     if (one.app || one === state.self) state.files.set(`${APP}/${one.id}.json`, JSON.stringify(one.app ?? {}))
   }
   on('session.id', () => ({ value: 'cli-self' }))
-  on('session.surface', () => ({ value: 'desktop' }))
+  on('session.surface', () => ({ value: state.surfaces?.[0] ?? 'desktop' }))
+  on('session.surfaces', () => ({ value: state.surfaces ?? ['desktop'] }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'x' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
@@ -342,6 +345,21 @@ test('while another session leads, this one draws what it shares and calls nothi
   await clock.advance(12_000)
   expect(calls).toContain('mcp__ccd_session_mgmt__list_sessions')
   expect(fileOf(files, 'leader.json').owner).toBe('cli-self')
+  await ui.unmount()
+})
+
+test('a session in a terminal never leads, the lease free or not, yet draws what the leader shares', async ($, on) => {
+  const row = { project: 'thoth', title: 'Bug', at: seenAt(5), seenAt: seenAt(60), link: 'l', isShown: false, isFocused: false }
+  const shared = { rows: [{ ...row, id: 'local_b', status: 'done', age: '5 min' }], problem: null }
+  const files = new Map([[`${DIR}/state.json`, JSON.stringify(shared)]])
+  const { clock, calls } = world(on, { self: SELF, shown: [], files, others: [THOTH], surfaces: ['terminal'] })
+  await $.session.start({ ...STARTED, surface: 'terminal' })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Button', key: 'next' }))?.text).toBe('Next: thoth › Bug')
+  await clock.advance(30_000)
+  expect(calls).toEqual([])
+  expect(files.has(`${DIR}/leader.json`)).toBe(false)
   await ui.unmount()
 })
 
