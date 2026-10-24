@@ -1,16 +1,17 @@
 ---
 name: audit
-description: Have an independent Codex agent audit one Nestor Plan or Task, sol6.1 or astra at the chosen reasoning effort, sol6.1 xhigh by default. Before anything is delivered, it audits the stored specification against the repository; once a pull request or a work branch exists, it audits the delivered code against that specification. The report is logged in a Nestor note linked to the audited item. Use only when the user explicitly invokes audit with an item reference; an agent, plan, task or another skill must never invoke it.
-argument-hint: "<plan-or-task-id-or-slug> [sol6.1|astra] [low|medium|high|xhigh|max|ultra]"
+description: Have an independent Codex agent audit one Nestor Plan or Task, or one pull request given by its number, sol6.1 or astra at the chosen reasoning effort, sol6.1 xhigh by default. For a Plan or Task, it audits the stored specification against the repository before anything is delivered, and the delivered code against that specification once a pull request or a work branch exists; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
+argument-hint: "<plan-or-task-id-or-slug|pr-number> [sol6.1|astra] [low|medium|high|xhigh|max|ultra]"
 disable-model-invocation: true
 ---
 
 # Nestor Audit
 
-Have one Plan or Task audited by a Codex agent that runs in its own process, outside this
-conversation, then log its report in a Nestor note linked to that item. The calling agent
-reads the item, pins the commits, writes the brief, waits for the end of the audit and
-records the report. The auditor only reads the repository and has no access to the journal.
+Have one Plan or Task, or one pull request, audited by a Codex agent that runs in its own
+process, outside this conversation. The report on a Plan or Task is then logged in a Nestor
+note linked to that item. The calling agent reads the item or the pull request, pins the
+commits, writes the brief, waits for the end of the audit and records the report. The
+auditor only reads the repository and has no access to the journal.
 
 ## Identify the plugin version
 
@@ -18,20 +19,23 @@ Pass `{ "version_hash": "2f446e153084ebf2a" }` on every Nestor MCP call.
 
 ## 1. Invocation
 
-- Claude Code: `/nestor-beta:audit <ref> [model] [effort]`.
-- Codex: `$nestor-beta:audit <ref> [model] [effort]`.
+- Claude Code: `/nestor-beta:audit <ref|PR> [model] [effort]`.
+- Codex: `$nestor-beta:audit <ref|PR> [model] [effort]`.
 - Cursor: select the skill, then supply the arguments.
 
 Run only on that explicit invocation. Read the arguments after the skill name, including a
-final `ARGUMENTS: …` line when the client supplies one. The first word is the reference: an
-id, an id prefix or an exact slug. Each following word, in any order and in any case, is a
-model, `sol6.1` or `astra`, or an effort, `low`, `medium`, `high`, `xhigh`, `max` or
-`ultra`, with at most one model and one effort. The defaults are `sol6.1` and `xhigh`.
-`sol6.1` runs the Codex model `gpt-6.1-sol`; `astra` runs `gpt-6-astra`.
+final `ARGUMENTS: …` line when the client supplies one. The first word is either a Nestor
+reference — an id, an id prefix or an exact slug — or a pull request number: digits only,
+with or without a leading `#`. A number audits that pull request of the workspace's
+repository, without any Nestor item: skip sections 2 and 7. Each following word, in any
+order and in any case, is a model, `sol6.1` or `astra`, or an effort, `low`, `medium`,
+`high`, `xhigh`, `max` or `ultra`, with at most one model and one effort. The defaults are
+`sol6.1` and `xhigh`. `sol6.1` runs the Codex model `gpt-6.1-sol`; `astra` runs
+`gpt-6-astra`.
 
-Without a reference, ask for it in one line and stop. On an unknown word, or a second model
-or effort, stop and name that word and the accepted values, without launching or writing
-anything.
+Without a reference or a number, ask for one in one line and stop. On an unknown word, or a
+second model or effort, stop and name that word and the accepted values, without launching
+or writing anything.
 
 ## 2. Read the item
 
@@ -79,16 +83,23 @@ When a delivery is found, the audit runs in code mode on the changes `git diff <
 Otherwise it runs in spec mode against the SHA of `origin/<targetBranch>`, or of `origin`'s
 default branch as `git ls-remote --symref origin HEAD` names it.
 
+A pull request number always runs in code mode. Its URL is the workspace's `origin`, in
+HTTPS form without `.git`, followed by `/pull/<number>`. Read it as above, adding `title`
+and `body` to the `--json` fields, and pin base and head the same way. A pull request closed
+without a merge leaves nothing to audit: stop and say so.
+
 ## 5. Write the brief
 
 Create a new private temporary directory with `mktemp -d` and write the brief to `brief.md`
-there. The auditor starts from this brief alone: it holds only the content stored in Nestor
-and the audit instructions, never this conversation or the calling agent's opinion of the
-work.
+there. The auditor starts from this brief alone: it holds only the stored content of the
+audited work, the Nestor item's or the pull request's, and the audit instructions, never
+this conversation or the calling agent's opinion of the work.
 
 - The audited item: its type, slug, title and status.
 - Its stored content as is: body, specification, dependencies with their justifications and
   completionEvidence; for a Plan, the same for each member.
+- For a pull request number, in place of the item and its content: the pull request's
+  number, URL, title and description as is.
 - The repository, the mode and the pinned SHAs.
 - The user's language, named explicitly.
 
@@ -98,8 +109,9 @@ that the completion criteria are observable, that no decision is left to whoever
 work, that the dependencies are justified, and which risks the architecture carries.
 
 In code mode, it asks the auditor to check `git diff <base> <head>` against the
-specification: criteria not met, bugs and regressions, missing or weakened tests, and
-changes outside the scope.
+specification, or against the pull request's title and description for a pull request
+number: criteria not met, bugs and regressions, missing or weakened tests, and changes
+outside the scope.
 
 In both modes, the brief gives the auditor these rules:
 
@@ -136,8 +148,8 @@ it no network, which is why the calling agent fetches and pins the commits befor
 Wait for the process to end without reading `audit.log`; only `report.md` comes back into
 the conversation, at the end. When the client cannot keep a command in the foreground until
 the audit ends, run it in the background and resume when it ends; then say in one sentence
-that the audit is running, with the agent, the cited item and the path of `audit.log` to
-follow it.
+that the audit is running, with the agent, the cited item or the pull request, and the path
+of `audit.log` to follow it.
 
 On a non-zero exit or an empty `report.md`, write no note: say that the audit failed, give
 its cause in plain words, read from the end of the log, and the log's path.
@@ -161,5 +173,6 @@ If the creation is refused, say that the report is not logged and give the path 
 ## 8. Report
 
 At the end, show the report as is, then one sentence that cites the note and the audited
-item using Nestor's item citation rule. Do not narrate the calls, versions, ETags or any
-technical identifier beyond those citations.
+item using Nestor's item citation rule; after a pull request audit, that sentence links the
+pull request instead. Do not narrate the calls, versions, ETags or any technical identifier
+beyond those citations.
