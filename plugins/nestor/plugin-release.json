@@ -1,5 +1,5 @@
 {
-  "version": "0.10.1",
-  "version_hash": "45b48fb8fa488ae0",
-  "changelog": "When a new decision replaces one already written in an item's body, Nestor now rewrites that passage instead of appending the new decision below the old one, so the body no longer keeps outdated expectations.\nOnly new information is appended, and a request to reword a body rewrites it as a whole."
+  "version": "0.10.2",
+  "version_hash": "190cb659247ab83a",
+  "changelog": "The HTML page of /nestor:explain now has a menu on the left that highlights the section you are reading as you scroll.\nOn a phone, the menu becomes a bar at the top of the screen."
 }
