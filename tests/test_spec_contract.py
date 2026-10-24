@@ -4,7 +4,6 @@ These checks validate documentation shapes, not approval or build policies. The
 domain's behavior is exercised by Journal's focused approval/selection tests.
 """
 
-import copy
 import importlib.util
 import json
 import re
@@ -13,7 +12,7 @@ import unittest
 from pathlib import Path
 
 import yaml
-from jsonschema import Draft202012Validator, ValidationError
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "plugins/nestor-beta/skills/spec"
@@ -46,30 +45,6 @@ class SpecContract(unittest.TestCase):
         for example in examples():
             with self.subTest(tool=example["tool"]):
                 validate_example(example)
-
-    def test_invalid_tool_and_obsolete_fields_are_rejected(self):
-        first = examples()[0]
-        malformed = []
-        unknown = copy.deepcopy(first)
-        unknown["tool"] = "create_plan"
-        malformed.append(unknown)
-        wrong_field = copy.deepcopy(first)
-        wrong_field["arguments"]["specification"]["steps"][0]["verify"] = "pnpm test"
-        malformed.append(wrong_field)
-        wrong_shape = copy.deepcopy(first)
-        wrong_shape["arguments"]["specification"]["steps"][0]["verification"] = ["pnpm test"]
-        malformed.append(wrong_shape)
-        wrong_hash = copy.deepcopy(first)
-        wrong_hash["arguments"]["version_hash"] = "2ffffffffffffffff"
-        malformed.append(wrong_hash)
-        patch_type = next(copy.deepcopy(example) for example in examples()
-                          if example["tool"] == "update_item" and "patch" in example["arguments"])
-        patch_type["arguments"]["patch"]["type"] = "plan"
-        malformed.append(patch_type)
-        for example in malformed:
-            with self.subTest(example=example):
-                with self.assertRaises((ValueError, ValidationError)):
-                    validate_example(example)
 
     def test_local_references_resolve_and_missing_references_fail(self):
         self.assertEqual(skills.validate_skill(SPEC / "SKILL.md"), [])

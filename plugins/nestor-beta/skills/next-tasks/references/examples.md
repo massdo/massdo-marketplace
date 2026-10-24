@@ -1,27 +1,25 @@
 # Mixed-view examples and contract coverage
 
 These are synthetic documentary examples, not transcripts or proof of agent runtime
-behaviour. The tests validate requests and responses against the captured MCP catalogue,
-then check that the declared presentation preserves every selected item's identity,
-parent, state and order. They do not implement a renderer distributed by this plugin.
+behaviour. The tests validate their requests against the captured MCP catalogue.
 
 ## Read without root filters
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"2b4920530586d8360","scope":{"mode":"project","projectId":"QYQi"},"view":"active"}}
+{"tool":"list_items","arguments":{"version_hash":"2e8250e4adc7a7258","scope":{"mode":"project","projectId":"QYQi"},"view":"active"}}
 ```
 
 Read every page. A short next-page reference restores the original scope and view:
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"2b4920530586d8360","cursor":"c1"}}
+{"tool":"list_items","arguments":{"version_hash":"2e8250e4adc7a7258","cursor":"c1"}}
 ```
 
 If an ancestor is missing from the collected pages, read its known identity instead of
 searching or listing its descendants. Missing full content uses null in `known`:
 
 ```json
-{"tool":"get_item","arguments":{"version_hash":"2b4920530586d8360","scope":{"mode":"project","projectId":"QYQi"},"ref":["5snR"],"known":[null]}}
+{"tool":"get_item","arguments":{"version_hash":"2e8250e4adc7a7258","scope":{"mode":"project","projectId":"QYQi"},"ref":["5snR"],"known":[null]}}
 ```
 
 A held complete ancestor uses its own matched version and ETag instead. Batch at most
@@ -59,28 +57,10 @@ inventing a Plan.
 Only then read it:
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"2b4920530586d8360","scope":{"mode":"project","projectId":"QYQi"},"view":"backlog"}}
+{"tool":"list_items","arguments":{"version_hash":"2e8250e4adc7a7258","scope":{"mode":"project","projectId":"QYQi"},"view":"backlog"}}
 ```
 
 The returned Tasks remain visible under contextual ancestors. Label the Task as backlog,
 and the Plan as context outside that view; never give the Plan a `backlog` property.
 With zero recorded backlog Tasks, say it is empty and ask nothing. With an absent count,
 offer it without a number. Never read it just to obtain a count.
-
-## Regression cases
-
-The fixture `tests/fixtures/next-tasks-cases.json` records expected outlines for:
-
-- Skyline Plan/core, ordinary and code autonomous Tasks, Plan/Tasks and nested sub-plans;
-- historical Task parents, ancestors outside the view and unresolved ancestor reads;
-- ready-to-build/building Tasks, calculated Plan progress and separate approval;
-- a Plan alone with zero active Tasks, a genuinely empty mixed view and missing counters;
-- parents and children on different pages, server sibling order and an interrupted page;
-- an active exchange without any backlog read, and explicitly requested backlog Tasks
-  grouped under contextual Plans.
-
-The catalogue snapshot includes its source commit and capture method. Current schemas
-require counters; missing-counter cases are explicitly labelled compatibility inputs
-that fail that strict schema, not examples of conforming current server output. They
-document graceful handling of absent data without changing the captured contract.
-All outlines are static expectations, not generated application output or live sessions.

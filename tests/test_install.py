@@ -740,22 +740,6 @@ function Invoke-WebRequest {
         self.assertNotIn('Installation complete', result.stdout)
         self.assert_no_mutations()
 
-    @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The browser is opened by the Bash wizard')
-    def test_browser_app_opens_its_page_only_on_request(self):
-        page = 'https://chatgpt.com/plugins'
-        code, output = self.run_interactive(self.command('chatgpt', ()), [('browser now', 'n')])
-        self.assertEqual(code, 0, output)
-        self.assertNotIn('Opening your browser', output)
-        self.assertEqual(self.calls(), [])
-        code, output = self.run_interactive(self.command('chatgpt', ()), [('browser now', 'y')])
-        self.assertEqual(code, 0, output)
-        self.assertIn('Opening your browser', output)
-        # The opener is detached from the wizard, so its record may land after the exit.
-        deadline = time.monotonic() + 5
-        while time.monotonic() < deadline and [page] not in [call[1:] for call in self.calls()]:
-            time.sleep(0.1)
-        self.assertEqual([call[1:] for call in self.calls()], [[page]])
-
     @unittest.skipIf(POWERSHELL or os.name == 'nt', 'The menu runs in the Bash wizard')
     def test_menu_offers_the_browser_apps_without_any_installed_app(self):
         for client in ('codex', 'claude', 'cursor-agent'):

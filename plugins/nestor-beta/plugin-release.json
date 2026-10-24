@@ -1,5 +1,5 @@
 {
-  "version": "0.13.0",
-  "version_hash": "b4920530586d8360",
-  "changelog": "Adds the Nestor task pane for Claude Code: a side panel that lists the project tasks as next-tasks reads them, with colored status chips, an accordion per task, a detail read, Refresh and Backlog buttons, Spec and Build buttons, live follow-up of the mutations Claude makes, and the /nestor-taches command."
+  "version": "0.13.1",
+  "version_hash": "e8250e4adc7a7258",
+  "changelog": "The next-tasks references no longer describe a test fixture the skill never reads. Its behavior is unchanged."
 }
