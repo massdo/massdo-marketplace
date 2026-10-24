@@ -32,18 +32,22 @@ repository, without any Nestor item: skip sections 2 and 7.
 Read the other words by their meaning, in any order, case or abbreviation, to choose the
 agent that audits, its model and its effort:
 
-- Agent: `codex` runs the Codex CLI, `claude` runs Claude Code. A model family alone names
-  its agent.
-- Codex families: `sol`, whose latest model is `gpt-6.1-sol` (sol6.1), and `astra`, whose
-  latest is `gpt-6-astra` (astra 6). `codex` without a family runs sol.
-- Claude families: `opus`, `fable`, `sonnet` and `haiku`.
-- `best`, or no version, runs the family's latest model. A version the user names runs that
-  model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for `claude-opus-5-5`.
-- Efforts: `low`, `medium`, `high`, `xhigh` and `max`, plus `ultra` for Codex.
+| Agent | Families | Latest model, for `best` or no version | Efforts |
+| --- | --- | --- | --- |
+| `codex`, the Codex CLI | `sol`, `astra` | `gpt-6.1-sol` (sol6.1), `gpt-6-astra` (astra 6) | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
+| `claude`, Claude Code | `opus`, `fable`, `sonnet`, `haiku` | the family name, which Claude Code resolves | `low`, `medium`, `high`, `xhigh`, `max` |
 
-Without an agent or a model, the audit runs sol6.1; without an effort, it runs at `xhigh`.
-So `codex sol best max` is sol6.1 at max, `claude op best max` is the latest Opus at max,
-`codex astra` is astra 6 at xhigh and `claude fable best` is the latest Fable at xhigh.
+A model family alone names its agent, and `codex` without a family runs sol. A version the
+user names runs that model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for
+`claude-opus-5-5`. Without an agent or a model, the audit runs sol6.1; without an effort, it
+runs at `xhigh`.
+
+| Words | Audit |
+| --- | --- |
+| `codex sol best max` | sol6.1 at max |
+| `claude op best max` | the latest Opus at max |
+| `codex astra` | astra 6 at xhigh |
+| `claude fable best` | the latest Fable at xhigh |
 
 Without a reference or a number, ask for one in one line and stop. When a word means
 nothing here, when the words name two agents, models or efforts, or a model or effort that
