@@ -16,9 +16,9 @@ const readJson = (path, fallback) => {
 
 // Why the plugin could not read the sessions, by the problem's kind: the queue is then out of date.
 const BLOCKED = {
-  ask: 'Queue on hold: allow Claude to read your sessions in /queue.',
-  refused: 'Queue on hold: reading the sessions was refused. It tries again in 1 min, or open /queue and press Retry.',
-  error: 'Queue on hold: reading the sessions failed. Open /queue and press Retry.',
+  ask: 'Queue on hold: allow Claude to read your sessions in /open-agent-queue.',
+  refused: 'Queue on hold: reading the sessions was refused. It tries again in 1 min, or open /open-agent-queue and press Retry.',
+  error: 'Queue on hold: reading the sessions failed. Open /open-agent-queue and press Retry.',
 }
 
 // `--dry-run` prints the link it would open, or the notification it would show, and changes nothing.

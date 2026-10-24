@@ -387,7 +387,7 @@ const dismiss = async ($: $, id: string) => {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
-      name: 'queue',
+      name: 'open-agent-queue',
       description: 'Opens the agents pane: every session and what it waits for',
     })
     await $.command.register({
@@ -395,7 +395,7 @@ export const register: Register = on => {
       description: 'Goes to the agent that has waited on you longest',
     })
     await logged($, installScript($))
-    // The pane opens on /queue only: the shortcut needs nothing drawn, just this polling.
+    // The pane opens on /open-agent-queue only: the shortcut needs nothing drawn, just this polling.
     void logged($, tick($))
     $.clock.every(POLL_MS, () => void logged($, tick($)))
 
@@ -410,7 +410,7 @@ export const register: Register = on => {
     next(e),
   )
 
-  on('command.run', { command: 'queue' }, async $ => {
+  on('command.run', { command: 'open-agent-queue' }, async $ => {
     await $.ui.open({ id: PANE, title: TITLE, focus: true })
 
     return {}
