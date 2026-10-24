@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Have an independent Codex or Claude agent audit one Nestor Plan or Task, or one pull request given by its number, with the agent, model and effort read from the arguments by their meaning, Codex sol6.1 at xhigh by default. For a Plan or Task, it audits the stored specification against the repository before anything is delivered, and the delivered code against that specification once a pull request or a work branch exists; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
+description: Have an independent Codex or Claude agent audit one Nestor Plan or Task, or one pull request given by its number, with the agent, model and effort read from the arguments by their meaning, Codex sol6.1 at xhigh by default. For a Plan or Task, it audits the stored specification against the repository until the item is delivered, then the delivered code against that specification; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
 argument-hint: "<plan-or-task-id-or-slug|pr-number> [codex|claude] [model] [effort]"
 disable-model-invocation: true
 ---
@@ -59,12 +59,13 @@ matched pair. Only a Plan or a Task, code or ordinary, can be audited: refuse a 
 transmission. An archived or trashed item cannot receive a link: stop before launching the
 audit.
 
-- For a Plan, read its whole subtree with `get_tree`, with the Plan as `rootItemId`, `depth`
-  6 and `verbose`. Follow `truncated` and every non-zero `hiddenChildCount` with further
-  `get_tree` reads from the incomplete nodes until no member is missing. Then read every
-  member's complete content with `get_item`, at most five references per call.
 - For a code Task attached to a Plan, follow its `planId`, then each `parentPlanId`, up to
   the root Plan. For a sub-plan, follow each `parentPlanId` up to the root Plan.
+- For a Plan, or a code Task attached to one, read the whole subtree of the root Plan with
+  `get_tree`, with that root as `rootItemId`, `depth` 6 and `verbose`. Follow `truncated`
+  and every non-zero `hiddenChildCount` with further `get_tree` reads from the incomplete
+  nodes until no member is missing. Then read every member's complete content with
+  `get_item`, at most five references per call.
 
 The effective Git context is the root Plan's, otherwise the autonomous code Task's. An
 ordinary Task has none.
@@ -97,6 +98,11 @@ When a delivery is found, the audit runs in code mode on the changes `git diff <
 Otherwise it runs in spec mode against the SHA of `origin/<targetBranch>`, or of `origin`'s
 default branch as `git ls-remote --symref origin HEAD` names it.
 
+A code Task attached to a Plan, or a sub-plan, shares the root Plan's pull request and work
+branch with its siblings, so they do not prove its own delivery. It counts as delivered only
+once its own work is: a Task whose `completionEvidence` records a commit and a pull request,
+a sub-plan with at least one such code Task. Until then, it runs in spec mode.
+
 A pull request number always runs in code mode. Its URL is the workspace's `origin`, in
 HTTPS form without `.git`, followed by `/pull/<number>`. Read it as above, adding `title`
 and `body` to the `--json` fields, and pin base and head the same way. A pull request closed
@@ -112,6 +118,8 @@ this conversation or the calling agent's opinion of the work.
 - The audited item: its type, slug, title and status.
 - Its stored content as is: body, specification, dependencies with their justifications and
   completionEvidence; for a Plan, the same for each member.
+- For a code Task attached to a Plan, or a sub-plan, the root Plan and each of its other
+  members with the same content, given as context only.
 - For a pull request number, in place of the item and its content: the pull request's
   number, URL, title and description as is.
 - The repository, the mode and the pinned SHAs.
@@ -130,6 +138,9 @@ outside the scope.
 In both modes, the brief gives the auditor these rules:
 
 - Stay read-only: no file, commit, push, pull request comment or journal entry.
+- For a code Task attached to a Plan, or a sub-plan, judge only the audited item. The root
+  Plan and its other members are context: in code mode, their changes in the diff are
+  neither issues nor outside the scope.
 - Read the code through Git at the given SHAs (`git show`, `git grep`, `git diff`), never
   in the working tree, which may hold unrelated local changes.
 - Ask no question.
