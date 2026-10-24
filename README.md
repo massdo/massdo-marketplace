@@ -243,7 +243,7 @@ Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run 
 - `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
 - `/nestor-beta:doctor` — offers to close tasks that already shipped
 - `/nestor-beta:clean-task` — tidies up a task
-- `/nestor-beta:audit` — has an independent Codex agent (sol6.1 or astra) audit a task or plan, then logs its report in a note linked to it; give a PR number instead to audit that pull request
+- `/nestor-beta:audit` — has an independent Codex or Claude agent (`codex sol best max`, `claude opus best`…) audit a task or plan, then logs its report in a note linked to it; give a PR number instead to audit that pull request
 - `/nestor-beta:check-for-updates` — looks for an update
 - `/nestor-taches` — Claude Code only: a side pane with the project’s tasks as `next-tasks` reads them, colored statuses, and Spec and Build buttons on each task
 

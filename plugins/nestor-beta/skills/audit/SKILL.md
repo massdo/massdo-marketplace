@@ -1,17 +1,17 @@
 ---
 name: audit
-description: Have an independent Codex agent audit one Nestor Plan or Task, or one pull request given by its number, sol6.1 or astra at the chosen reasoning effort, sol6.1 xhigh by default. For a Plan or Task, it audits the stored specification against the repository before anything is delivered, and the delivered code against that specification once a pull request or a work branch exists; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
-argument-hint: "<plan-or-task-id-or-slug|pr-number> [sol6.1|astra] [low|medium|high|xhigh|max|ultra]"
+description: Have an independent Codex or Claude agent audit one Nestor Plan or Task, or one pull request given by its number, with the agent, model and effort read from the arguments by their meaning, Codex sol6.1 at xhigh by default. For a Plan or Task, it audits the stored specification against the repository before anything is delivered, and the delivered code against that specification once a pull request or a work branch exists; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
+argument-hint: "<plan-or-task-id-or-slug|pr-number> [codex|claude] [model] [effort]"
 disable-model-invocation: true
 ---
 
 # Nestor Audit
 
-Have one Plan or Task, or one pull request, audited by a Codex agent that runs in its own
-process, outside this conversation. The report on a Plan or Task is then logged in a Nestor
-note linked to that item. The calling agent reads the item or the pull request, pins the
-commits, writes the brief, waits for the end of the audit and records the report. The
-auditor only reads the repository and has no access to the journal.
+Have one Plan or Task, or one pull request, audited by a Codex or Claude agent that runs in
+its own process, outside this conversation. The report on a Plan or Task is then logged in
+a Nestor note linked to that item. The calling agent reads the item or the pull request,
+pins the commits, writes the brief, waits for the end of the audit and records the report.
+The auditor only reads the repository and has no access to the journal.
 
 ## Identify the plugin version
 
@@ -19,23 +19,37 @@ Pass `{ "version_hash": "2f446e153084ebf2a" }` on every Nestor MCP call.
 
 ## 1. Invocation
 
-- Claude Code: `/nestor-beta:audit <ref|PR> [model] [effort]`.
-- Codex: `$nestor-beta:audit <ref|PR> [model] [effort]`.
+- Claude Code: `/nestor-beta:audit <ref|PR> [agent] [model] [effort]`.
+- Codex: `$nestor-beta:audit <ref|PR> [agent] [model] [effort]`.
 - Cursor: select the skill, then supply the arguments.
 
 Run only on that explicit invocation. Read the arguments after the skill name, including a
 final `ARGUMENTS: …` line when the client supplies one. The first word is either a Nestor
 reference — an id, an id prefix or an exact slug — or a pull request number: digits only,
 with or without a leading `#`. A number audits that pull request of the workspace's
-repository, without any Nestor item: skip sections 2 and 7. Each following word, in any
-order and in any case, is a model, `sol6.1` or `astra`, or an effort, `low`, `medium`,
-`high`, `xhigh`, `max` or `ultra`, with at most one model and one effort. The defaults are
-`sol6.1` and `xhigh`. `sol6.1` runs the Codex model `gpt-6.1-sol`; `astra` runs
-`gpt-6-astra`.
+repository, without any Nestor item: skip sections 2 and 7.
 
-Without a reference or a number, ask for one in one line and stop. On an unknown word, or a
-second model or effort, stop and name that word and the accepted values, without launching
-or writing anything.
+Read the other words by their meaning, in any order, case or abbreviation, to choose the
+agent that audits, its model and its effort:
+
+- Agent: `codex` runs the Codex CLI, `claude` runs Claude Code. A model family alone names
+  its agent.
+- Codex families: `sol`, whose latest model is `gpt-6.1-sol` (sol6.1), and `astra`, whose
+  latest is `gpt-6-astra` (astra 6). `codex` without a family runs sol.
+- Claude families: `opus`, `fable`, `sonnet` and `haiku`.
+- `best`, or no version, runs the family's latest model. A version the user names runs that
+  model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for `claude-opus-5-5`.
+- Efforts: `low`, `medium`, `high`, `xhigh` and `max`, plus `ultra` for Codex.
+
+Without an agent or a model, the audit runs sol6.1; without an effort, it runs at `xhigh`.
+So `codex sol best max` is sol6.1 at max, `claude op best max` is the latest Opus at max,
+`codex astra` is astra 6 at xhigh and `claude fable best` is the latest Fable at xhigh.
+
+Without a reference or a number, ask for one in one line and stop. When a word means
+nothing here, when the words name two agents, models or efforts, or a model or effort that
+the agent does not offer, such as `claude sol` or `claude ultra`, or when they name
+`claude` without a family, ask in one line for the intended choice with the accepted values
+and wait for the answer. Launch and write nothing before it.
 
 ## 2. Read the item
 
@@ -129,12 +143,15 @@ In both modes, the brief gives the auditor these rules:
 
 ## 6. Launch the audit
 
-Before writing the brief, check that `codex` is on the PATH. Without it, stop before any
-write and say that the audit requires the Codex CLI, installed and signed in.
+Before writing the brief, check that the agent's command, `codex` or `claude`, is on the
+PATH. Without it, stop before any write and say that the audit requires that CLI, installed
+and signed in.
 
-Run this command from the repository root, with `gpt-6.1-sol` or `gpt-6-astra` as
-`<model>`, the effort of section 1 as `<effort>`, the repository root as `<repo-root>` and
-the brief's directory as `<dir>`:
+Run the agent's command from the repository root, with the brief's directory as `<dir>` and
+the effort of section 1 as `<effort>`.
+
+For Codex, `<model>` is the model of section 1, such as `gpt-6.1-sol` or `gpt-6-astra`, and
+`<repo-root>` is the repository root:
 
 ```sh
 codex exec --ignore-user-config --model <model> --config 'model_reasoning_effort="<effort>"' --sandbox read-only --cd <repo-root> --output-last-message <dir>/report.md - < <dir>/brief.md > <dir>/audit.log 2>&1
@@ -145,22 +162,40 @@ audit: nothing from another session enters it, and the auditor cannot write to t
 Codex keeps its own sign-in. `--sandbox read-only` lets the auditor change nothing and gives
 it no network, which is why the calling agent fetches and pins the commits beforehand.
 
+For Claude, `<model>` is the family name, which Claude Code resolves to its latest model, or
+the full name of the version the user named:
+
+```sh
+claude -p --safe-mode --setting-sources "" --model <model> --effort <effort> --tools Bash --allowedTools "Bash(git ls-tree *)" --permission-mode dontAsk --no-session-persistence < <dir>/brief.md > <dir>/report.md 2> <dir>/audit.log
+```
+
+`--safe-mode` and the empty `--setting-sources` keep the user's CLAUDE.md files, memory,
+settings, plugins, hooks and MCP servers out of the audit: nothing from another session
+enters it, and the auditor cannot write to the journal. Claude Code keeps its own sign-in.
+`--tools Bash` with `--permission-mode dontAsk` leaves the auditor only the commands that
+change nothing: Git reads run, while file writes and network requests are refused without
+waiting for an approval. `--allowedTools` adds `git ls-tree`, a read that Claude Code does
+not count among them. `--no-session-persistence` keeps the audit out of the user's
+sessions.
+
 Wait for the process to end without reading `audit.log`; only `report.md` comes back into
 the conversation, at the end. When the client cannot keep a command in the foreground until
 the audit ends, run it in the background and resume when it ends; then say in one sentence
-that the audit is running, with the agent, the cited item or the pull request, and the path
-of `audit.log` to follow it.
+that the audit is running, with the agent and its model, the cited item or the pull
+request, and the path of `audit.log`.
 
-On a non-zero exit or an empty `report.md`, write no note: say that the audit failed, give
-its cause in plain words, read from the end of the log, and the log's path.
+On a non-zero exit or an empty `report.md`, write no note: say that the audit failed and give
+its cause in plain words with the path of the file it comes from, the end of `audit.log`, or
+`report.md` for Claude, which prints its errors there.
 
 ## 7. Log the report
 
 Create the note with `create_item`, type `note`, in the audited item's scope: `project` with
-its project, otherwise global. Title it `Audit <sol6.1|astra> <effort> — <item title>`. Its
-body is one header line, an empty line, then `report.md` as is. The header line gives the
-local date and time, the agent with its model, the mode, the item's slug, the repository,
-the audited SHAs and, in code mode, the pull request URL when there is one.
+its project, otherwise global. Title it `Audit <model> <effort> — <item title>`, with the
+model as section 1 reads it, such as `sol6.1`, `astra 6` or `opus`. Its body is one header
+line, an empty line, then `report.md` as is. The header line gives the local date and time,
+the agent with its model, the mode, the item's slug, the repository, the audited SHAs and,
+in code mode, the pull request URL when there is one.
 
 Then call `update_item` with `add_link` in the same scope, passing the note as `id` with the
 pair that `create_item` returned, the note as `sourceId` and the audited item as `targetId`:
