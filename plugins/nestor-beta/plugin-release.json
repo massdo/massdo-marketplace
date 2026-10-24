@@ -1,5 +1,5 @@
 {
   "version": "0.13.1",
   "version_hash": "e8250e4adc7a7258",
-  "changelog": "The next-tasks references no longer describe a test fixture the skill never reads. Its behavior is unchanged."
+  "changelog": "The Spec, Build and Next tasks references no longer carry maintainer notes about tests and reviews that the agent never used. Their behavior is unchanged."
 }

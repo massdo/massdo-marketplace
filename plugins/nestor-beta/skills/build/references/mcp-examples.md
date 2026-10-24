@@ -183,10 +183,3 @@ Every reserved write uses private ownership and the addressed object's current p
 | Owned blocked Task | conditional reads -> observe resumeCondition resolved -> Git checks -> resume(Task, true) -> continue |
 | Authorised review corrections | conditional reads -> Git checks -> resume(Task, false) -> correct and verify; acceptance is never self-granted |
 | Owned Plan with no active Task | conditional reads and Git checks -> next(selection) -> recheck returned Task -> continue |
-
-These are expected sequences checked by static review, not recorded runtime traces. The
-new startup removes one mandatory inspect before reserve; saving a target no longer adds
-another inspect. Necessary item reads and Git checks remain, so this is not a claim of a
-fixed total call count. Schema tests validate documented payloads, not server policy or an
-agent's runtime decisions. No token saving has been measured; any token benefit is an
-estimate until a separate before/after runtime comparison records calls and token usage.

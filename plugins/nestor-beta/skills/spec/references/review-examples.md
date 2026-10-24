@@ -1,10 +1,9 @@
 # Reviewing the compiled work
 
-These are illustrative exchanges and a static review matrix, not observed runtime
-behaviour. `A` is the agent and `U` the user. Brackets describe the material displayed
-or the writes performed; they are not placeholders to store in Nestor. Use the real items
-and the user's language. The [MCP examples](mcp-examples.md) define the complete data
-written in every path.
+These are illustrative exchanges and a matrix of the expected paths. `A` is the agent and
+`U` the user. Brackets describe the material displayed or the writes performed; they are
+not placeholders to store in Nestor. Use the real items and the user's language. The
+[MCP examples](mcp-examples.md) define the complete data written in every path.
 
 ## Detail typed: an existing Plan
 
@@ -45,27 +44,24 @@ Nothing is displayed before the writes, even with this request. The detail follo
 status sentence, without the `detail` offer. Its repository, scheduling, identity and
 unrelated content stay intact.
 
-## Nine-path static review
+## Nine paths
 
 For each row, check both the visible exchange and the complete saved work. In every path,
 only interview questions precede the writes: no summary, display question or permission
 request. The closing gives the citation and the actual status, then the `detail` offer
 unless the detail was requested during the interview.
 
-| Entry | Detail path | Before the writes | Saved work and approval | Closing | After the closing | Static review |
-| --- | --- | --- | --- | --- | --- | --- |
-| Existing Plan | `detail` typed | Interview questions only | Same Plan and all remaining descendants, complete replacements; approve the selected subtree once | Citation, ready to build, `detail` offer | Every specification, typed tree, justified edges, changed items and replaced fields, without a write | Reviewed: complete subtree is retained; no write follows `detail` |
-| Existing Plan | Other answer | Interview questions only | Same complete subtree and dependency data; approve once | Citation, ready to build, `detail` offer | Nothing changes | Reviewed: stored data is not abbreviated |
-| Existing Plan | Requested during the interview | Interview questions only | Same complete subtree; approve once | Citation, ready to build, then the full detail, without an offer | Nothing further | Reviewed: no presentation before the writes |
-| Task reorganised under a new Plan | `detail` typed | Interview questions, including the reorganisation when uncertain | New complete Plan, same existing Task attached through `planId`, other complete Tasks and edges; approve Plan once | Citation of the new Plan, ready to build, `detail` offer | New Plan and Tasks, retained Task identity, specifications, typed tree, justified edges and replaced fields, without a write | Reviewed: Task type and identity are preserved |
-| Task reorganised under a new Plan | Other answer | Interview questions, including the reorganisation when uncertain | Same complete Plan, Task specifications and edges; approve Plan once | Citation of the new Plan, ready to build, `detail` offer | Nothing changes | Reviewed: the reorganisation is saved complete without a display |
-| Task reorganised under a new Plan | Requested during the interview | Interview questions, including the reorganisation when uncertain | Same complete Plan and Tasks; approve Plan once | Citation of the new Plan, ready to build, then the full detail with the reorganisation, without an offer | Nothing further | Reviewed: no Task-to-Plan conversion |
-| Autonomous code Task | `detail` typed | Interview questions only | Same complete Task, with its own repository; approve Task | Citation, ready to build, `detail` offer | Task tree, full context, steps, checks, criteria, dependencies and replaced fields, without a write | Reviewed: Task identity and unrelated content are retained |
-| Autonomous code Task | Other answer | Interview questions only | Same complete Task data; approve Task | Citation, ready to build, `detail` offer | Nothing changes | Reviewed: no loss of executable checks or completion criteria |
-| Autonomous code Task | Requested during the interview | Interview questions only | Same complete Task; approve Task | Citation, ready to build, then the full detail, without an offer | Nothing further | Reviewed: no presentation before the writes |
-
-This matrix records static review of the nine documented combinations. It is not a
-measurement or a claim that nine conversational sessions have been executed.
+| Entry | Detail path | Before the writes | Saved work and approval | Closing | After the closing |
+| --- | --- | --- | --- | --- | --- |
+| Existing Plan | `detail` typed | Interview questions only | Same Plan and all remaining descendants, complete replacements; approve the selected subtree once | Citation, ready to build, `detail` offer | Every specification, typed tree, justified edges, changed items and replaced fields, without a write |
+| Existing Plan | Other answer | Interview questions only | Same complete subtree and dependency data; approve once | Citation, ready to build, `detail` offer | Nothing changes |
+| Existing Plan | Requested during the interview | Interview questions only | Same complete subtree; approve once | Citation, ready to build, then the full detail, without an offer | Nothing further |
+| Task reorganised under a new Plan | `detail` typed | Interview questions, including the reorganisation when uncertain | New complete Plan, same existing Task attached through `planId`, other complete Tasks and edges; approve Plan once | Citation of the new Plan, ready to build, `detail` offer | New Plan and Tasks, retained Task identity, specifications, typed tree, justified edges and replaced fields, without a write |
+| Task reorganised under a new Plan | Other answer | Interview questions, including the reorganisation when uncertain | Same complete Plan, Task specifications and edges; approve Plan once | Citation of the new Plan, ready to build, `detail` offer | Nothing changes |
+| Task reorganised under a new Plan | Requested during the interview | Interview questions, including the reorganisation when uncertain | Same complete Plan and Tasks; approve Plan once | Citation of the new Plan, ready to build, then the full detail with the reorganisation, without an offer | Nothing further |
+| Autonomous code Task | `detail` typed | Interview questions only | Same complete Task, with its own repository; approve Task | Citation, ready to build, `detail` offer | Task tree, full context, steps, checks, criteria, dependencies and replaced fields, without a write |
+| Autonomous code Task | Other answer | Interview questions only | Same complete Task data; approve Task | Citation, ready to build, `detail` offer | Nothing changes |
+| Autonomous code Task | Requested during the interview | Interview questions only | Same complete Task; approve Task | Citation, ready to build, then the full detail, without an offer | Nothing further |
 
 ## Exceptions at any detail level
 
@@ -82,7 +78,7 @@ the detail. Never use the `detail` offer or its answer to override an explicit l
 
 No write follows an explicit stop received before saving.
 
-## Invariants checked during review
+## Invariants
 
 Every Plan and sub-plan keeps all six fields: `objective`, `requirements`, `architecture`,
 `dataHandling`, `errorHandling` and `verificationPlan`. Every code Task keeps its complete

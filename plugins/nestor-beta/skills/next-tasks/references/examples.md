@@ -1,7 +1,7 @@
-# Mixed-view examples and contract coverage
+# Mixed-view examples
 
-These are synthetic documentary examples, not transcripts or proof of agent runtime
-behaviour. The tests validate their requests against the captured MCP catalogue.
+These are illustrative examples, not transcripts to replay. Replace the sample ids and
+project with confirmed values.
 
 ## Read without root filters
 

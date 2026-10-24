@@ -121,7 +121,7 @@ say none is recorded; with incomplete approval data, leave it unknown. Do not as
 Task status to a Plan, calculate progress, or infer build eligibility from approval.
 
 Cite every item exactly as the `nestor` skill prescribes, including contextual ancestors.
-See [the examples and contract coverage](references/examples.md) for mixed views,
+See [the examples](references/examples.md) for mixed views,
 pagination, missing ancestors and a requested backlog.
 
 ## Decide whether the view is empty
