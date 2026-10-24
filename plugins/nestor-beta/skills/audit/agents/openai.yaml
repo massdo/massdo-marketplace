@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nestor Audit"
+  short_description: "Audit a Plan or Task with an independent Codex agent"
+  default_prompt: "Use $nestor-beta:audit <plan-or-task-id-or-slug> [sol6.1|astra] [effort] to have an independent Codex agent audit it and log the report in a linked Nestor note."
+
+policy:
+  allow_implicit_invocation: false
