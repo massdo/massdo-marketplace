@@ -45,8 +45,8 @@ audit.
   6 and `verbose`. Follow `truncated` and every non-zero `hiddenChildCount` with further
   `get_tree` reads from the incomplete nodes until no member is missing. Then read every
   member's complete content with `get_item`, at most five references per call.
-- For a code Task attached to a Plan, or a sub-plan, follow its `planId`, then each
-  `parentPlanId`, up to the root Plan.
+- For a code Task attached to a Plan, follow its `planId`, then each `parentPlanId`, up to
+  the root Plan. For a sub-plan, follow each `parentPlanId` up to the root Plan.
 
 The effective Git context is the root Plan's, otherwise the autonomous code Task's. An
 ordinary Task has none.
