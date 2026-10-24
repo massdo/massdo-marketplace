@@ -19,7 +19,7 @@ explainer shows.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "145b48fb8fa488ae0" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1190cb659247ab83a" }` on every Nestor MCP call.
 
 ## Argument
 
@@ -152,12 +152,18 @@ after it.
 
 **`html`.** One self-contained file: inline CSS and JavaScript, no build step, no
 framework required, a library from a public CDN only when it earns its place. The page
-carries the six questions as sections, with a navigation that jumps to each, and a
-diagram wherever a picture beats a paragraph: the shape as a collapsible tree or an
-inline SVG, the timeline as a line, the status as a board. Every diagram has a title and
-a caption of three to five sentences. The page is readable in light and dark, at phone
-width and on a desktop, and states the subject, the read date and any incomplete read at
-the top.
+carries the six questions as sections, and a diagram wherever a picture beats a
+paragraph: the shape as a collapsible tree or an inline SVG, the timeline as a line, the
+status as a board. Every diagram has a title and a caption of three to five sentences.
+The page is readable in light and dark, at phone width and on a desktop, and states the
+subject, the read date and any incomplete read at the top.
+
+A dynamic menu on the left of the page shows the reader where they are. It lists every
+section and stays in view while the page scrolls. The entry of the section on screen is
+highlighted, and the highlight follows the scroll in both directions. When the page
+reaches its bottom, the last entry is highlighted, even for a short last section. A click
+on an entry jumps to its section. At phone width, the menu becomes a bar fixed at the top
+of the screen, with the same highlight.
 
 Build it in one pass. A page that opens and reads well is finished: do not iterate on
 pixels, screenshots or palettes, the reader wants the picture now, not a polished one in
