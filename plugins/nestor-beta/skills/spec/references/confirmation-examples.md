@@ -1,10 +1,9 @@
 # Exchange examples
 
-These exchanges illustrate the expected tone and closing of each flow. They support a
-static review of this skill, not evidence of observed conversational behaviour. Conduct
-the real exchange in the user's language, with the actual slugs and server results. `A`
-is the agent and `U` the user; bracketed text summarises what the agent shows or does.
-For the complete closing matrix, see [the review examples](review-examples.md).
+These exchanges illustrate the expected tone and closing of each flow. Conduct the real
+exchange in the user's language, with the actual slugs and server results. `A` is the
+agent and `U` the user; bracketed text summarises what the agent shows or does. For the
+complete closing matrix, see [the review examples](review-examples.md).
 
 ## Normal wording
 
