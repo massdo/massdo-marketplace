@@ -1,7 +1,7 @@
 {
   "name": "agent-queue",
   "displayName": "Agent Queue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A pane of the Claude Code sessions that wait on you, in Claude Code's own colors, and a jump to the next one. Desktop app on macOS.",
   "types": "./types/index.d.ts",
   "author": {
