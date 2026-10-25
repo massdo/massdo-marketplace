@@ -89,9 +89,14 @@ The calling agent chooses the mode from the effective Git context and resolves e
 it gives the auditor to a full SHA.
 
 - With `git.pullRequestUrl`, read
-  `gh pr view <url> --json state,baseRefName,headRefOid,mergeCommit`:
+  `gh pr view <url> --json state,baseRefName,headRefOid,mergeCommit`. Unless it was closed
+  without a merge, fetch its head with `git fetch origin pull/<number>/head`, the number
+  being the last segment of its URL, which also reaches the branch of a fork or a deleted
+  branch. Check that `git rev-parse FETCH_HEAD` is `headRefOid`; otherwise read the pull
+  request again.
   - OPEN: base is `git merge-base origin/<baseRefName> <headRefOid>`, head is `headRefOid`.
-  - MERGED: base is `<mergeCommit>^1`, head is `<mergeCommit>`.
+  - MERGED: base is `git merge-base <mergeCommit>^1 <headRefOid>`, head is `headRefOid`,
+    whether the pull request was merged with a merge commit, squashed or rebased.
   - CLOSED without a merge: nothing is delivered.
   - If the pull request cannot be read, stop and say so.
 - Otherwise, when `git.workBranch` exists on `origin`: base is the merge base of
