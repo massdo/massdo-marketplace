@@ -1,5 +1,5 @@
 {
-  "version": "0.13.1",
-  "version_hash": "e8250e4adc7a7258",
-  "changelog": "The Spec, Build and Next tasks references no longer carry maintainer notes about tests and reviews that the agent never used. Their behavior is unchanged."
+  "version": "0.14.0",
+  "version_hash": "f446e153084ebf2a",
+  "changelog": "Adds /nestor-beta:audit: an independent Codex or Claude agent, whose model and effort are read from plain words such as codex sol best max or claude opus best (Codex sol6.1 xhigh by default), audits a task or plan, its specification before delivery and its delivered code after, and the report is logged in a Nestor note linked to the audited item. A pull request number in place of a reference audits that pull request's changes against its description."
 }
