@@ -170,17 +170,22 @@ and signed in.
 Run the agent's command from the repository root, with the brief's directory as `<dir>` and
 the effort of section 1 as `<effort>`.
 
-For Codex, `<model>` is the model of section 1, such as `gpt-6.1-sol` or `gpt-6-astra`, and
-`<repo-root>` is the repository root:
+For Codex, `<model>` is the model of section 1, such as `gpt-6.1-sol` or `gpt-6-astra`,
+`<repo-root>` is the repository root, and `<skills-off>` holds one
+`{path="<file>",enabled=false}` entry, comma separated, for each file that
+`find -L ~/.codex/skills ~/.agents/skills -name SKILL.md` returns:
 
 ```sh
-codex exec --ignore-user-config --model <model> --config 'model_reasoning_effort="<effort>"' --sandbox read-only --cd <repo-root> --output-last-message <dir>/report.md - < <dir>/brief.md > <dir>/audit.log 2>&1
+codex exec --ignore-user-config -c 'skills.bundled.enabled=false' -c 'skills.config=[<skills-off>]' --model <model> --config 'model_reasoning_effort="<effort>"' --sandbox read-only --cd <repo-root> --output-last-message <dir>/report.md - < <dir>/brief.md > <dir>/audit.log 2>&1
 ```
 
 `--ignore-user-config` keeps the user's memories, MCP servers, plugins and hooks out of the
 audit: nothing from another session enters it, and the auditor cannot write to the journal.
-Codex keeps its own sign-in. `--sandbox read-only` lets the auditor change nothing and gives
-it no network, which is why the calling agent fetches and pins the commits beforehand.
+Codex keeps its own sign-in. It still loads skills without that configuration, so the two
+`skills` overrides turn off its bundled skills and each of the user's own; a whole skills
+folder cannot be turned off at once. `--sandbox read-only` lets the auditor change nothing
+and gives it no network, which is why the calling agent fetches and pins the commits
+beforehand.
 
 For Claude, `<model>` is the family name, which Claude Code resolves to its latest model, or
 the full name of the version the user named:
