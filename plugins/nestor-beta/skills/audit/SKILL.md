@@ -161,10 +161,10 @@ In both modes, the brief gives the auditor these rules:
   in the working tree, which may hold unrelated local changes.
 - Ask no question.
 - End with a last message that is the report alone, written in the language that the brief
-  names, in three blocks titled in that language, such as ISSUES, EXAMPLE and SOLUTIONS in English or
-  ENJEUX, EXEMPLE and SOLUTIONS in French: one line per issue, the most important first; a
-  single concrete example in two or three sentences; numbered solutions, one imperative
-  action per line. No file paths and no detailed evidence. Keep only the issues that occur
+  names, in three blocks titled in that language, such as ISSUES, EXAMPLE and SOLUTIONS in
+  English or ENJEUX, EXEMPLE and SOLUTIONS in French: one line per issue, the most important
+  first; a single concrete example in two or three sentences; numbered solutions, one
+  imperative action per line. No file paths and no detailed evidence. Keep only the issues that occur
   in the nominal flow, never one built on an unfavorable scenario that nothing establishes.
   Without any issue, a single line under the first heading says so.
 
@@ -243,6 +243,6 @@ If the creation is refused, say that the report is not logged and give the path 
 ## 8. Report
 
 At the end, give the report as is to whoever asked for the audit, the user or an agent, then
-one sentence that cites the note and the audited item using Nestor's item citation rule; after a pull request audit, that sentence links the
-pull request instead. Do not narrate the calls, versions, ETags or any technical identifier
-beyond those citations.
+one sentence that cites the note and the audited item using Nestor's item citation rule;
+after a pull request audit, that sentence links the pull request instead. Do not narrate the
+calls, versions, ETags or any technical identifier beyond those citations.
