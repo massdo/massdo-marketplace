@@ -52,7 +52,7 @@ const TASK = {
   version: 1,
   status: 'ready_to_build',
   priority: 'high',
-  dueAt: { date: '2026-10-27', isAllDay: true },
+  dueAt: { date: '2099-10-27', isAllDay: true },
   backlog: false,
   planId: 'p1',
   template: 'code',
@@ -71,6 +71,7 @@ const ORPHAN = {
   version: 1,
   status: 'todo',
   priority: 'normal',
+  dueAt: { date: '2020-01-15', isAllDay: true },
   backlog: false,
   project: SKYLINE,
 }
@@ -237,7 +238,7 @@ const titles = async (ui: {
     .map(one => one.text)
     .filter(text => [PLAN, TASK, ORPHAN, LATER].some(item => item.title === text))
 
-test('a next-tasks read fills the pane: the plan, its task beneath, the orphan after, with colored status chips', async ($, on) => {
+test('a next-tasks read fills the pane: the plan, its task beneath, the orphan after, with quiet status lines', async ($, on) => {
   const { opened } = world(on, { first: [TASK, PLAN], next: [ORPHAN] })
   await $.session.start(STARTED)
 
@@ -248,17 +249,35 @@ test('a next-tasks read fills the pane: the plan, its task beneath, the orphan a
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
     expect(await titles(ui)).toEqual([PLAN.title, TASK.title, ORPHAN.title])
-    expect((await ui.findAll({ type: 'Button', text: /▸/ })).map(row => row.text)).toEqual([
-      '▸',
-      '▸',
-      '▸',
+    expect((await ui.findAll({ type: 'Button', text: /^[›⌄]$/ })).map(row => row.text)).toEqual([
+      '›',
+      '›',
+      '›',
     ])
-    expect((await ui.find({ type: 'Text', text: /plan · en cours/ }))?.text).toBe(
-      ' plan · en cours ',
-    )
-    expect((await ui.find({ type: 'Text', text: /prête à build/ }))?.text).toBe(' prête à build ')
-    expect((await ui.find({ type: 'Text', text: /haute/ }))?.text).toBe('▲ haute')
-    expect((await ui.find({ type: 'Text', text: /27 oct\./ }))?.text).toBe('⏱ 27 oct.')
+    expect(
+      (await ui.findAll({ type: 'Text', text: /^(Plans|Tâches)$/ })).map(one => one.text),
+    ).toEqual(['Plans', 'Tâches'])
+    expect(await ui.find({ type: 'Text', text: /^plan$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^en cours$/ })).toBeDefined()
+    const ready = await ui.find({ type: 'Text', text: /^prête à build$/ })
+    expect(ready?.props.dimColor).toBe(true)
+    expect(ready?.props.color).toBeUndefined()
+    expect((await ui.find({ type: 'Text', text: /^●$/ }))?.props.color).toBe('claude')
+    expect(await ui.find({ type: 'Text', text: /^↑ haute$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^échéance 27 oct\.$/ })).toBeDefined()
+    expect(
+      (await ui.find({ type: 'Text', text: /^en retard, échéance 15 janv\.$/ }))?.props.color,
+    ).toBe('error')
+    for (const one of await ui.findAll({ type: 'Text' })) {
+      expect(one.props.backgroundColor).toBeUndefined()
+      expect(String(one.props.color ?? '').startsWith('#')).toBe(false)
+    }
+    const name = await ui.find({ type: 'Text', text: /^Skyline$/ })
+    expect(name?.props.size).toBe('title')
+    expect(name?.props.color).toBeUndefined()
+    // The desktop pane's own header already has a close control.
+    const close = await ui.find({ type: 'Button', key: 'close' })
+    expect(close === undefined).toBe(surface === 'desktop')
     expect((await ui.find({ type: 'Text', text: /actives/ }))?.text).toMatch(
       /^3 actives · 1 en backlog · lu à \d\d:\d\d$/,
     )
@@ -354,6 +373,7 @@ test('Spec and Build run the skill on the clicked item', async ($, on) => {
 
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
   await ui.press({ key: 'row:t1' })
+  expect((await ui.find({ type: 'Text', text: /^Build$/ }))?.props.color).toBe('claude')
   await ui.press({ key: 'build:t1' })
   await ui.press({ key: 'spec:t1' })
   expect(submitted).toEqual([
@@ -384,7 +404,8 @@ test('a mutation Claude makes updates the row; a task created in the project joi
     ref: 't1',
     status: 'building',
   })
-  expect((await ui.find({ type: 'Text', text: /build en cours/ }))?.text).toBe(' build en cours ')
+  expect((await ui.find({ type: 'Text', text: /^build en cours$/ }))?.text).toBe('build en cours')
+  expect(await ui.find({ type: 'Text', text: /^✻$/ })).toBeDefined()
 
   await $.tool.call({
     tool: UPDATE,
@@ -393,7 +414,7 @@ test('a mutation Claude makes updates the row; a task created in the project joi
     ref: 't1',
     status: 'need_review',
   })
-  expect((await ui.find({ type: 'Text', text: /à relire/ }))?.text).toBe(' à relire ')
+  expect((await ui.find({ type: 'Text', text: /^à relire$/ }))?.text).toBe('à relire')
 
   await $.tool.call({
     tool: CREATE,

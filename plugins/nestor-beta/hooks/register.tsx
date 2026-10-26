@@ -42,39 +42,35 @@ const readAt = atom({ plugin: 'nestor-beta', key: 'readAt' } as const, null as n
 const showBacklog = atom({ plugin: 'nestor-beta', key: 'showBacklog' } as const, false)
 const busy = atom({ plugin: 'nestor-beta', key: 'busy' } as const, null as NestorBusy | null)
 
-type Tone = { color: Color; fg: Color; bg: Color }
-type Mark = Tone & { glyph: string; label: string }
-
-const GRAY: Tone = { color: '#9ca3af', fg: '#f3f4f6', bg: '#4b5563' }
-const GREEN: Tone = { color: '#4ade80', fg: '#dcfce7', bg: '#15803d' }
-const AMBER: Tone = { color: '#fbbf24', fg: '#fef3c7', bg: '#b45309' }
-const BLUE: Tone = { color: '#60a5fa', fg: '#dbeafe', bg: '#1d4ed8' }
-const PURPLE: Tone = { color: '#c084fc', fg: '#f3e8ff', bg: '#7e22ce' }
-const RED: Tone = { color: '#f87171', fg: '#fee2e2', bg: '#b91c1c' }
+/** Colors are theme keys, so the pane follows the light or dark theme; null is drawn dim. */
+type Mark = { glyph: string; label: string; color: Color | null }
+type Part = { text: string; color: Color | null }
 
 const STATUS: Record<NestorTaskStatus, Mark> = {
-  todo: { glyph: '○', label: 'à faire', ...GRAY },
-  ready_to_build: { glyph: '◇', label: 'prête à build', ...GREEN },
-  building: { glyph: '◆', label: 'build en cours', ...AMBER },
-  in_progress: { glyph: '◐', label: 'en cours', ...BLUE },
-  need_review: { glyph: '◉', label: 'à relire', ...PURPLE },
-  completed: { glyph: '●', label: 'terminée', ...GREEN },
-  cancelled: { glyph: '×', label: 'annulée', ...GRAY },
+  todo: { glyph: '○', label: 'à faire', color: null },
+  ready_to_build: { glyph: '●', label: 'prête à build', color: 'claude' },
+  building: { glyph: '✻', label: 'build en cours', color: 'text' },
+  in_progress: { glyph: '◐', label: 'en cours', color: 'text' },
+  need_review: { glyph: '◉', label: 'à relire', color: 'text' },
+  completed: { glyph: '✓', label: 'terminée', color: null },
+  cancelled: { glyph: '×', label: 'annulée', color: null },
 }
 
 const PROGRESS: Record<NestorProgress, Mark> = {
-  not_started: { glyph: '▢', label: 'non démarré', ...GRAY },
-  in_progress: { glyph: '▣', label: 'en cours', ...BLUE },
-  blocked: { glyph: '▣', label: 'bloqué', ...RED },
-  completed: { glyph: '■', label: 'terminé', ...GREEN },
+  not_started: { glyph: '○', label: 'non démarré', color: null },
+  in_progress: { glyph: '◐', label: 'en cours', color: 'text' },
+  blocked: { glyph: '⊘', label: 'bloqué', color: 'error' },
+  completed: { glyph: '✓', label: 'terminé', color: null },
 }
 
-const PRIORITY: Record<NestorPriority, { label: string; color: Color } | null> = {
-  low: { label: 'basse', color: '#9ca3af' },
+const PRIORITY: Record<NestorPriority, Part | null> = {
+  low: { text: '↓ basse', color: null },
   normal: null,
-  high: { label: '▲ haute', color: '#fb923c' },
-  urgent: { label: '▲▲ urgente', color: '#f87171' },
+  high: { text: '↑ haute', color: null },
+  urgent: { text: '↑↑ urgente', color: 'error' },
 }
+
+const tint = (color: Color | null) => (color === null ? { dimColor: true } : { color })
 
 const MONTHS = [
   'janv.',
@@ -121,18 +117,54 @@ function parentOf(one: NestorEntry): string | undefined {
 
 function markOf(one: NestorEntry): Mark {
   if (one.type === 'task') {
-    return STATUS[one.status] ?? { glyph: '?', label: one.status, ...GRAY }
+    return STATUS[one.status] ?? { glyph: '?', label: one.status, color: null }
   }
   if (one.type === 'plan') {
-    const kind = one.parentPlanId === undefined ? 'plan' : 'sous-plan'
     const mark = one.progress === undefined ? undefined : PROGRESS[one.progress]
 
-    return mark
-      ? { ...mark, label: `${kind} · ${mark.label}` }
-      : { glyph: '▣', label: kind, ...GRAY }
+    return mark ?? { glyph: '○', label: '', color: null }
   }
 
-  return { glyph: '¶', label: 'note', ...GRAY }
+  return { glyph: '¶', label: 'note', color: null }
+}
+
+/** The quiet line under a title; only an overdue date, an urgent priority or a blocked plan stands out. */
+function metaOf(one: NestorEntry, now: number): Part[] {
+  const dim = (text: string): Part => ({ text, color: null })
+  const parts: Part[] = []
+  if (one.type === 'task') {
+    parts.push(dim(markOf(one).label))
+    const priority = PRIORITY[one.priority]
+    if (priority) {
+      parts.push(priority)
+    }
+    if (one.dueAt) {
+      const date = shortDate(one.dueAt)
+      parts.push(
+        isPast(one.dueAt, now)
+          ? { text: `en retard, échéance ${date}`, color: 'error' }
+          : dim(`échéance ${date}`),
+      )
+    } else if (one.scheduledAt) {
+      parts.push(dim(`prévue le ${shortDate(one.scheduledAt)}`))
+    }
+    if (one.backlog) {
+      parts.push(dim('backlog'))
+    }
+  } else if (one.type === 'plan') {
+    parts.push(dim(one.parentPlanId === undefined ? 'plan' : 'sous-plan'))
+    const { label } = markOf(one)
+    if (label !== '') {
+      parts.push({ text: label, color: one.progress === 'blocked' ? 'error' : null })
+    }
+  } else {
+    parts.push(dim('note'))
+  }
+  if (one.isContext) {
+    parts.push(dim('hors vue'))
+  }
+
+  return parts
 }
 
 const titleOf = (one: NestorEntry) => one.title ?? one.slug ?? one.id
@@ -704,8 +736,8 @@ export const register: Register = on => {
     if (named === null) {
       return (
         <Box flexDirection="column">
-          <Text dimColor>Aucune lecture pour l'instant.</Text>
-          <Text dimColor>
+          <Text weight="medium">Aucune lecture pour l'instant.</Text>
+          <Text size="footnote" dimColor>
             Lance /nestor-beta:next-tasks, ou /nestor-taches suivi d'un nom de projet.
           </Text>
         </Box>
@@ -724,38 +756,21 @@ export const register: Register = on => {
       }
     }
     const hasOpen = Object.keys(open).length > 0
-    const chip = (label: string, tone: Tone) => (
-      <Text backgroundColor={tone.bg} color={tone.fg}>{` ${label} `}</Text>
+
+    const metaLineOf = (one: NestorEntry) => (
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
+        {metaOf(one, now).flatMap((part, index) => [
+          index > 0 && (
+            <Text size="footnote" dimColor>
+              ·
+            </Text>
+          ),
+          <Text size="footnote" {...tint(part.color)}>
+            {part.text}
+          </Text>,
+        ])}
+      </Box>
     )
-
-    const chipsOf = (one: NestorEntry) => {
-      const mark = markOf(one)
-      const chips = [chip(mark.label, mark)]
-      if (one.type === 'task') {
-        const priority = PRIORITY[one.priority]
-        if (priority) {
-          chips.push(<Text color={priority.color}>{priority.label}</Text>)
-        }
-        if (one.dueAt) {
-          const late = isPast(one.dueAt, now)
-          chips.push(
-            <Text color={late ? RED.color : AMBER.color}>
-              {`${late ? '⚠' : '⏱'} ${shortDate(one.dueAt)}`}
-            </Text>,
-          )
-        } else if (one.scheduledAt) {
-          chips.push(<Text dimColor>{`${shortDate(one.scheduledAt)}`}</Text>)
-        }
-        if (one.backlog) {
-          chips.push(<Text dimColor>backlog</Text>)
-        }
-      }
-      if (one.isContext) {
-        chips.push(<Text dimColor>hors vue</Text>)
-      }
-
-      return chips
-    }
 
     const detailOf = (one: NestorEntry) => {
       const detail = known[one.id]
@@ -779,30 +794,45 @@ export const register: Register = on => {
         (one.type === 'plan' && isApproved(one))
 
       return (
-        <Box flexDirection="column">
-          <Text dimColor wrap="wrap">
+        <Box
+          flexDirection="column"
+          rowGap="xs"
+          marginLeft={2}
+          marginTop="xs"
+          paddingX={1}
+          borderStyle="round"
+          borderColor="subtle"
+        >
+          <Text size="footnote" dimColor wrap="wrap">
             {meta}
           </Text>
           {one.tags && one.tags.length > 0 && (
-            <Text color={PURPLE.color} wrap="wrap">
+            <Text size="footnote" dimColor wrap="wrap">
               {one.tags.map(tag => `#${tag.name}`).join(' ')}
             </Text>
           )}
           {!detail && one.excerpt && <Text wrap="wrap">{one.excerpt}</Text>}
           {detail &&
             (text === '' ? (
-              <Text dimColor>(aucun contenu)</Text>
+              <Text size="footnote" dimColor>
+                (aucun contenu)
+              </Text>
             ) : Markdown ? (
               <Markdown text={text} />
             ) : (
               <Text wrap="wrap">{text}</Text>
             ))}
-          <Box flexDirection="row" flexWrap="wrap" columnGap={1} marginTop={1}>
-            {!detail && src !== null && isReading && <Text dimColor>lecture…</Text>}
+          <Box flexDirection="row" flexWrap="wrap" columnGap="sm">
+            {!detail && src !== null && isReading && (
+              <Text size="footnote" dimColor>
+                lecture…
+              </Text>
+            )}
             {!detail && src !== null && !isReading && (
               <Button
                 key={`detail:${one.id}`}
                 label="Lire le détail"
+                plain
                 dimColor
                 onPress={() => void fetchDetail($, one.id)}
               />
@@ -815,11 +845,12 @@ export const register: Register = on => {
               />
             )}
             {canBuild && (
-              <Button
-                key={`build:${one.id}`}
-                label="Build"
-                onPress={() => void submitSkill($, 'build', one)}
-              />
+              // A primary variant could paint its own background under the orange label.
+              <Button key={`build:${one.id}`} onPress={() => void submitSkill($, 'build', one)}>
+                <Text color="claude" weight="semibold">
+                  Build
+                </Text>
+              </Button>
             )}
           </Box>
         </Box>
@@ -834,27 +865,25 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           <Box flexDirection="row" columnGap={1} alignItems="flex-start">
+            <Text {...tint(mark.color)}>{mark.glyph}</Text>
+            <Box flexDirection="column" flexGrow={1} flexShrink={1}>
+              <Text wrap="wrap" weight={one.type === 'plan' ? 'semibold' : 'regular'}>
+                {titleOf(one)}
+              </Text>
+              {metaLineOf(one)}
+            </Box>
             <Button
               key={`row:${one.id}`}
               plain
-              label={isOpen ? '▾' : '▸'}
+              dimColor
+              label={isOpen ? '⌄' : '›'}
               onPress={() => void toggle($, one.id)}
             />
-            <Box flexDirection="row" flexWrap="wrap" columnGap={1} flexGrow={1} flexShrink={1}>
-              <Text color={mark.color}>{mark.glyph}</Text>
-              <Text wrap="wrap" bold={one.type === 'plan'}>
-                {titleOf(one)}
-              </Text>
-              {chipsOf(one)}
-            </Box>
           </Box>
-          {isOpen && (
-            <Box paddingLeft={4} paddingBottom={1}>
-              {detailOf(one)}
-            </Box>
-          )}
+          {isOpen && detailOf(one)}
           {kids.length > 0 && (
-            <Box flexDirection="column" paddingLeft={3}>
+            // The glyph and its gap are two cells: a child's glyph sits under its parent's title.
+            <Box flexDirection="column" rowGap="xs" paddingLeft={2} marginTop="xs">
               {kids.map(child => rowOf(child))}
             </Box>
           )}
@@ -862,21 +891,17 @@ export const register: Register = on => {
       )
     }
 
-    const rows: JSX.Element[] = []
-    let sawPlan = false
-    roots.forEach((one, index) => {
-      if (one.type === 'plan' && !sawPlan && index > 0) {
-        rows.push(
-          <Box marginTop={1}>
-            <Text dimColor bold>
-              Plans
-            </Text>
-          </Box>,
-        )
+    // A section opens wherever the server's order switches between plans and other items.
+    const sections: { isPlan: boolean; rows: JSX.Element[] }[] = []
+    for (const one of roots) {
+      const isPlan = one.type === 'plan'
+      const last = sections.at(-1)
+      if (last?.isPlan === isPlan) {
+        last.rows.push(rowOf(one))
+      } else {
+        sections.push({ isPlan, rows: [rowOf(one)] })
       }
-      sawPlan = sawPlan || one.type === 'plan'
-      rows.push(rowOf(one))
-    })
+    }
 
     const summary = [
       total ? `${total.active} actives` : null,
@@ -895,50 +920,78 @@ export const register: Register = on => {
             : null
 
     return (
-      <Box flexDirection="column" rowGap={1}>
+      <Box flexDirection="column" rowGap="md">
         <Box flexDirection="column">
-          <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="flex-start">
-            <Text bold size="heading" color={BLUE.color}>
-              {named.name}
+          <Text size="title" weight="semibold">
+            {named.name}
+          </Text>
+          <Text size="footnote" dimColor>
+            {summary}
+          </Text>
+        </Box>
+        <Box flexDirection="row" flexWrap="wrap" columnGap="sm">
+          {busyText !== null && (
+            <Text size="footnote" dimColor>
+              {busyText}
             </Text>
-            <Text dimColor>{summary}</Text>
-          </Box>
-          <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
-            {busyText !== null && <Text dimColor>{busyText}</Text>}
-            {busyText === null && (
-              <Button key="refresh" label="Rafraîchir" onPress={() => void refresh($)} />
-            )}
-            {busyText === null && (
-              <Button
-                key="backlog"
-                label={
-                  isBacklogShown
-                    ? 'Masquer le backlog'
-                    : `Backlog${total ? ` (${total.backlog})` : ''}`
-                }
-                onPress={() => void toggleBacklog($)}
-              />
-            )}
-            {hasOpen && (
-              <Button
-                key="fold"
-                label="Tout replier"
-                dimColor
-                onPress={() => void update($, expanded, () => ({}))}
-              />
-            )}
+          )}
+          {busyText === null && (
+            <Button
+              key="refresh"
+              label="Rafraîchir"
+              plain
+              dimColor
+              onPress={() => void refresh($)}
+            />
+          )}
+          {busyText === null && (
+            <Button
+              key="backlog"
+              label={
+                isBacklogShown
+                  ? 'Masquer le backlog'
+                  : `Backlog${total ? ` (${total.backlog})` : ''}`
+              }
+              plain
+              dimColor
+              onPress={() => void toggleBacklog($)}
+            />
+          )}
+          {hasOpen && (
+            <Button
+              key="fold"
+              label="Tout replier"
+              plain
+              dimColor
+              onPress={() => void update($, expanded, () => ({}))}
+            />
+          )}
+          {/* The desktop pane's own header already has ⤢ and ✕. */}
+          {e.surface !== 'desktop' && (
             <Button
               key="close"
               label="Fermer"
+              plain
               dimColor
               onPress={() => void $.ui.close({ id: PANE })}
             />
-          </Box>
+          )}
         </Box>
-        {rows.length === 0 ? (
-          <Text dimColor>Aucune tâche active dans ce projet.</Text>
+        {sections.length === 0 ? (
+          <Text size="footnote" dimColor>
+            Aucune tâche active dans ce projet.
+          </Text>
         ) : (
-          <Box flexDirection="column">{rows}</Box>
+          <Box flexDirection="column" rowGap="md">
+            {sections.map(section => (
+              <Box flexDirection="column" rowGap="xs">
+                <Text size="caption" weight="medium" dimColor>
+                  {section.isPlan ? 'Plans' : 'Tâches'}
+                </Text>
+                {section.rows}
+              </Box>
+            ))}
+          </Box>
         )}
       </Box>
     )

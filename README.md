@@ -245,7 +245,7 @@ Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run 
 - `/nestor-beta:clean-task` — tidies up a task
 - `/nestor-beta:audit` — has an independent Codex or Claude agent (`codex sol best max`, `claude opus best`…) audit a task or plan, then logs its report in a note linked to it; give a PR number instead to audit that pull request
 - `/nestor-beta:check-for-updates` — looks for an update
-- `/nestor-taches` — Claude Code only: a side pane with the project’s tasks as `next-tasks` reads them, colored statuses, and Spec and Build buttons on each task
+- `/nestor-taches` — Claude Code only: a side pane in claude.ai’s style with the project’s tasks as `next-tasks` reads them, a quiet status line under each title, and Spec and Build buttons on each task
 
 Behind the scenes, `nestor-beta` signs your pull requests with a `nestor tasks:` footer. Nothing to type.
 
