@@ -1,8 +1,7 @@
 ---
 name: audit
-description: Have an independent Codex or Claude agent audit one Nestor Plan or Task, or one pull request given by its number, with the agent, model and effort read from the arguments by their meaning, Codex sol6.1 at xhigh by default. For a Plan or Task, it audits the stored specification against the repository until the item is delivered, then the delivered code against that specification; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use only when the user explicitly invokes audit with an item reference or a pull request number; an agent, plan, task or another skill must never invoke it.
+description: Have an independent Codex or Claude agent audit one Nestor Plan or Task, or one pull request given by its number, with the agent, model and effort read from the arguments by their meaning, Codex sol6.1 at xhigh by default. For a Plan or Task, it audits the stored specification against the repository until the item is delivered, then the delivered code against that specification; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use when the user or an agent asks to audit an item reference or a pull request number; an agent invokes it on its own with the same arguments and ends with the report as the result. Do not use for a review that the agent makes itself.
 argument-hint: "<plan-or-task-id-or-slug|pr-number> [codex|claude] [model] [effort]"
-disable-model-invocation: true
 ---
 
 # Nestor Audit
@@ -23,11 +22,17 @@ Pass `{ "version_hash": "2bbbc535454db15fe" }` on every Nestor MCP call.
 - Codex: `$nestor-beta:audit <ref|PR> [agent] [model] [effort]`.
 - Cursor: select the skill, then supply the arguments.
 
-Run only on that explicit invocation. Read the arguments after the skill name, including a
-final `ARGUMENTS: …` line when the client supplies one. The first word is either a Nestor
-reference — an id, an id prefix or an exact slug — or a pull request number: digits only,
-with or without a leading `#`. A number audits that pull request of the workspace's
-repository, without any Nestor item: skip sections 2 and 7.
+An agent can also invoke the skill on its own, with the same arguments, when an audit is
+asked of it: by its user in plain words, by its instructions, or by the agent that started
+it, as for a subagent. It then follows these steps itself and ends with the report, which is
+the result of the audit for whoever asked.
+
+Read the arguments after the skill name, including a final `ARGUMENTS: …` line when the
+client supplies one; an invocation without arguments takes them from the request that asked
+for the audit. The first word is either a Nestor reference — an id, an id prefix or an exact
+slug — or a pull request number: digits only, with or without a leading `#`. A number
+audits that pull request of the workspace's repository, without any Nestor item: skip
+sections 2 and 7.
 
 Read the other words by their meaning, in any order, case or abbreviation, to choose the
 agent that audits, its model and its effort:
@@ -38,7 +43,7 @@ agent that audits, its model and its effort:
 | `claude`, Claude Code | `opus`, `fable`, `sonnet`, `haiku` | the family name, which Claude Code resolves | `low`, `medium`, `high`, `xhigh`, `max` |
 
 A model family alone names its agent, and `codex` without a family runs sol. A version the
-user names runs that model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for
+words name runs that model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for
 `claude-opus-5-5`. Without an agent or a model, the audit runs sol6.1; without an effort, it
 runs at `xhigh`.
 
@@ -53,7 +58,7 @@ Without a reference or a number, ask for one in one line and stop. When a word m
 nothing here, when the words name two agents, models or efforts, or a model or effort that
 the agent does not offer, such as `claude sol` or `claude ultra`, or when they name
 `claude` without a family, ask in one line for the intended choice with the accepted values
-and wait for the answer. Launch and write nothing before it.
+and stop there. Launch and write nothing before a valid choice comes back.
 
 ## 2. Read the item
 
@@ -77,8 +82,8 @@ ordinary Task has none.
 ## 3. Check the repository
 
 Work from the root of the workspace's Git repository. Its `origin`, in HTTPS form without
-`.git`, must equal the effective Git context's `repository`; otherwise stop and ask the user
-to run the audit again from a checkout of that repository. Without an effective repository,
+`.git`, must equal the effective Git context's `repository`; otherwise stop and say to run
+the audit again from a checkout of that repository. Without an effective repository,
 audit the workspace's repository; without a Git repository, stop.
 
 Run `git fetch --prune origin`. Then never switch branches, stash or modify the working tree.
@@ -122,7 +127,8 @@ without a merge leaves nothing to audit: stop and say so.
 Create a new private temporary directory with `mktemp -d` and write the brief to `brief.md`
 there. The auditor starts from this brief alone: it holds only the stored content of the
 audited work, the Nestor item's or the pull request's, and the audit instructions, never
-this conversation or the calling agent's opinion of the work.
+this conversation or an opinion of the work, whether the calling agent's or that of whoever
+asked for the audit.
 
 - The audited item: its type, slug, title and status.
 - Its stored content as is: body, specification, dependencies with their justifications and
@@ -132,7 +138,8 @@ this conversation or the calling agent's opinion of the work.
 - For a pull request number, in place of the item and its content: the pull request's
   number, URL, title and description as is.
 - The repository, the mode and the pinned SHAs.
-- The user's language, named explicitly.
+- The language of the report, named explicitly: the user's language or, when an agent asked
+  for the audit, the language that agent names, otherwise the language of its request.
 
 In spec mode, the brief asks the auditor to check against the pinned SHA that the cited
 files and symbols exist, that the steps are feasible and their verifications conclusive,
@@ -153,8 +160,8 @@ In both modes, the brief gives the auditor these rules:
 - Read the code through Git at the given SHAs (`git show`, `git grep`, `git diff`), never
   in the working tree, which may hold unrelated local changes.
 - Ask no question.
-- End with a last message that is the report alone, written in the user's language, in
-  three blocks titled in that language, such as ISSUES, EXAMPLE and SOLUTIONS in English or
+- End with a last message that is the report alone, written in the language that the brief
+  names, in three blocks titled in that language, such as ISSUES, EXAMPLE and SOLUTIONS in English or
   ENJEUX, EXEMPLE and SOLUTIONS in French: one line per issue, the most important first; a
   single concrete example in two or three sentences; numbered solutions, one imperative
   action per line. No file paths and no detailed evidence. Keep only the issues that occur
@@ -205,9 +212,12 @@ sessions.
 
 Wait for the process to end without reading `audit.log`; only `report.md` comes back into
 the conversation, at the end. When the client cannot keep a command in the foreground until
-the audit ends, run it in the background and resume when it ends; then say in one sentence
-that the audit is running, with the agent and its model, the cited item or the pull
-request, and the path of `audit.log`.
+the audit ends, run it in the background and resume when it ends. On the user's invocation,
+say meanwhile in one sentence that the audit is running, with the agent and its model, the
+cited item or the pull request, and the path of `audit.log`. When an agent invoked the skill
+on its own, keep waiting for the process within the same turn and write nothing before the
+report: whoever asked, such as the agent that started a subagent, may receive only what the
+turn ends with.
 
 On a non-zero exit or an empty `report.md`, write no note: say that the audit failed and give
 its cause in plain words with the path of the file it comes from, the end of `audit.log`, or
@@ -232,7 +242,7 @@ If the creation is refused, say that the report is not logged and give the path 
 
 ## 8. Report
 
-At the end, show the report as is, then one sentence that cites the note and the audited
-item using Nestor's item citation rule; after a pull request audit, that sentence links the
+At the end, give the report as is to whoever asked for the audit, the user or an agent, then
+one sentence that cites the note and the audited item using Nestor's item citation rule; after a pull request audit, that sentence links the
 pull request instead. Do not narrate the calls, versions, ETags or any technical identifier
 beyond those citations.
