@@ -18,7 +18,7 @@ Create an autonomous code Task in the backlog. Its repository belongs to the Tas
 {
   "tool": "create_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "type": "task",
     "title": "Reject invalid export dates",
@@ -48,7 +48,7 @@ six fields for that group, and it inherits the root repository.
 {
   "tool": "create_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "type": "plan",
     "title": "Export dated records",
@@ -73,7 +73,7 @@ once all ids are known:
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -98,7 +98,7 @@ for full member content and matched preconditions, including completed work to p
 {
   "tool": "get_tree",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "rootItemId": "4W1R",
     "depth": 6,
@@ -123,7 +123,7 @@ and inherited repository instead of supplying the autonomous Git context below.
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -158,7 +158,7 @@ Never patch `type` or migrate historical Task children automatically.
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "id": "5X2T",
     "operation": "patch",
@@ -186,7 +186,7 @@ autonomous Task without a question, using the latest pair:
 {
   "tool": "update_item",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "id": "4W1R",
     "operation": "approve",
@@ -227,7 +227,7 @@ Only when the user explicitly asks whether the saved work can be built, inspect 
 {
   "tool": "manage_build",
   "arguments": {
-    "version_hash": "2bbbc535454db15fe",
+    "version_hash": "2ac989639d73a12e8",
     "scope": { "mode": "global" },
     "id": "4W1R",
     "operation": "inspect"
