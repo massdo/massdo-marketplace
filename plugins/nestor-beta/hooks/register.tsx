@@ -859,6 +859,13 @@ export const register: Register = on => {
                 </Text>
               </Button>
             )}
+            <Button
+              key={`fold:${one.id}`}
+              label="Replier"
+              plain
+              dimColor
+              onPress={() => void toggle($, one.id)}
+            />
           </Box>
         </Box>
       )
