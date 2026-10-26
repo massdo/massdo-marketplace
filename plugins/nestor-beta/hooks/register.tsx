@@ -130,7 +130,7 @@ function markOf(one: NestorEntry): Mark {
   return { glyph: '¶', label: 'note', color: null }
 }
 
-/** The quiet line under a title; only an overdue date, an urgent priority or a blocked plan stands out. */
+/** The quiet status after a title; only an overdue date, an urgent priority or a blocked plan stands out. */
 function metaOf(one: NestorEntry, now: number): Part[] {
   const dim = (text: string): Part => ({ text, color: null })
   const parts: Part[] = []
@@ -779,21 +779,6 @@ export const register: Register = on => {
     }
     const hasOpen = Object.keys(open).length > 0
 
-    const metaLineOf = (one: NestorEntry) => (
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
-        {metaOf(one, now).flatMap((part, index) => [
-          index > 0 && (
-            <Text size="footnote" dimColor>
-              ·
-            </Text>
-          ),
-          <Text size="footnote" {...tint(part.color)}>
-            {part.text}
-          </Text>,
-        ])}
-      </Box>
-    )
-
     const detailOf = (one: NestorEntry) => {
       const detail = known[one.id]
       const text = detail ? `${detail.body ?? ''}${specificationText(detail)}`.trim() : ''
@@ -886,22 +871,21 @@ export const register: Register = on => {
 
       return (
         <Box flexDirection="column">
-          <Box flexDirection="row" columnGap={1} alignItems="flex-start">
-            <Text {...tint(mark.color)}>{mark.glyph}</Text>
-            <Box flexDirection="column" flexGrow={1} flexShrink={1}>
-              <Text wrap="wrap" weight={one.type === 'plan' ? 'semibold' : 'regular'}>
-                {titleOf(one)}
-              </Text>
-              {metaLineOf(one)}
-            </Box>
-            <Button
-              key={`row:${one.id}`}
-              plain
-              dimColor
-              label={isOpen ? '⌄' : '›'}
-              onPress={() => void toggle($, one.id)}
-            />
-          </Box>
+          {/* A Button holds only strings and Text, and a Box inside it fails the pane: the meta follows the title. */}
+          <Button key={`row:${one.id}`} plain onPress={() => void toggle($, one.id)}>
+            <Text {...tint(mark.color)}>{mark.glyph}</Text>{' '}
+            <Text wrap="wrap" weight={one.type === 'plan' ? 'semibold' : 'regular'}>
+              {titleOf(one)}
+            </Text>
+            {metaOf(one, now).flatMap(part => [
+              <Text size="footnote" dimColor>
+                {' · '}
+              </Text>,
+              <Text size="footnote" {...tint(part.color)}>
+                {part.text}
+              </Text>,
+            ])}
+          </Button>
           {isOpen && detailOf(one)}
           {kids.length > 0 && (
             // The glyph and its gap are two cells: a child's glyph sits under its parent's title.

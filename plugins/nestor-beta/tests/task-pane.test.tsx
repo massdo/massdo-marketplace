@@ -259,11 +259,17 @@ test('a next-tasks read fills the pane: the plan, its task beneath, the orphan a
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
     expect(await titles(ui)).toEqual([PLAN.title, TASK.title, ORPHAN.title])
-    expect((await ui.findAll({ type: 'Button', text: /^[›⌄]$/ })).map(row => row.text)).toEqual([
-      '›',
-      '›',
-      '›',
-    ])
+    expect((await ui.find({ type: 'Button', key: 'row:p1' }))?.text).toBe(
+      `◐ ${PLAN.title} · plan · en cours`,
+    )
+    expect((await ui.find({ type: 'Button', key: 'row:t1' }))?.text).toBe(
+      `● ${TASK.title} · prête à build · ↑ haute · échéance 27 oct.`,
+    )
+    expect((await ui.find({ type: 'Button', key: 'row:t2' }))?.text).toBe(
+      `○ ${ORPHAN.title} · à faire · en retard, échéance 15 janv.`,
+    )
+    expect(await ui.findAll({ type: 'Text', text: /[›⌄]/ })).toEqual([])
+    expect(await ui.findAll({ type: 'Button', text: /[›⌄]/ })).toEqual([])
     expect(
       (await ui.findAll({ type: 'Text', text: /^(Plans|Tâches)$/ })).map(one => one.text),
     ).toEqual(['Plans', 'Tâches'])
