@@ -1,30 +1,38 @@
 ---
 name: spec
-description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Once the work is complete, save its structured specification and approve it without asking for a final confirmation, unless the user explicitly asks for a draft, a stop or a later approval. Invoke only on the user's direct request; an agent, subagent, plan, memory, task or another skill cannot invoke it on their behalf.
+description: Prepare a Nestor Plan subtree or one code Task from an idea or an existing item, through an explicit interview with one question at a time. Once the work is complete, save its structured specification and approve it without asking for a final confirmation, unless a draft, a stop or a later approval is explicitly asked for. Use when the user or an agent asks to spec an idea or a Nestor Plan or Task; an agent invokes it on its own with the same arguments, and its questions go to whoever asked. Do not use to record a task or a note without this interview.
 argument-hint: "<idea… | id-or-slug> [project:<name-or-id>]"
-disable-model-invocation: true
 ---
 
 # Nestor Spec
 
 Interview the user, prepare the complete work, then save and approve it in Nestor. This
 skill writes no code or files and starts no build. Conduct the interview and write the
-specification in the user's language. Start only on their explicit invocation or request
+specification in the user's language. Start only on an explicit invocation or request
 for this process. That invocation authorises, by default, saving and approving the
 requested scope as soon as the work is complete, with nothing displayed before; the full
 detail stays available afterwards on request. An explicit request for a draft or a later
 approval limits this to saving; an explicit stop ends the session without further writes.
 Never ask for approval again to get around that choice.
 
+An agent can also invoke the skill on its own, with the same arguments, when this process
+is asked of it: by its user in plain words, by its instructions, or by the agent that
+started it, as for a subagent. It then follows these steps itself. When another agent
+asked, that agent stands for the user throughout this skill: it receives the questions and
+the closing, answers from what it holds or asks its own user, and its request carries the
+invocation's authority and any draft, stop or detail request. The language is then the one
+it names, otherwise that of its request.
+
 ## Identify the plugin version
 
-Pass `{ "version_hash": "20c511c7944ead67f" }` on every Nestor MCP call.
+Pass `{ "version_hash": "21f7ec0e4b31c4f38" }` on every Nestor MCP call.
 
 ## Starting point
 
-Read the idea or item reference and optional `project:<name-or-id>` from the user's
-arguments. Preserve everything after the first colon in the project value. With no idea,
-ask for it in one line.
+Read the idea or item reference and optional `project:<name-or-id>` from the arguments;
+an invocation without them takes them from the request that asked for this process.
+Preserve everything after the first colon in the project value. With no idea, ask for it
+in one line.
 
 A single token resembling an item identity is a reference. Read it with `get_item`,
 passing the received value in `ref`, `scope: { mode: "global" }`, `known` and

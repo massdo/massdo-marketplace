@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $nestor-beta:spec <idea or existing Plan/Task reference> [project:<name-or-id>] to prepare, save and approve complete code work."
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

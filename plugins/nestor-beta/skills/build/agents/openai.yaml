@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $nestor-beta:build <plan-or-task-id-or-slug> [prod] [target:<branch>] [--worktree] to deliver approved code work into its shared pull request."
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

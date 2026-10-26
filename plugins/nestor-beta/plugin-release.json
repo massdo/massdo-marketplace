@@ -1,5 +1,5 @@
 {
-  "version": "0.14.3",
-  "version_hash": "0c511c7944ead67f",
-  "changelog": "The Nestor task pane no longer ignores a failed read: when Rafraîchir, Lire le détail, Backlog or opening a project cannot reach Nestor, a message says which call failed and why. The pane also reads through the server of the Nestor plugin when the session has it, rather than through the desktop app's connector."
+  "version": "0.14.4",
+  "version_hash": "1f7ec0e4b31c4f38",
+  "changelog": "/nestor-beta:spec and /nestor-beta:build can now be run by an agent as well as by you: an agent asked to spec an idea or a task, or to build an approved task or plan, invokes them with the same arguments. Spec's questions and closing go to whoever asked; Build ends with the pull request as its result, and a review still needs a person's acceptance."
 }

@@ -30,7 +30,7 @@ mutations can change other members' ETags; a stale pair follows the conflict con
 
 | Case | Skill behavior checked against the contract |
 | --- | --- |
-| Direct invocation | Empty arguments stop; only the user starts Build. Both clients retain explicit invocation policy. |
+| Direct invocation | Empty arguments stop; the user or an agent asked by them, by its instructions or by its parent agent starts Build. Both clients allow an agent to invoke it. |
 | Direct Task | Inspect and reserve only that Task. Parent approval is unnecessary. An unfinished prerequisite or foreign reservation cannot be bypassed. |
 | Plan | Read the complete subtree; use inspect/reserve ordering, then complete/next sequentially without another skill invocation or an agent per child. An empty remaining selection stops before Git or reservation. |
 | Attached Task or sub-plan | Follow planId/parentPlanId to the root; reuse its repository, target, work branch and PR. A sibling is not implicitly selected. |
