@@ -1,5 +1,5 @@
 {
-  "version": "0.14.1",
-  "version_hash": "bbbc535454db15fe",
-  "changelog": "The Nestor task pane now follows claude.ai's look: a quiet status line under each title, one orange accent for ready-to-build work and the Build button, theme colors only, and no second close button on desktop."
+  "version": "0.14.2",
+  "version_hash": "ac989639d73a12e8",
+  "changelog": "/nestor-beta:audit can now be run by an agent as well as by you: an agent asked to audit a task, a plan or a pull request invokes it with the same arguments, waits for the end of the audit and gets the report as its result."
 }
