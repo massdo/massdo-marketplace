@@ -237,9 +237,9 @@ Nestor learned to code. It takes you from an idea to merged pull requests. Insta
 
 Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run `next-tasks`: in a repo it finds the project through Git, anywhere else you name it (`/nestor-beta:next-tasks lisbon-trip`), and it lists what to do now.
 
-- `/nestor-beta:spec` — turns your idea into a task tree, one question at a time
+- `/nestor-beta:spec` — turns your idea into a task tree, one question at a time. An agent can run it too and gets the questions
 - `/nestor-beta:next-tasks` — lists a project’s active tasks
-- `/nestor-beta:build` — turns a task into a pull request
+- `/nestor-beta:build` — turns a task into a pull request. An agent can run it too and gets the pull request back
 - `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
 - `/nestor-beta:doctor` — offers to close tasks that already shipped
 - `/nestor-beta:clean-task` — tidies up a task

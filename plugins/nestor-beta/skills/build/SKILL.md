@@ -1,8 +1,7 @@
 ---
 name: build
-description: Build one approved Nestor code Task or an approved Plan subtree into a shared open pull request, using the server's build reservation and progression decisions. Invoke only on the user's direct request with an explicit item id or slug; agents, plans, tasks and other skills cannot invoke it. Stop after verified delivery; never merge, wait for CI or deployment, publish a release, or tag.
+description: Build one approved Nestor code Task or an approved Plan subtree into a shared open pull request, using the server's build reservation and progression decisions. Use when the user or an agent asks to build an item given by its id or slug; an agent invokes it on its own with the same arguments and ends with the delivery as the result. Do not use for code that no approved Nestor item specifies. Stop after verified delivery; never merge, wait for CI or deployment, publish a release, or tag.
 argument-hint: "<plan-or-task-id-or-slug> [prod] [target:<branch>] [--worktree]"
-disable-model-invocation: true
 ---
 
 # Nestor Build
@@ -18,9 +17,18 @@ Pass `{ "version_hash": "20c511c7944ead67f" }` on every Nestor MCP call.
 
 ## Arguments
 
-Accept `<id-or-slug> [prod] [target:<branch>] [--worktree]` only from a direct user
-invocation or an explicit request for this process. A task mentioned in conversation is
-insufficient. With an empty argument string, reply exactly and stop without searching:
+Accept `<id-or-slug> [prod] [target:<branch>] [--worktree]` only from a direct invocation
+or an explicit request for this process. A task mentioned in conversation is insufficient.
+
+An agent can also invoke the skill on its own, with the same arguments, when a build is
+asked of it: by its user in plain words, by its instructions, or by the agent that started
+it, as for a subagent. It then follows these steps itself. Its questions, such as the target
+branch, go to whoever asked: the user, or the agent that asked, which answers from what it
+holds or asks its own user.
+
+Read the arguments after the skill name; an invocation without them takes them from the
+request that asked for the build. With no item reference there either, reply exactly and
+stop without searching:
 
 > id or task slug is needed to build ! :)
 
@@ -30,7 +38,7 @@ colon, including `/`. An empty `target:` leaves the target unspecified. The lite
 `--worktree` moves the work into a linked Git worktree, as section 2 describes; without it,
 the build works in the current checkout. Reject unknown arguments and a repeated `target:`
 or `--worktree`, naming the invalid input. Without a resolved target, ask for
-`target:<branch>` during preparation and wait.
+`target:<branch>` during preparation and stop there until the answer comes back.
 
 ## 1. Read and prepare before Git
 
@@ -89,7 +97,8 @@ slugs. Commit subjects, PR titles and PR descriptions are in English.
    `git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin`, excluding symbolic
    `HEAD`. Resolve the requested target exactly. Without one, show available branches and
    ask for `target:<branch>`. For a missing name, propose only a case-insensitive exact or
-   unique one-edit match and wait for confirmation; otherwise request an available target.
+   unique one-edit match and stop there until it is confirmed; otherwise request an
+   available target.
    An empty remote list ends preparation. Never silently substitute a branch.
 3. Read the root Plan's shared `git.targetBranch`, `git.workBranch` and `git.pullRequestUrl`
    (or the autonomous Task's Git fields). An attached direct build reuses that context;
@@ -254,8 +263,8 @@ with those reads. Validate the repository, current checkout, pushed head and ope
 the shared Git references again, including section 2.4's prerequisite checks. With
 `--worktree`, find the worktree on the work branch through `git worktree list --porcelain`
 first, and recreate it from the pushed work branch when none remains. Do not call
-reserve again or insert an automatic inspect into a continuation. Review still requires
-explicit acceptance or correction authorisation; otherwise keep the build suspended.
+reserve again or insert an automatic inspect into a continuation. Review still requires a
+person's explicit acceptance or correction authorisation; otherwise keep the build suspended.
 Use the retained private ownership. If another execution must take over, require explicit
 transfer by the current owner via `manage_build(operation: "transfer")`; it returns a new
 credential and revokes the old one immediately. Missing proof is not authority to recover
@@ -267,8 +276,8 @@ For review corrections without blockage, resume may use false. Continue the inte
 Task only after acceptance. An already building unblocked Task can continue with its owned
 reservation without an invalid resume call; if no Task is active and work remains in a
 selected Plan, use next with the selection's current pair. Use `complete(review: "accepted")`
-only after actual acceptance of the reviewed work, with valid evidence; never grant that
-acceptance yourself to skip review.
+only after a person's actual acceptance of the reviewed work, with valid evidence; never
+grant that acceptance yourself to skip review.
 
 If planned work must change, release explicitly before seeking revised specification and
 approval; do not edit frozen work. An explicit abandonment may also release the context:
@@ -279,7 +288,8 @@ the server retains completed work and restores eligible unfinished Tasks to read
 Keep the final message to one or two sentences: explain what the delivered work changes
 for the user, cite the contributing work using Nestor's item citation rule, give the PR
 link, then the next choice if one exists, such as reviewing and merging the PR. This
-closing replaces Nestor's per-mutation report.
+closing replaces Nestor's per-mutation report and goes to whoever asked for the build, the
+user or an agent, as its result.
 
 Apply the same rule to intermediate messages, already finished selections, refusals,
 incomplete plans, incorrect specifications, reviews, blockages and continuations: explain
