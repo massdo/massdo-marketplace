@@ -89,6 +89,16 @@ const LATER = {
   project: SKYLINE,
 }
 
+const NOTE = {
+  id: 'n2',
+  type: 'note',
+  title: 'compte rendu du lancement',
+  slug: 'olive_heron',
+  excerpt: 'Notes du lancement.',
+  version: 1,
+  project: SKYLINE,
+}
+
 const COUNTS = {
   inbox: 0,
   today: 0,
@@ -259,11 +269,17 @@ test('a next-tasks read fills the pane: the plan, its task beneath, the orphan a
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
     expect(await titles(ui)).toEqual([PLAN.title, TASK.title, ORPHAN.title])
-    expect((await ui.findAll({ type: 'Button', text: /^[›⌄]$/ })).map(row => row.text)).toEqual([
-      '›',
-      '›',
-      '›',
-    ])
+    expect((await ui.find({ type: 'Button', key: 'row:p1' }))?.text).toBe(
+      `◐ ${PLAN.title} · plan · en cours`,
+    )
+    expect((await ui.find({ type: 'Button', key: 'row:t1' }))?.text).toBe(
+      `● ${TASK.title} · prête à build · ↑ haute · échéance 27 oct.`,
+    )
+    expect((await ui.find({ type: 'Button', key: 'row:t2' }))?.text).toBe(
+      `○ ${ORPHAN.title} · à faire · en retard, échéance 15 janv.`,
+    )
+    expect(await ui.findAll({ type: 'Text', text: /[›⌄]/ })).toEqual([])
+    expect(await ui.findAll({ type: 'Button', text: /[›⌄]/ })).toEqual([])
     expect(
       (await ui.findAll({ type: 'Text', text: /^(Plans|Tâches)$/ })).map(one => one.text),
     ).toEqual(['Plans', 'Tâches'])
@@ -393,6 +409,39 @@ test('a row unfolds on press; Lire le détail reads the item alone and draws its
   await ui.press({ key: 'fold' })
   expect(await ui.find({ type: 'Text', text: /approbation/ })).toBeUndefined()
   await ui.unmount()
+})
+
+test('a second press on a row folds its detail, and so does Replier, last in the detail of a task, a plan or a note', async ($, on) => {
+  world(on, { first: [PLAN, TASK, NOTE] })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+
+  const keysOf: Record<string, string[]> = {
+    t1: ['row:t1', 'detail:t1', 'spec:t1', 'build:t1', 'fold:t1'],
+    p1: ['row:p1', 'detail:p1', 'spec:p1', 'build:p1', 'fold:p1'],
+    n2: ['row:n2', 'detail:n2', 'fold:n2'],
+  }
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+    for (const [id, keys] of Object.entries(keysOf)) {
+      const fold = { type: 'Button', key: `fold:${id}` }
+      expect(await ui.find(fold)).toBeUndefined()
+
+      await ui.press({ key: `row:${id}` })
+      const buttons = await ui.findAll({ type: 'Button' })
+      expect(buttons.map(one => one.key).filter(key => key?.endsWith(`:${id}`))).toEqual(keys)
+      expect((await ui.find(fold))?.text).toBe('Replier')
+
+      await ui.press({ key: `row:${id}` })
+      expect(await ui.find(fold)).toBeUndefined()
+
+      await ui.press({ key: `row:${id}` })
+      await ui.press({ key: `fold:${id}` })
+      expect(await ui.find(fold)).toBeUndefined()
+      expect(await ui.find({ type: 'Button', key: `row:${id}` })).toBeDefined()
+    }
+    await ui.unmount()
+  }
 })
 
 test('Spec and Build run the skill on the clicked item', async ($, on) => {
