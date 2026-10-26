@@ -42,38 +42,32 @@ const readAt = atom({ plugin: 'nestor-beta', key: 'readAt' } as const, null as n
 const showBacklog = atom({ plugin: 'nestor-beta', key: 'showBacklog' } as const, false)
 const busy = atom({ plugin: 'nestor-beta', key: 'busy' } as const, null as NestorBusy | null)
 
-type Tone = { color: Color; fg: Color; bg: Color }
-type Mark = Tone & { glyph: string; label: string }
-
-const GRAY: Tone = { color: '#9ca3af', fg: '#f3f4f6', bg: '#4b5563' }
-const GREEN: Tone = { color: '#4ade80', fg: '#dcfce7', bg: '#15803d' }
-const AMBER: Tone = { color: '#fbbf24', fg: '#fef3c7', bg: '#b45309' }
-const BLUE: Tone = { color: '#60a5fa', fg: '#dbeafe', bg: '#1d4ed8' }
-const PURPLE: Tone = { color: '#c084fc', fg: '#f3e8ff', bg: '#7e22ce' }
-const RED: Tone = { color: '#f87171', fg: '#fee2e2', bg: '#b91c1c' }
+/** A theme key, so the pane follows the light or dark theme; null is drawn dim. */
+type Mark = { glyph: string; label: string; color: Color | null }
+type Part = { text: string; color: Color | null }
 
 const STATUS: Record<NestorTaskStatus, Mark> = {
-  todo: { glyph: '○', label: 'à faire', ...GRAY },
-  ready_to_build: { glyph: '◇', label: 'prête à build', ...GREEN },
-  building: { glyph: '◆', label: 'build en cours', ...AMBER },
-  in_progress: { glyph: '◐', label: 'en cours', ...BLUE },
-  need_review: { glyph: '◉', label: 'à relire', ...PURPLE },
-  completed: { glyph: '●', label: 'terminée', ...GREEN },
-  cancelled: { glyph: '×', label: 'annulée', ...GRAY },
+  todo: { glyph: '○', label: 'à faire', color: null },
+  ready_to_build: { glyph: '●', label: 'prête à build', color: 'claude' },
+  building: { glyph: '✻', label: 'build en cours', color: 'text' },
+  in_progress: { glyph: '◐', label: 'en cours', color: 'text' },
+  need_review: { glyph: '◉', label: 'à relire', color: 'text' },
+  completed: { glyph: '✓', label: 'terminée', color: null },
+  cancelled: { glyph: '×', label: 'annulée', color: null },
 }
 
 const PROGRESS: Record<NestorProgress, Mark> = {
-  not_started: { glyph: '▢', label: 'non démarré', ...GRAY },
-  in_progress: { glyph: '▣', label: 'en cours', ...BLUE },
-  blocked: { glyph: '▣', label: 'bloqué', ...RED },
-  completed: { glyph: '■', label: 'terminé', ...GREEN },
+  not_started: { glyph: '○', label: 'non démarré', color: null },
+  in_progress: { glyph: '◐', label: 'en cours', color: 'text' },
+  blocked: { glyph: '⊘', label: 'bloqué', color: 'error' },
+  completed: { glyph: '✓', label: 'terminé', color: null },
 }
 
-const PRIORITY: Record<NestorPriority, { label: string; color: Color } | null> = {
-  low: { label: 'basse', color: '#9ca3af' },
+const PRIORITY: Record<NestorPriority, Part | null> = {
+  low: { text: '↓ basse', color: null },
   normal: null,
-  high: { label: '▲ haute', color: '#fb923c' },
-  urgent: { label: '▲▲ urgente', color: '#f87171' },
+  high: { text: '↑ haute', color: null },
+  urgent: { text: '↑↑ urgente', color: 'error' },
 }
 
 const MONTHS = [
@@ -121,18 +115,54 @@ function parentOf(one: NestorEntry): string | undefined {
 
 function markOf(one: NestorEntry): Mark {
   if (one.type === 'task') {
-    return STATUS[one.status] ?? { glyph: '?', label: one.status, ...GRAY }
+    return STATUS[one.status] ?? { glyph: '?', label: one.status, color: null }
   }
   if (one.type === 'plan') {
-    const kind = one.parentPlanId === undefined ? 'plan' : 'sous-plan'
     const mark = one.progress === undefined ? undefined : PROGRESS[one.progress]
 
-    return mark
-      ? { ...mark, label: `${kind} · ${mark.label}` }
-      : { glyph: '▣', label: kind, ...GRAY }
+    return mark ?? { glyph: '○', label: '', color: null }
   }
 
-  return { glyph: '¶', label: 'note', ...GRAY }
+  return { glyph: '¶', label: 'note', color: null }
+}
+
+/** The quiet line under a title; only an overdue date, an urgent priority or a blocked plan stands out. */
+function metaOf(one: NestorEntry, now: number): Part[] {
+  const dim = (text: string): Part => ({ text, color: null })
+  const parts: Part[] = []
+  if (one.type === 'task') {
+    parts.push(dim(markOf(one).label))
+    const priority = PRIORITY[one.priority]
+    if (priority) {
+      parts.push(priority)
+    }
+    if (one.dueAt) {
+      const date = shortDate(one.dueAt)
+      parts.push(
+        isPast(one.dueAt, now)
+          ? { text: `en retard, échéance ${date}`, color: 'error' }
+          : dim(`échéance ${date}`),
+      )
+    } else if (one.scheduledAt) {
+      parts.push(dim(`prévue le ${shortDate(one.scheduledAt)}`))
+    }
+    if (one.backlog) {
+      parts.push(dim('backlog'))
+    }
+  } else if (one.type === 'plan') {
+    parts.push(dim(one.parentPlanId === undefined ? 'plan' : 'sous-plan'))
+    const { label } = markOf(one)
+    if (label !== '') {
+      parts.push({ text: label, color: one.progress === 'blocked' ? 'error' : null })
+    }
+  } else {
+    parts.push(dim('note'))
+  }
+  if (one.isContext) {
+    parts.push(dim('hors vue'))
+  }
+
+  return parts
 }
 
 const titleOf = (one: NestorEntry) => one.title ?? one.slug ?? one.id
