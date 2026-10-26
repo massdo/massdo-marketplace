@@ -14,7 +14,7 @@ The auditor only reads the repository and has no access to the journal.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2ac989639d73a12e8" }` on every Nestor MCP call.
+Pass `{ "version_hash": "20c511c7944ead67f" }` on every Nestor MCP call.
 
 ## 1. Invocation
 

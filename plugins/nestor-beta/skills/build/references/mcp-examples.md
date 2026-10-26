@@ -15,7 +15,7 @@ pair when context and selection are the same object; repository and target freez
 No inspect call is required before or after saving the target.
 
 ```json
-{"tool":"update_item","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":3,"expectedEtag":"example-current-etag","patch":{"git":{"targetBranch":"main"}}}}
+{"tool":"update_item","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":3,"expectedEtag":"example-current-etag","patch":{"git":{"targetBranch":"main"}}}}
 ```
 
 The ids have different roles even when some values coincide:
@@ -32,7 +32,7 @@ when attached. Its parent Plans need no approval. An autonomous Task uses the sa
 shape but owns its own context. For example, an attached Task reserve and response:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"reserve","id":"7TxA","expectedVersion":4,"expectedEtag":"example-task-etag"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"reserve","id":"7TxA","expectedVersion":4,"expectedEtag":"example-task-etag"}}
 ```
 
 ```json
@@ -44,11 +44,11 @@ server orders that pending internal dependency; never compute an alternative ord
 a refused member. Use the root id for a root request or the sub-plan id and its own pair:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"reserve","id":"4W1R","expectedVersion":4,"expectedEtag":"example-current-etag"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"reserve","id":"4W1R","expectedVersion":4,"expectedEtag":"example-current-etag"}}
 ```
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"reserve","id":"5Sub","expectedVersion":4,"expectedEtag":"example-subplan-etag"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"reserve","id":"5Sub","expectedVersion":4,"expectedEtag":"example-subplan-etag"}}
 ```
 
 ```json
@@ -70,7 +70,7 @@ Results produced by an earlier internal Task are checked when its dependent beco
 Once owned, create or reuse the common branch and record it on the root:
 
 ```json
-{"tool":"update_item","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":5,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"patch":{"git":{"workBranch":"feat/csv-export","pullRequestUrl":"https://github.com/example/repository/pull/42"}}}}
+{"tool":"update_item","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"patch","id":"4W1R","expectedVersion":5,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"patch":{"git":{"workBranch":"feat/csv-export","pullRequestUrl":"https://github.com/example/repository/pull/42"}}}}
 ```
 
 For an autonomous Task, that Git patch addresses the Task instead. Persist a missing branch
@@ -91,7 +91,7 @@ verification, `pnpm test`. Actual evidence must cover every criterion and comman
 by the real Task. Verify the full pushed SHA and the open common PR before sending:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"complete","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"completionEvidence":{"criteria":[{"criterion":"CSV export is available","result":"Export check produced the expected CSV rows."}],"verifications":[{"command":"pnpm test","result":"12 tests passed; exit 0."}],"commit":{"sha":"0123456789abcdef0123456789abcdef01234567","pushed":true},"pullRequest":{"url":"https://github.com/example/repository/pull/42","state":"open","verified":true}},"review":"none"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"complete","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"completionEvidence":{"criteria":[{"criterion":"CSV export is available","result":"Export check produced the expected CSV rows."}],"verifications":[{"command":"pnpm test","result":"12 tests passed; exit 0."}],"commit":{"sha":"0123456789abcdef0123456789abcdef01234567","pushed":true},"pullRequest":{"url":"https://github.com/example/repository/pull/42","state":"open","verified":true}},"review":"none"}}
 ```
 
 Use `review: "requested"` for required human review; it records need_review and stops the
@@ -99,7 +99,7 @@ cascade. `review: "accepted"` requires actual review acceptance, not a skill's a
 Completion results and a PR do not establish deployment.
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"next","id":"4W1R","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"next","id":"4W1R","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 For a Plan, next returns the started Task in `item.id` after server rechecks; read it and
@@ -108,7 +108,7 @@ selected by the invocation is complete, release explicitly. Root Plan completion
 derived from all its Tasks, even after a direct Task or sub-plan build ends.
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"release","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"release","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 ## Interruption, blockage and transfer alternatives
@@ -117,7 +117,7 @@ These calls describe alternatives while a reservation is held, not operations fo
 the release above. Persist an obstacle on the active Task only:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"block","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"blockage":{"reason":"Required fixture is unavailable.","resumeCondition":"The reviewed fixture is present in this checkout."}}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"block","id":"7TxA","expectedVersion":6,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"blockage":{"reason":"Required fixture is unavailable.","resumeCondition":"The reviewed fixture is present in this checkout."}}}
 ```
 
 Interruption retains ownership and the reservation. On continuation, read the selection,
@@ -128,7 +128,7 @@ another execution owns it, stop: reads never recover proof or authorise a new re
 When a stored blockage's resume condition is observed resolved:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"resume","id":"7TxA","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"conditionResolved":true}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"resume","id":"7TxA","expectedVersion":7,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"},"conditionResolved":true}}
 ```
 
 Review corrections without blockage may use `conditionResolved: false`. Do not call resume
@@ -139,7 +139,7 @@ No proof means no right to resume or reserve again. For an explicitly authorised
 owner calls transfer; retain the new ownership privately and immediately discard the old:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"transfer","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"transfer","id":"4W1R","expectedVersion":8,"expectedEtag":"example-current-etag","ownership":{"executionId":"abcdefghijklmnopqrstuv","proof":"example-private-proof"}}}
 ```
 
 For stale preconditions, reconcile `CONFLICT.details.current` and retry once using its
@@ -153,11 +153,11 @@ work, including Spec. Its `target`, `tasks` and `externalDependencies` do not ch
 pair. These calls are independent diagnostics, not a fresh-build or continuation preamble:
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"inspect","id":"7TxA"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"inspect","id":"7TxA"}}
 ```
 
 ```json
-{"tool":"manage_build","arguments":{"version_hash":"2ac989639d73a12e8","scope":{"mode":"global"},"operation":"inspect","id":"4W1R"}}
+{"tool":"manage_build","arguments":{"version_hash":"20c511c7944ead67f","scope":{"mode":"global"},"operation":"inspect","id":"4W1R"}}
 ```
 
 ## Expected flow matrix and evidence limits

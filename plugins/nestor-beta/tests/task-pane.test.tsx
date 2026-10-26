@@ -138,6 +138,9 @@ const world = (on: On, pages: Pages, tools = [{ name: LIST, description: '', mcp
   const opened: string[] = []
   const closed: string[] = []
   const submitted: Call[] = []
+  const toasts: string[] = []
+  // Set to a message, every $.mcp.call rejects with it, as an unreachable server does.
+  const outage: { message: string | null } = { message: null }
   const panes: {
     id: string
     title: string
@@ -159,7 +162,11 @@ const world = (on: On, pages: Pages, tools = [{ name: LIST, description: '', mcp
   })
   on('ui.panes', () => ({ value: panes }))
   on('ui.status', () => ({ value: undefined }))
-  on('ui.toast', () => ({ value: undefined }))
+  on('ui.toast', (_, e) => {
+    toasts.push(e.text)
+
+    return { value: undefined }
+  })
   on('ui.log', () => ({ value: undefined }))
   on('tool.check', () => ({ decision: 'allow' }))
   on('tool.list', () => ({ value: tools }))
@@ -207,6 +214,9 @@ const world = (on: On, pages: Pages, tools = [{ name: LIST, description: '', mcp
   on('mcp.call', (_, e) => {
     const args = e.args
     reads.push({ server: e.server, tool: e.tool, ...args })
+    if (outage.message !== null) {
+      throw new Error(outage.message)
+    }
     const payload =
       e.tool === 'get_item'
         ? READ
@@ -228,7 +238,7 @@ const world = (on: On, pages: Pages, tools = [{ name: LIST, description: '', mcp
     return { value: { content: [{ type: 'text', text: JSON.stringify(payload) }], isError: false } }
   })
 
-  return { calls, reads, opened, closed, submitted, panes }
+  return { calls, reads, opened, closed, submitted, panes, toasts, outage }
 }
 
 const titles = async (ui: {
@@ -314,6 +324,25 @@ test('Nestor listed under a connector id still fills the pane, which then reads 
     version_hash: 'h1',
     ref: 't1',
   })
+  await ui.unmount()
+})
+
+test('beside a connector, the pane reads through the nestor plugin’s own server', async ($, on) => {
+  const { reads } = world(on, { first: [PLAN, TASK] }, [
+    ...CONNECTOR_TOOLS,
+    { name: LIST, description: '', mcp: true },
+  ])
+  await $.session.start(STARTED)
+  await $.tool.call({
+    tool: `mcp__${CONNECTOR}__list_items`,
+    version_hash: 'h1',
+    scope: SCOPE,
+    view: 'active',
+  })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'refresh' })
+  expect(reads[0]).toMatchObject({ server: SERVER, tool: 'list_items', version_hash: 'h1' })
   await ui.unmount()
 })
 
@@ -456,6 +485,30 @@ test('Rafraîchir rereads the active view by the server’s own call; Backlog re
   await ui.press({ key: 'backlog' })
   expect(await titles(ui)).toEqual([ORPHAN.title])
   expect(reads).toHaveLength(2)
+  await ui.unmount()
+})
+
+test('a server call that rejects says so in a toast and frees the buttons', async ($, on) => {
+  const { reads, toasts, outage } = world(on, { first: [PLAN, TASK] })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  outage.message = 'no server named plugin_nestor_nestor'
+  await ui.press({ key: 'refresh' })
+  expect(toasts).toHaveLength(1)
+  expect(toasts[0]).toMatch(/^Nestor : list_items injoignable sur plugin_nestor_nestor · /)
+  expect(await titles(ui)).toEqual([PLAN.title, TASK.title])
+
+  await ui.press({ key: 'row:t1' })
+  await ui.press({ key: 'detail:t1' })
+  expect(toasts[1]).toMatch(/^Nestor : get_item injoignable sur plugin_nestor_nestor · /)
+  expect((await ui.find({ type: 'Button', key: 'detail:t1' }))?.text).toBe('Lire le détail')
+
+  outage.message = null
+  await ui.press({ key: 'refresh' })
+  expect(reads).toHaveLength(3)
+  expect(toasts).toHaveLength(2)
   await ui.unmount()
 })
 
