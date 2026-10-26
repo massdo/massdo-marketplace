@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $nestor-beta:audit <plan-or-task-id-or-slug|pr-number> [codex|claude] [model] [effort], such as codex sol best max or claude opus best, to have an independent agent audit it; a Plan or Task report is logged in a linked Nestor note."
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
