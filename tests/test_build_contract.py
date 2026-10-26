@@ -44,9 +44,10 @@ class BuildContract(unittest.TestCase):
             with self.subTest(item=response["item"]["type"]):
                 validator.validate(response)
 
-    def test_references_and_explicit_invocation_are_valid(self):
+    def test_references_are_valid_and_an_agent_can_invoke_the_skill(self):
         self.assertEqual(skills.validate_skill(BUILD / "SKILL.md"), [])
         frontmatter = re.match(r"---\n(.*?)\n---", (BUILD / "SKILL.md").read_text(), re.DOTALL)
-        self.assertIs(yaml.safe_load(frontmatter.group(1))["disable-model-invocation"], True)
+        self.assertNotIn("disable-model-invocation", yaml.safe_load(frontmatter.group(1)))
         interface = yaml.safe_load((BUILD / "agents/openai.yaml").read_text())
-        self.assertIs(interface["policy"]["allow_implicit_invocation"], False)
+        self.assertIs(interface["policy"]["allow_implicit_invocation"], True)
+        self.assertIn("$nestor-beta:build", interface["interface"]["default_prompt"])

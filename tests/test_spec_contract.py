@@ -62,8 +62,9 @@ class SpecContract(unittest.TestCase):
             (skill / "references/contract.md").write_text("# Inputs\n")
             self.assertEqual(skills.validate_skill(entry), [])
 
-    def test_explicit_invocation_is_preserved_in_both_clients(self):
+    def test_an_agent_can_invoke_the_skill_in_both_clients(self):
         frontmatter = re.match(r"---\n(.*?)\n---", (SPEC / "SKILL.md").read_text(), re.DOTALL)
-        self.assertIs(yaml.safe_load(frontmatter.group(1))["disable-model-invocation"], True)
-        policy = yaml.safe_load((SPEC / "agents/openai.yaml").read_text())
-        self.assertIs(policy["policy"]["allow_implicit_invocation"], False)
+        self.assertNotIn("disable-model-invocation", yaml.safe_load(frontmatter.group(1)))
+        interface = yaml.safe_load((SPEC / "agents/openai.yaml").read_text())
+        self.assertIs(interface["policy"]["allow_implicit_invocation"], True)
+        self.assertIn("$nestor-beta:spec", interface["interface"]["default_prompt"])
