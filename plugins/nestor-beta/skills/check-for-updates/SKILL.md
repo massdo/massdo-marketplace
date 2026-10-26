@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Run only after a direct user invocation.
 
-Call `probe_plugin_version` with `{ "version_hash": "2ac989639d73a12e8" }`.
+Call `probe_plugin_version` with `{ "version_hash": "20c511c7944ead67f" }`.
 Use this skill's declared hash exclusively, even when another plugin's skill is loaded.
 This checks the Nestor Beta skill loaded in this client only.
 
