@@ -22,6 +22,8 @@ const COMMAND = 'nestor-taches'
 const NESTOR_TOOL =
   /^mcp__(.+)__(list_items|get_item|get_project|update_item|create_item|manage_build)$/i
 const NESTOR_LIST = /^mcp__(.+)__list_items$/i
+/** The server the nestor plugin brings, which the engine connects itself: `plugin:nestor:nestor` as a tool names it. */
+const OWN_SERVER = /^plugin_nestor_/i
 
 const project = atom(
   { plugin: 'nestor-beta', key: 'project' } as const,
@@ -483,7 +485,14 @@ async function resolveSource($: EngineInterface): Promise<NestorSource | null> {
   return null
 }
 
-/** The pane's own call to the Nestor server: no permission dialog, nothing in the transcript. */
+/** The engine's own Nestor server when it runs one; a desktop connector the model reads through is the app's to serve. */
+async function serverOf($: EngineInterface, src: NestorSource): Promise<string> {
+  const servers = (await $.tool.list()).map(tool => NESTOR_LIST.exec(tool.name)?.[1])
+
+  return servers.find(server => server !== undefined && OWN_SERVER.test(server)) ?? src.server
+}
+
+/** The pane's own call to the Nestor server: nothing in the transcript, no dialog; the permission rules still decide. */
 async function callNestor(
   $: EngineInterface,
   tool: string,
@@ -496,7 +505,20 @@ async function callNestor(
 
     return null
   }
-  const ran = await $.mcp.call(src.server, tool, { version_hash: src.versionHash, ...args })
+  const server = await serverOf($, src)
+  // A press handler drops a rejection: without this toast a failed call shows nothing.
+  let ran: Awaited<ReturnType<EngineInterface['mcp']['call']>>
+  try {
+    ran = await $.mcp.call(server, tool, { version_hash: src.versionHash, ...args })
+  } catch (error) {
+    if (!options.isQuiet) {
+      $.ui.toast(
+        `Nestor : ${tool} injoignable sur ${server} · ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+
+    return null
+  }
   if (ran.isError) {
     if (!options.isQuiet) {
       $.ui.toast(`Nestor : ${tool} refusé · ${errorText(ran)}`)
