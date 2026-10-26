@@ -42,7 +42,7 @@ const readAt = atom({ plugin: 'nestor-beta', key: 'readAt' } as const, null as n
 const showBacklog = atom({ plugin: 'nestor-beta', key: 'showBacklog' } as const, false)
 const busy = atom({ plugin: 'nestor-beta', key: 'busy' } as const, null as NestorBusy | null)
 
-/** A theme key, so the pane follows the light or dark theme; null is drawn dim. */
+/** Colors are theme keys, so the pane follows the light or dark theme; null is drawn dim. */
 type Mark = { glyph: string; label: string; color: Color | null }
 type Part = { text: string; color: Color | null }
 
