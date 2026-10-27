@@ -1,5 +1,5 @@
 {
-  "version": "0.10.2",
-  "version_hash": "190cb659247ab83a",
-  "changelog": "The HTML page of /nestor:explain now has a menu on the left that highlights the section you are reading as you scroll.\nOn a phone, the menu becomes a bar at the top of the screen."
+  "version": "0.10.3",
+  "version_hash": "07ffd294240f3c11",
+  "changelog": "Nestor can look at the items linked to a task or note through a short preview of each one, then open only those the request needs, instead of reading every linked item in full."
 }

@@ -10,7 +10,7 @@ every item's `version`.
 No necessary content or matched pair is held:
 
 ```json
-{"tool":"get_item","arguments":{"ref":"brown_turtle","known":null,"scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_item","arguments":{"ref":"brown_turtle","known":null,"scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 The full response supplies the item, tags, relations and its matched pair. Suppose the
@@ -23,7 +23,7 @@ The user asks "Can this task be built now?" and its full plan and pair are still
 Check freshness with that pair:
 
 ```json
-{"tool":"get_item","arguments":{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_item","arguments":{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 If the item has not changed, the short response is:
@@ -42,7 +42,7 @@ The same held revision is sent; do not guess the next revision or replace the pa
 the plugin hash:
 
 ```json
-{"tool":"get_item","arguments":{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_item","arguments":{"ref":"brown_turtle","known":{"version":3,"etag":"revision-3-etag"},"scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 If the current revision is 4, the server returns full content with `item.version: 4` and
@@ -55,7 +55,7 @@ as `expectedVersion` and `expectedEtag`, without a preventive read or a read aft
 Some content is held, some is missing, and a reference is repeated:
 
 ```json
-{"tool":"get_item","arguments":{"ref":["brown_turtle","gray_xerinae","brown_turtle","missing_task"],"known":[{"version":3,"etag":"revision-3-etag"},null,{"version":3,"etag":"revision-3-etag"},null],"scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_item","arguments":{"ref":["brown_turtle","gray_xerinae","brown_turtle","missing_task"],"known":[{"version":3,"etag":"revision-3-etag"},null,{"version":3,"etag":"revision-3-etag"},null],"scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 Each `results[i]` belongs to `ref[i]` and `known[i]`. Preserve the duplicate and handle
@@ -72,13 +72,13 @@ using the returned pair directly under the shared optimistic-mutation rules.
 The user asks how to renew the TLS certificates, without naming an item. Search first:
 
 ```json
-{"tool":"search_items","arguments":{"query":"certificate renewal","scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"search_items","arguments":{"query":"certificate renewal","scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 The search finds the task `teal_falcon`. Read its links before any content:
 
 ```json
-{"tool":"get_relations","arguments":{"ref":"teal_falcon","scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_relations","arguments":{"ref":"teal_falcon","scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 The page holds three links and `hasMore: false`. Two `documents` links are `incoming`: the
@@ -87,7 +87,7 @@ One `related-to` link is `undirected`: the task `olive_moose`, a commercial comp
 certificate providers. Only the two notes answer the request, so read them together:
 
 ```json
-{"tool":"get_item","arguments":{"ref":["coral_heron","amber_wren"],"known":[null,null],"scope":{"mode":"global"},"version_hash":"1190cb659247ab83a"}}
+{"tool":"get_item","arguments":{"ref":["coral_heron","amber_wren"],"known":[null,null],"scope":{"mode":"global"},"version_hash":"107ffd294240f3c11"}}
 ```
 
 The commercial task stays unread. The `version` of a preview never enters `known`: the
