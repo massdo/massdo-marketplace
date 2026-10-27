@@ -42,6 +42,20 @@ matched `{ version, etag }` pair with complete content, otherwise `known: null`.
 a full response replaces them. An unmistakable slug or full id that is not found ends
 the session. An ambiguous short word not found can instead be a one-word idea.
 
+Once an existing item's content is read, read its links. When the catalogue exposes
+`get_relations`, read their first page with the item's id in `ref`, its scope and
+`version_hash`, in the default `compact` projection and without `kinds`: an audit is
+linked to a Task by `documents` and to a Plan by `related-to`. Otherwise, use the
+`relations[]` of the full `get_item` response already held, without another call. Then
+read in one grouped `get_item`, at most five refs with `known: null` unless their content
+and pair are already held, only the linked notes whose title or excerpt bears on this
+work, such as audit reports and recorded decisions; without previews, the most recent
+linked notes, at most five. Leave linked Tasks, hidden neighbors and further pages
+unread. These notes are interview material: the first question starts from the largest
+unknown they leave, such as an open issue of an audit. A preview is not held content and
+gives no pair. Read the links of the entry item only, not those of each member of a
+Plan's subtree.
+
 Read the published MCP contracts before preparing writes: `create_item` and `update_item`
 must support Plans and structured code Tasks, and `update_item` must expose `approve`.
 If a required capability is unavailable, stop before writing and use the closing rule below. Read
