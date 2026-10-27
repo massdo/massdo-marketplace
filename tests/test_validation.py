@@ -334,6 +334,30 @@ class RepositoryValidation(unittest.TestCase):
         self.write(path, "```json\n{invalid}\n```\n")
         self.assertIn("invalid JSON example", self.check(ok=False).stderr)
 
+    def test_nestor_wrapped_examples_are_checked_by_their_tool(self):
+        shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
+        version_hash = "1" + json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]
+        path = "plugins/nestor/skills/nestor/references/wrapped.md"
+        relations = {"ref": "brown_turtle", "scope": {"mode": "global"}, "version_hash": version_hash}
+        accepted = [
+            {"tool": "get_relations", "arguments": relations},
+            {"tool": "get_relations", "result": {"relations": []}},
+        ]
+        for example in accepted:
+            with self.subTest(example=example):
+                self.write(path, "```json\n" + json.dumps(example) + "\n```\n")
+                self.check()
+        refused = [
+            ({"tool": "get_relations", "arguments": relations | {"known": None}}, "must not carry known"),
+            ({"tool": "get_item", "arguments": relations}, "omits known"),
+            ({"tool": "get_relations", "arguments": relations | {"version_hash": "1ffffffffffffffff"}},
+             "version_hash does not match"),
+        ]
+        for example, diagnostic in refused:
+            with self.subTest(example=example):
+                self.write(path, "```json\n" + json.dumps(example) + "\n```\n")
+                self.assertIn(diagnostic, self.check(ok=False).stderr)
+
     def test_nestor_conditional_read_examples_accept_mixed_and_single_arrays(self):
         shutil.copytree(ROOT / "plugins/nestor", self.root / "plugins/nestor")
         version_hash = "1" + json.loads((self.root / "plugins/nestor/plugin-release.json").read_text())["version_hash"]

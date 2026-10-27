@@ -596,7 +596,9 @@ for plugin in plugin_dirs:
 
 # Nestor examples are executable input shapes, even though this repository
 # ships no MCP implementation. Catch obsolete tools and malformed conditional
-# reads in every distributed Markdown resource, including references.
+# reads in every distributed Markdown resource, including references. A
+# {tool, arguments} block is checked as a call of that tool; a bare object
+# with `ref` is a get_item call; a {tool, result} block is a response.
 for name in ("nestor", "nestor-beta"):
     for resource in sorted((PLUGINS / name).rglob("*.md")):
         text = resource.read_text(encoding="utf-8")
@@ -614,7 +616,17 @@ for name in ("nestor", "nestor-beta"):
             if example.get("unchanged") is True:
                 check(not ({"item", "title", "body", "tags", "relations", "etag"} & example.keys()),
                       f"{where}: unchanged example must not repeat content or ETag")
-            if "ref" not in example:
+            if set(example) == {"tool", "arguments"} and isinstance(example["arguments"], dict):
+                tool, example = example["tool"], example["arguments"]
+            elif "ref" in example:
+                tool = "get_item"
+            else:
+                continue
+            check(example.get("version_hash") == plugin_hash_prefixes[name] + published_hashes.get(name, ""),
+                  f"{where}: {tool} example version_hash does not match its plugin release")
+            if tool == "get_relations":
+                check("known" not in example, f"{where}: get_relations example must not carry known")
+            if tool != "get_item" or "ref" not in example:
                 continue
             check("known" in example, f"{where}: get_item example omits known")
             refs, known = example["ref"], example.get("known")
@@ -634,8 +646,6 @@ for name in ("nestor", "nestor-beta"):
                     and type(pair["version"]) is int and pair["version"] >= 1
                     and isinstance(pair["etag"], str) and bool(pair["etag"])
                 ), f"{where}: known needs null or a complete version/ETag pair")
-            check(example.get("version_hash") == plugin_hash_prefixes[name] + published_hashes.get(name, ""),
-                  f"{where}: get_item example version_hash does not match its plugin release")
 
 # --- Verified release history. --------------------------------------------
 
