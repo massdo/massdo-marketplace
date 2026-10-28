@@ -1,5 +1,5 @@
 {
-  "version": "0.14.5",
-  "version_hash": "79081db6cfc07f33",
-  "changelog": "In the Nestor task pane, a click anywhere on a row now opens or folds its detail, with the row's status shown right after its title, and a Replier button at the end of an open detail folds it without scrolling back up to the title. This works for tasks, plans and notes."
+  "version": "0.14.6",
+  "version_hash": "4c8b125c28bbbc43",
+  "changelog": "/nestor-beta:spec reads the notes linked to an existing task or plan, such as earlier audits and recorded decisions, before its first question."
 }

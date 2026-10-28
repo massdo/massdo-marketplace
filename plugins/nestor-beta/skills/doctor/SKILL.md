@@ -17,7 +17,7 @@ Use the Nestor skill for journal operations and the MCP catalogue for tool contr
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "279081db6cfc07f33" }` on every Nestor MCP call.
+Pass `{ "version_hash": "24c8b125c28bbbc43" }` on every Nestor MCP call.
 
 ## 1. Select the project and tasks
 

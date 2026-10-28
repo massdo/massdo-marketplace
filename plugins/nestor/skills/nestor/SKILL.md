@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, chat transmissions, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.10.2"
+  pluginVersion: "0.10.3"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.10.2, hashed as `190cb659247ab83a`.
+This plugin version is 0.10.3, hashed as `07ffd294240f3c11`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1190cb659247ab83a", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "107ffd294240f3c11", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, tell the user that an update is available for the Nestor plugin when `pluginName` is `nestor`, or for the Nestor Beta plugin when `pluginName` is `nestor-beta`. Without `pluginName`, tell the user that an update is available.
@@ -73,6 +73,11 @@ lists, prose, conclusions, answers about code, repeated mentions, and slugs supp
 
 - Use `get_item` when id or slug is known, whatever the read is for. For a single item, pass the received reference as a string in `ref`, together with `known`, `scope` and `version_hash`. Never send `id`, `slug` or `refs` as input keys to this tool. A single field, a status check, and a full read all take the same tool; apply the conditional-read rules below.
 - When several known items need reading or a freshness check, pass an array of 1 to 5 references in `ref` in one `get_item` call, together with `known`, `scope` and `version_hash`. Pass a `known` array of the same length as `ref`, with a matched pair or null at each position. An array always returns `results`, even with one reference. Match `results[i]` with the input `ref[i]` and check the echoed `ref`. Preserve repeated entries. An entry with `error` concerns that position only. Leave out held items that need no freshness check; handle each remaining position's full or unchanged response separately.
+- Use `get_relations` to find the items linked to a known item, such as the notes that document a task or related work. Pass the item's reference in `ref` with the same `scope` and `version_hash`, without `known`, and keep the default `compact` projection. From each neighbor's `type`, `title` and `excerpt`, choose only the neighbors the request needs, then read them in one grouped `get_item` of at most 5 references, with `known: null` at each position unless their content and matched pair are already held from an earlier response. Never read every neighbor in full to find the relevant one. See [the link-reading example](references/item-reads.md#links-of-an-item).
+- `related-to` links are `undirected`. For `documents`, `incoming` on a task is a note that documents it, and `outgoing` on a note is the task it documents.
+- A `hidden` neighbor is archived or trashed and comes as `{id, type}` only. Read it only when the user asks for that work, with `include` naming its state.
+- When the catalogue does not expose `get_relations`, use the `relations[]` of the item's full `get_item` response, without reading the item again when that response is already held. They give each link's kind, ends and types, without title or excerpt. Read the chosen neighbors with the same grouped `get_item`.
+- Use `get_tree` for a hierarchy: a plan with its sub-plans and code tasks, or a task with its subtasks. Never use `get_relations` for it: it reads `related-to` and `documents` links only.
 - Use `search_items` only when the user describes content and no id or slug is known.
 - Use `list_items` for views and unfiltered lists.
 - Treat `recent` as the default view. Query backlog, completed, cancelled, or trashed work only when requested.
@@ -86,6 +91,7 @@ lists, prose, conclusions, answers about code, repeated mentions, and slugs supp
 - A pair from `create_item` or `update_item` identifies the state that operation produced. Send it in `known` only when that state is known; otherwise send null. A retained pair alone, for example after context compaction lost the body, is insufficient for a conditional read.
 - With `unchanged: true`, keep the held item content and matched pair and refresh the project name from the response. This short response supplies no content or ETag; do not follow it with a full read.
 - A full response replaces the held item content and matched pair with `item`, `tags`, `relations` and `etag` from that response. A changed or stale pair normally produces this full response, not a mutation conflict.
+- A `get_relations` preview is never held content: its `excerpt` is not the body, and the `version` of a neighbor or of `item` comes without an ETag. Never send it in `known`, `expectedVersion` or `expectedEtag`, and never complete it with an ETag from another response. Decide on a neighbor's content only after reading it with `get_item`.
 - `item.version` is the item's revision. `version_hash` identifies the plugin release and never substitutes for that revision or the item's ETag.
 
 For first reads, unchanged or changed items and mixed grouped reads, see
