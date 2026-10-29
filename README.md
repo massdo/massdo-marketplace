@@ -243,7 +243,7 @@ Two ways in. **New idea?** Start with `spec`. **Not sure what to do next?** Run 
 - `/nestor-beta:ship` — merges open PRs into `main` (`ship list` only looks)
 - `/nestor-beta:doctor` — offers to close tasks that already shipped
 - `/nestor-beta:clean-task` — tidies up a task
-- `/nestor-beta:audit` — has an independent Codex or Claude agent (`codex sol best max`, `claude opus best`…) audit a task or plan, then logs its report in a note linked to it; give a PR number instead to audit that pull request. An agent can run it too and gets the report back
+- `/nestor-beta:audit` — has a subagent of your client audit a task or plan, then logs its report in a note linked to it; add `cli` for an independent Codex or Claude CLI instead (`cli codex sol best max`, `cli claude opus best`…), or give a PR number to audit that pull request. An agent can run it too and gets the report back
 - `/nestor-beta:check-for-updates` — looks for an update
 - `/nestor-taches` — Claude Code only: a side pane in claude.ai’s style with the project’s tasks as `next-tasks` reads them, a quiet status line after each title, a click anywhere on a row to open or fold its detail, and Spec, Build and Replier buttons in that detail
 
