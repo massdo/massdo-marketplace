@@ -241,9 +241,9 @@ responses, configuration preservation and collisions. Interactive OAuth scenario
 use a pseudo-terminal on macOS and Linux. Windows tests cover noninteractive
 installation and the incomplete/resume result; they do not claim browser consent.
 
-`.github/workflows/test-installer.yml` runs Bash doubles on macOS and Linux and
-PowerShell doubles on Windows with Windows PowerShell and PowerShell 7. WSL uses
-the Linux entry point. These tests exercise orchestration, not a real OAuth server.
+CI runs the Bash doubles on Linux only, inside the Validate workflow. Run the
+PowerShell entry by hand on Windows when `install.ps1` changes. WSL uses the Linux
+entry point. These tests exercise orchestration, not a real OAuth server.
 
 Before publishing the one-command entry points, manually validate a fresh user
 profile on macOS, Linux, WSL and native Windows with each client. Verify browser
