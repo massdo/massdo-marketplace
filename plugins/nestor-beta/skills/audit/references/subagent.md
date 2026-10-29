@@ -11,13 +11,14 @@ Read the other words by their meaning, in any order, case or abbreviation, to ch
 subagent's model and effort:
 
 - Effort: `low`, `medium`, `high`, `xhigh` or `max`.
-- Model: one that the client runs, named by its family or its version, such as `opus` or
-  `opus 5.5` in Claude Code.
+- Model: one that the client runs, named by its family, such as `opus` in Claude Code, or
+  by a version only when the client's subagent mechanism takes that version as such.
 
 A word that names the current client itself, such as `claude` in Claude Code, chooses
 nothing more. Without a model or an effort, the subagent runs with none imposed. Pass the
-chosen model and effort to the subagent when the client's mechanism allows it; a model or
-effort that this mechanism cannot take is a word that the client cannot run.
+chosen model and effort to the subagent as the client's mechanism takes them; a model or
+effort that this mechanism cannot take as such, such as a version where it takes only a
+family name, is a word that the client cannot run.
 
 When a word means nothing here, or names what the client cannot run, such as `codex`, `sol`
 or `astra` in Claude Code, `claude` or `opus` in Codex, or `ultra`, or when the words name
