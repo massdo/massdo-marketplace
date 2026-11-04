@@ -128,8 +128,6 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Use `item_history`, `list_events`, or `project_history` for history.
 - Use `list_tags` and `manage_tag` for tags.
 - Use `get_project`, `search_project`, `manage_project`, and `project_history` for projects.
-- Write a project's `context` as a business summary of at most 200 words: what the project does, for whom, its goal and its essential scope. A word is a run of non-whitespace characters. Never a work log: no session report, technical status, deployment detail, commit, task list or priorities; record those in notes, tasks or transmissions. See [the project context examples](references/project-context.md).
-- When `manage_project` refuses a context of more than 200 words with `INVALID_PATCH` and `details.words`, rewrite a shorter summary and send it again. Never truncate it silently, and never move the excess into another project's context.
 - Use `configure_journal` only for journal configuration. Read the current configuration before changing it.
 - Treat `@@tags` as a tag consultation and `@@config` as a configuration request. Do not create items from them.
 
