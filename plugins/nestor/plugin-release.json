@@ -1,5 +1,5 @@
 {
-  "version": "0.10.4",
-  "version_hash": "bd8db46515d006f9",
-  "changelog": "Nestor keeps a project's context to a business summary of at most 200 words, what the project does, for whom and why, and rewrites it shorter when the server refuses a longer one, instead of filling it with session reports, statuses or priorities."
+  "version": "0.10.5",
+  "version_hash": "bc4c9520a397af86",
+  "changelog": "The guidance for a project's context now comes from the Nestor server: when a context exceeds 200 words, the refusal itself says how to rewrite it as a short business summary and to keep the rest in a note, so the skill no longer repeats that rule."
 }

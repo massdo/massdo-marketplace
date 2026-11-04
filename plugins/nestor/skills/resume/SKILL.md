@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Nestor Resume
 
 Use the Nestor skill for shared MCP procedures, conditional reads and citations.
-Pass `{ "version_hash": "1bd8db46515d006f9" }` on every Nestor MCP call.
+Pass `{ "version_hash": "1bc4c9520a397af86" }` on every Nestor MCP call.
 This workflow is read-only. Start no work and invoke no other skill.
 
 ## Find the transmission

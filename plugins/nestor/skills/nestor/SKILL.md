@@ -2,16 +2,16 @@
 name: nestor
 description: Use the Nestor MCP server as the canonical source whenever the user asks to consult or change tasks, todos, action items, backlog, journal entries, notes, chat transmissions, memos, reminders, history, journal projects, tags, priorities, due dates, pending work, or next actions. Trigger even when the user does not mention Nestor or MCP, including equivalent requests in any language such as asking what to do next, recording something, adding or completing a task, logging progress, checking project status, or finding a past note. Use the activity skill instead for starting, switching, stopping, repairing, or reporting activity time. Do not trigger for generic software logs or unrelated project work unless the user asks to store or retrieve that information in the journal.
 metadata:
-  pluginVersion: "0.10.4"
+  pluginVersion: "0.10.5"
 ---
 
 # Nestor Journal
 
 ## Identify the plugin version
 
-This plugin version is 0.10.4, hashed as `bd8db46515d006f9`.
+This plugin version is 0.10.5, hashed as `bc4c9520a397af86`.
 
-Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1bd8db46515d006f9", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
+Pass `version_hash` on every call to a Nestor MCP tool, like `{ "version_hash": "1bc4c9520a397af86", ... }`. When another loaded skill handles the request, use its declared version_hash. Copy the value exactly, including its prefix.
 
 - After every tool response, read `structuredContent.pluginUpdate` when present.
 - If `pluginUpdate.status` is `update_available`, tell the user that an update is available for the Nestor plugin when `pluginName` is `nestor`, or for the Nestor Beta plugin when `pluginName` is `nestor-beta`. Without `pluginName`, tell the user that an update is available.
@@ -128,8 +128,6 @@ An `antipattern` is an action the agent must avoid at all costs. The first three
 - Use `item_history`, `list_events`, or `project_history` for history.
 - Use `list_tags` and `manage_tag` for tags.
 - Use `get_project`, `search_project`, `manage_project`, and `project_history` for projects.
-- Write a project's `context` as a business summary of at most 200 words: what the project does, for whom, its goal and its essential scope. A word is a run of non-whitespace characters. Never a work log: no session report, technical status, deployment detail, commit, task list or priorities; record those in notes, tasks or transmissions. See [the project context examples](references/project-context.md).
-- When `manage_project` refuses a context of more than 200 words with `INVALID_PATCH` and `details.words`, rewrite a shorter summary and send it again. Never truncate it silently, and never move the excess into another project's context.
 - Use `configure_journal` only for journal configuration. Read the current configuration before changing it.
 - Treat `@@tags` as a tag consultation and `@@config` as a configuration request. Do not create items from them.
 
