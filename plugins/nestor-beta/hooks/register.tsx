@@ -363,6 +363,8 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
     await update($, expanded, () => ({}))
     await update($, showBacklog, () => false)
   }
+  const nextCursor =
+    page.hasMore === true && typeof page.nextCursor === 'string' ? page.nextCursor : null
   await update($, items, all => {
     const kept = isNewProject
       ? []
@@ -373,11 +375,12 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
           )
     const merged = kept.map(one => fresh.find(next => next.id === one.id) ?? one)
     const ids = new Set(merged.map(one => one.id))
+    const joined: NestorEntry[] = [...merged, ...fresh.filter(one => !ids.has(one.id))]
+    const list = [...joined.filter(one => !one.isContext), ...joined.filter(one => one.isContext)]
 
-    return withAncestors([...merged, ...fresh.filter(one => !ids.has(one.id))])
+    // A subtask on a later page may still sit under an ancestor: prune once the view is read whole.
+    return nextCursor === null ? withAncestors(list) : list
   })
-  const nextCursor =
-    page.hasMore === true && typeof page.nextCursor === 'string' ? page.nextCursor : null
   await update($, cursors, all => {
     const rest = Object.fromEntries(
       Object.entries(isNewProject ? {} : all).filter(([held, of]) =>
@@ -512,11 +515,26 @@ async function absorbMutation($: EngineInterface, name: string, call: Loose, pag
 
     return
   }
+  const named = await read($, project)
+  const scope = isRecord(call.scope) ? call.scope : null
+  if (name === 'update_item' && named !== null) {
+    // A row the pane does not hold may come back into the view: only a reread knows its fields.
+    const patch = isRecord(call.patch) ? call.patch : {}
+    const target = isRecord(call.targetScope) ? call.targetScope : null
+    const mayReturn =
+      patch.backlog === false ||
+      patch.trashed === false ||
+      patch.archived === false ||
+      typeof patch.status === 'string'
+    if ((scope?.projectId === named.id && mayReturn) || target?.projectId === named.id) {
+      await refresh($)
+    }
+
+    return
+  }
   if (name !== 'create_item') {
     return
   }
-  const named = await read($, project)
-  const scope = isRecord(call.scope) ? call.scope : null
   const title = typeof call.title === 'string' ? call.title : null
   if (named === null || scope?.projectId !== named.id || title === null) {
     return
