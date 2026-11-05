@@ -845,3 +845,56 @@ test('Rafraîchir keeps an ancestor whose subtask comes on a later page', async 
   expect(await rows(ui)).toEqual(['row:t1', 'row:tP', 'row:t9'])
   await ui.unmount()
 })
+
+test('a task brought back from the hidden backlog in global scope returns to the list', async ($, on) => {
+  const pages: Pages = { first: [PLAN, TASK, ORPHAN] }
+  world(on, pages, undefined, {
+    tool: call =>
+      call.tool === UPDATE
+        ? { item: { id: call.id, type: 'task', version: 2, status: 'todo', slug: 'amber_koala' }, etag: 'e2' }
+        : undefined,
+  })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const GLOBAL = { mode: 'global' }
+
+  pages.first = [PLAN, TASK]
+  await $.tool.call({ tool: UPDATE, version_hash: 'h1', scope: GLOBAL, id: 't2', operation: 'patch', patch: { backlog: true } })
+  expect(await rows(ui)).toEqual(['row:p1', 'row:t1'])
+
+  pages.first = [PLAN, TASK, ORPHAN]
+  await $.tool.call({ tool: UPDATE, version_hash: 'h1', scope: GLOBAL, id: 't2', operation: 'patch', patch: { backlog: false } })
+  expect(await rows(ui)).toEqual(['row:p1', 'row:t1', 'row:t2'])
+  await ui.unmount()
+})
+
+test('a subtask that goes through the backlog comes back under its ancestor read outside the view', async ($, on) => {
+  const SUB = { ...ORPHAN, id: 't9', title: 'sous-tâche', parentTaskId: 'tP' }
+  const PARENT = { id: 'tP', type: 'task', title: 'tâche parente', status: 'completed', priority: 'normal', backlog: false, version: 4 }
+  const pages: Pages = { first: [TASK, SUB] }
+  world(on, pages, undefined, {
+    tool: call =>
+      call.tool === GET
+        ? { results: [{ ref: 'tP', item: PARENT, project: SKYLINE, tags: [], relations: [], etag: 'e' }] }
+        : call.tool === UPDATE
+          ? { item: { id: call.id, type: 'task', version: 2, status: 'todo', slug: 'amber_koala' }, etag: 'e2' }
+          : undefined,
+  })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+  await $.tool.call({ tool: GET, version_hash: 'h1', scope: SCOPE, ref: ['tP'], known: [null] })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tP', 'row:t9'])
+
+  pages.first = [TASK]
+  await $.tool.call({ tool: UPDATE, version_hash: 'h1', scope: SCOPE, id: 't9', operation: 'patch', patch: { backlog: true } })
+  expect(await rows(ui)).toEqual(['row:t1'])
+
+  pages.first = [TASK, SUB]
+  await $.tool.call({ tool: UPDATE, version_hash: 'h1', scope: SCOPE, id: 't9', operation: 'patch', patch: { backlog: false } })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tP', 'row:t9'])
+  await ui.press({ key: 'refresh' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tP', 'row:t9'])
+  await ui.unmount()
+})
