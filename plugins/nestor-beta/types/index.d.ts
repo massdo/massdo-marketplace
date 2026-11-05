@@ -105,7 +105,8 @@ declare module 'claude-code' {
   interface PluginState {
     'nestor-beta': {
       project: NestorProject | null
-      items: NestorEntry[]
+      items: NestorItem[]
+      ancestors: Record<string, NestorItem>
       details: Record<string, NestorDetail>
       expanded: Record<string, true>
       counts: NestorCounts | null

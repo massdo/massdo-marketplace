@@ -32,7 +32,12 @@ const project = atom(
   { plugin: 'nestor-beta', key: 'project' } as const,
   null as NestorProject | null,
 )
-const items = atom({ plugin: 'nestor-beta', key: 'items' } as const, [] as NestorEntry[])
+const items = atom({ plugin: 'nestor-beta', key: 'items' } as const, [] as NestorItem[])
+/** Items read outside the view, kept whatever is listed: the pane draws those a listed row sits under. */
+const ancestors = atom(
+  { plugin: 'nestor-beta', key: 'ancestors' } as const,
+  {} as Record<string, NestorItem>,
+)
 const details = atom(
   { plugin: 'nestor-beta', key: 'details' } as const,
   {} as Record<string, NestorDetail>,
@@ -310,19 +315,20 @@ async function setBusy($: EngineInterface, value: NestorBusy | null) {
   await update($, busy, () => value)
 }
 
-/** Rows a read listed, and the ancestors read outside the view that one of them still sits under. */
-function withAncestors(list: NestorEntry[]): NestorEntry[] {
-  const byId = new Map(list.map(one => [one.id, one]))
-  const needed = new Set<string>()
-  for (const one of list.filter(row => !row.isContext)) {
-    let above = byId.get(parentOf(one) ?? '')
-    while (above !== undefined && !needed.has(above.id)) {
-      needed.add(above.id)
-      above = byId.get(parentOf(above) ?? '')
+/** The listed rows, then each ancestor read outside the view that one of them sits under. */
+function withAncestors(listed: NestorItem[], cache: Record<string, NestorItem>): NestorEntry[] {
+  const ids = new Set(listed.map(one => one.id))
+  const above: NestorEntry[] = []
+  for (const one of listed) {
+    let held = cache[parentOf(one) ?? '']
+    while (held !== undefined && !ids.has(held.id)) {
+      ids.add(held.id)
+      above.push({ ...held, isContext: true })
+      held = cache[parentOf(held) ?? '']
     }
   }
 
-  return list.filter(one => !one.isContext || needed.has(one.id))
+  return [...listed, ...above]
 }
 
 /** The first page of a whole view of one project: no filter, sort, limit or narrower projection. */
@@ -360,6 +366,7 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
     const named = fresh.find(one => one.project?.id === projectId)?.project
     await update($, project, () => ({ id: projectId, name: named?.name ?? projectId }))
     await update($, details, () => ({}))
+    await update($, ancestors, () => ({}))
     await update($, expanded, () => ({}))
     await update($, showBacklog, () => false)
   }
@@ -370,16 +377,11 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
       ? []
       : !isNewRead
         ? all
-        : all.filter(
-            one => one.isContext || (view === 'backlog' ? !isBacklog(one) : isBacklog(one)),
-          )
+        : all.filter(one => (view === 'backlog' ? !isBacklog(one) : isBacklog(one)))
     const merged = kept.map(one => fresh.find(next => next.id === one.id) ?? one)
     const ids = new Set(merged.map(one => one.id))
-    const joined: NestorEntry[] = [...merged, ...fresh.filter(one => !ids.has(one.id))]
-    const list = [...joined.filter(one => !one.isContext), ...joined.filter(one => one.isContext)]
 
-    // A subtask on a later page may still sit under an ancestor: prune once the view is read whole.
-    return nextCursor === null ? withAncestors(list) : list
+    return [...merged, ...fresh.filter(one => !ids.has(one.id))]
   })
   await update($, cursors, all => {
     const rest = Object.fromEntries(
@@ -409,7 +411,7 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
   void $.ui.open({ id: PANE, title: `Nestor · ${named?.name ?? 'tâches'}` })
 }
 
-/** One item read: its detail unless the server kept its content unchanged, and its row when a listed item names it as parent. */
+/** One item read: its detail unless the server kept its content unchanged, its row when listed, else its place among the ancestors. */
 async function absorbItem($: EngineInterface, item: NestorItem & Loose, isContentKept: boolean) {
   if (!isContentKept) {
     const detail: NestorDetail = { readAt: Date.now() }
@@ -422,16 +424,19 @@ async function absorbItem($: EngineInterface, item: NestorItem & Loose, isConten
     await update($, details, all => ({ ...all, [item.id]: detail }))
   }
   const { body: _body, specification: _spec, ...compact } = item
-  await update($, items, all => {
-    if (all.some(one => one.id === item.id)) {
-      return all.map(one =>
-        one.id === item.id ? ({ ...one, ...compact, type: one.type } as NestorEntry) : one,
-      )
-    }
-    const isNamed = all.some(one => parentOf(one) === item.id)
+  if ((await read($, items)).some(one => one.id === item.id)) {
+    await update($, items, all =>
+      all.map(one =>
+        one.id === item.id ? ({ ...one, ...compact, type: one.type } as NestorItem) : one,
+      ),
+    )
 
-    return isNamed ? [...all, { ...(compact as NestorItem), isContext: true as const }] : all
-  })
+    return
+  }
+  await update($, ancestors, all => ({
+    ...all,
+    [item.id]: { ...all[item.id], ...compact } as NestorItem,
+  }))
 }
 
 async function absorbRead($: EngineInterface, page: Loose) {
@@ -462,7 +467,31 @@ const PATCHED = [
   'parentPlanId',
 ] as const
 
-/** A mutation Claude made: the listed row follows it, and a task or plan created in the project joins the list. */
+/** A row as a mutation leaves it: the patch Claude sent, then the status and slug the server answered. */
+function patched(
+  one: NestorItem,
+  patch: Loose,
+  status: NestorTaskStatus | undefined,
+  slug: string | undefined,
+): NestorItem {
+  const next: Loose = { ...one, ...(slug === undefined ? {} : { slug }) }
+  for (const key of PATCHED) {
+    if (key in patch) {
+      if (patch[key] === null) {
+        delete next[key]
+      } else {
+        next[key] = patch[key]
+      }
+    }
+  }
+  if (patch.backlog === true) {
+    delete next.scheduledAt
+  }
+
+  return (one.type === 'task' && status !== undefined ? { ...next, status } : next) as NestorItem
+}
+
+/** A mutation Claude made: the row or ancestor it touches follows it, and a task or plan created in the project joins the list. */
 async function absorbMutation($: EngineInterface, name: string, call: Loose, page: Loose) {
   const item = isRecord(page.item) ? page.item : null
   if (item === null || typeof item.id !== 'string') {
@@ -471,62 +500,53 @@ async function absorbMutation($: EngineInterface, name: string, call: Loose, pag
   const id = item.id
   const status = typeof item.status === 'string' ? (item.status as NestorTaskStatus) : undefined
   const slug = typeof item.slug === 'string' ? item.slug : undefined
-  const all = await read($, items)
-  if (all.some(one => one.id === id)) {
-    // The server answers a mutation with the status and slug alone: the rest comes from what Claude sent.
-    const patch = name === 'update_item' && isRecord(call.patch) ? call.patch : {}
-    const target = isRecord(call.targetScope) ? call.targetScope : null
-    const isGone =
-      patch.trashed === true ||
-      patch.archived === true ||
-      (patch.backlog === true && !(await read($, showBacklog))) ||
-      (target !== null && target.projectId !== (await read($, project))?.id)
-    await update($, items, list => {
-      if (isGone) {
-        return withAncestors(list.filter(one => one.id !== id))
-      }
+  // The server answers a mutation with the status and slug alone: the rest comes from what Claude sent.
+  const patch = name === 'update_item' && isRecord(call.patch) ? call.patch : {}
+  const named = await read($, project)
+  const scope = isRecord(call.scope) ? call.scope : null
+  const target = isRecord(call.targetScope) ? call.targetScope : null
+  const isRemoved =
+    patch.trashed === true ||
+    patch.archived === true ||
+    (target !== null && target.projectId !== named?.id)
+  const isListed = (await read($, items)).some(one => one.id === id)
+  const isCached = (await read($, ancestors))[id] !== undefined
+  if (isCached) {
+    await update($, ancestors, all => {
+      const { [id]: held, ...rest } = all
 
-      return list.map(one => {
-        if (one.id !== id) {
-          return one
-        }
-        const next: Loose = { ...one, ...(slug === undefined ? {} : { slug }) }
-        for (const key of PATCHED) {
-          if (key in patch) {
-            if (patch[key] === null) {
-              delete next[key]
-            } else {
-              next[key] = patch[key]
-            }
-          }
-        }
-        if (patch.backlog === true) {
-          delete next.scheduledAt
-        }
-
-        return (one.type === 'task' && status !== undefined ? { ...next, status } : next) as NestorEntry
-      })
+      return isRemoved || held === undefined
+        ? rest
+        : { ...rest, [id]: patched(held, patch, status, slug) }
     })
+  }
+  if (isListed) {
+    const isGone = isRemoved || (patch.backlog === true && !(await read($, showBacklog)))
+    await update($, items, list =>
+      isGone
+        ? list.filter(one => one.id !== id)
+        : list.map(one => (one.id === id ? patched(one, patch, status, slug) : one)),
+    )
+  }
+  if (isListed || isCached) {
     await update($, details, list => {
       const { [id]: _stale, ...rest } = list
 
       return rest
     })
-
+  }
+  if (isListed) {
     return
   }
-  const named = await read($, project)
-  const scope = isRecord(call.scope) ? call.scope : null
   if (name === 'update_item' && named !== null) {
-    // A row the pane does not hold may come back into the view: only a reread knows its fields.
-    const patch = isRecord(call.patch) ? call.patch : {}
-    const target = isRecord(call.targetScope) ? call.targetScope : null
+    // A row the pane does not list may come back into the view, as Claude's default global scope or the project's: only a reread knows its fields.
     const mayReturn =
       patch.backlog === false ||
       patch.trashed === false ||
       patch.archived === false ||
       typeof patch.status === 'string'
-    if ((scope?.projectId === named.id && mayReturn) || target?.projectId === named.id) {
+    const isPaneScope = scope?.mode === 'global' || scope?.projectId === named.id
+    if ((isPaneScope && mayReturn) || target?.projectId === named.id) {
       await refresh($)
     }
 
@@ -541,7 +561,7 @@ async function absorbMutation($: EngineInterface, name: string, call: Loose, pag
   }
   const parent = (key: string) =>
     typeof call[key] === 'string' ? (call[key] as string) : undefined
-  let entry: NestorEntry | null = null
+  let entry: NestorItem | null = null
   if (item.type === 'task') {
     const priority =
       typeof call.priority === 'string' ? (call.priority as NestorPriority) : 'normal'
@@ -695,7 +715,7 @@ async function toggleBacklog($: EngineInterface) {
     return
   }
   if (await read($, showBacklog)) {
-    await update($, items, all => withAncestors(all.filter(one => !isBacklog(one))))
+    await update($, items, all => all.filter(one => !isBacklog(one)))
     await update($, showBacklog, () => false)
 
     return
@@ -759,6 +779,7 @@ async function openProject($: EngineInterface, name: string): Promise<{ text: st
     const named: NestorProject = { id: found.id, name: found.name }
     await update($, project, () => named)
     await update($, items, () => [])
+    await update($, ancestors, () => ({}))
     await update($, details, () => ({}))
     await update($, expanded, () => ({}))
     await update($, counts, () => null)
@@ -875,7 +896,7 @@ export const register: Register = on => {
     const { Box, Button, Text } = elements
     const Markdown = 'Markdown' in elements ? elements.Markdown : undefined
     const named = await read($, project)
-    const all = await read($, items)
+    const all = withAncestors(await read($, items), await read($, ancestors))
     const known = await read($, details)
     const open = await read($, expanded)
     const total = await read($, counts)
