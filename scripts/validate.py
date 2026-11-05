@@ -593,6 +593,15 @@ for plugin in plugin_dirs:
             declared.group(1) == plugin_hash_prefixes.get(name, "") + published_hashes[name],
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
+    # A hooks module that calls Nestor itself sends the same hash as its skills.
+    for module in sorted((plugin / "hooks").glob("*.tsx")):
+        for declared in re.findall(r"^const VERSION_HASH = '([^']*)'$",
+                                   module.read_text(encoding="utf-8"), re.MULTILINE):
+            check(
+                declared == plugin_hash_prefixes.get(name, "") + published_hashes.get(name, ""),
+                f"{module.relative_to(ROOT)}: VERSION_HASH does not match "
+                f"{name}/plugin-release.json",
+            )
 
 # Nestor examples are executable input shapes, even though this repository
 # ships no MCP implementation. Catch obsolete tools and malformed conditional
