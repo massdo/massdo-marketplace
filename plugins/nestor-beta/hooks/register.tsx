@@ -331,6 +331,19 @@ function withAncestors(listed: NestorItem[], cache: Record<string, NestorItem>):
   return [...listed, ...above]
 }
 
+/** Changes the listed rows; a row that leaves them stays known as an ancestor, since a listed subtask may still sit under it. */
+async function relist($: EngineInterface, change: (all: NestorItem[]) => NestorItem[]) {
+  const before = await read($, items)
+  const ids = new Set((await update($, items, change)).map(one => one.id))
+  const left = before.filter(one => !ids.has(one.id))
+  if (left.length > 0) {
+    await update($, ancestors, all => ({
+      ...all,
+      ...Object.fromEntries(left.map(one => [one.id, one])),
+    }))
+  }
+}
+
 /** The first page of a whole view of one project: no filter, sort, limit or narrower projection. */
 function wholeViewOf(call: Loose): { view: NestorView; projectId: string } | null {
   const scope = isRecord(call.scope) ? call.scope : null
@@ -372,7 +385,7 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
   }
   const nextCursor =
     page.hasMore === true && typeof page.nextCursor === 'string' ? page.nextCursor : null
-  await update($, items, all => {
+  const reread = (all: NestorItem[]) => {
     const kept = isNewProject
       ? []
       : !isNewRead
@@ -382,7 +395,12 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
     const ids = new Set(merged.map(one => one.id))
 
     return [...merged, ...fresh.filter(one => !ids.has(one.id))]
-  })
+  }
+  if (isNewProject) {
+    await update($, items, reread)
+  } else {
+    await relist($, reread)
+  }
   await update($, cursors, all => {
     const rest = Object.fromEntries(
       Object.entries(isNewProject ? {} : all).filter(([held, of]) =>
@@ -521,12 +539,15 @@ async function absorbMutation($: EngineInterface, name: string, call: Loose, pag
     })
   }
   if (isListed) {
-    const isGone = isRemoved || (patch.backlog === true && !(await read($, showBacklog)))
     await update($, items, list =>
-      isGone
-        ? list.filter(one => one.id !== id)
-        : list.map(one => (one.id === id ? patched(one, patch, status, slug) : one)),
+      list.map(one => (one.id === id ? patched(one, patch, status, slug) : one)),
     )
+    const others = (list: NestorItem[]) => list.filter(one => one.id !== id)
+    if (isRemoved) {
+      await update($, items, others)
+    } else if (patch.backlog === true && !(await read($, showBacklog))) {
+      await relist($, others)
+    }
   }
   if (isListed || isCached) {
     await update($, details, list => {
@@ -715,7 +736,7 @@ async function toggleBacklog($: EngineInterface) {
     return
   }
   if (await read($, showBacklog)) {
-    await update($, items, all => all.filter(one => !isBacklog(one)))
+    await relist($, all => all.filter(one => !isBacklog(one)))
     await update($, showBacklog, () => false)
 
     return
