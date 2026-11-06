@@ -15,8 +15,11 @@ import type {
   NestorSource,
   NestorTask,
   NestorTaskStatus,
+  NestorView,
 } from '../types'
 
+/** This plugin's release hash, prefix 2, for a call no captured read lends one to; validate.py keeps it equal to plugin-release.json. */
+const VERSION_HASH = '222ccd33b8468a583'
 const PANE = 'nestor-taches'
 const COMMAND = 'nestor-taches'
 const NESTOR_TOOL =
@@ -29,7 +32,12 @@ const project = atom(
   { plugin: 'nestor-beta', key: 'project' } as const,
   null as NestorProject | null,
 )
-const items = atom({ plugin: 'nestor-beta', key: 'items' } as const, [] as NestorEntry[])
+const items = atom({ plugin: 'nestor-beta', key: 'items' } as const, [] as NestorItem[])
+/** Items read outside the view, kept whatever is listed: the pane draws those a listed row sits under. */
+const ancestors = atom(
+  { plugin: 'nestor-beta', key: 'ancestors' } as const,
+  {} as Record<string, NestorItem>,
+)
 const details = atom(
   { plugin: 'nestor-beta', key: 'details' } as const,
   {} as Record<string, NestorDetail>,
@@ -39,6 +47,11 @@ const expanded = atom(
   {} as Record<string, true>,
 )
 const counts = atom({ plugin: 'nestor-beta', key: 'counts' } as const, null as NestorCounts | null)
+/** The next page of each view read whole and not finished yet: only these cursors continue the pane's view. */
+const cursors = atom(
+  { plugin: 'nestor-beta', key: 'cursors' } as const,
+  {} as Record<string, NestorView>,
+)
 const source = atom({ plugin: 'nestor-beta', key: 'source' } as const, null as NestorSource | null)
 const readAt = atom({ plugin: 'nestor-beta', key: 'readAt' } as const, null as number | null)
 const showBacklog = atom({ plugin: 'nestor-beta', key: 'showBacklog' } as const, false)
@@ -226,9 +239,25 @@ function specificationText(detail: NestorDetail): string {
     return ''
   }
   const lines: string[] = ['', '### Spécification']
+  const listOf = (heading: string, entries: string[] | undefined) => {
+    if (entries?.length) {
+      lines.push('', `**${heading}**`, ...entries.map(entry => `- ${entry}`))
+    }
+  }
   if (spec.context) {
     lines.push('', spec.context)
   }
+  for (const [heading, text] of [
+    ['Objectif', spec.objective],
+    ['Architecture', spec.architecture],
+    ['Données', spec.dataHandling],
+    ['Erreurs', spec.errorHandling],
+  ] as const) {
+    if (text) {
+      lines.push('', `**${heading}**`, '', text)
+    }
+  }
+  listOf('Exigences', spec.requirements)
   if (spec.steps?.length) {
     lines.push('', '**Étapes**')
     spec.steps.forEach((step, index) => {
@@ -236,12 +265,8 @@ function specificationText(detail: NestorDetail): string {
       lines.push(`${index + 1}. ${step.action ?? ''}${check}`)
     })
   }
-  if (spec.doneWhen?.length) {
-    lines.push('', '**Terminé quand**')
-    for (const rule of spec.doneWhen) {
-      lines.push(`- ${rule}`)
-    }
-  }
+  listOf('Terminé quand', spec.doneWhen)
+  listOf('Plan de vérification', spec.verificationPlan)
   if (spec.repository) {
     lines.push('', `Dépôt : ${spec.repository}`)
   }
@@ -290,29 +315,77 @@ async function setBusy($: EngineInterface, value: NestorBusy | null) {
   await update($, busy, () => value)
 }
 
-/** One page of an active or backlog read: a fresh read replaces that view, a cursor page adds to it. */
+/** The listed rows, then each ancestor read outside the view that one of them sits under. */
+function withAncestors(listed: NestorItem[], cache: Record<string, NestorItem>): NestorEntry[] {
+  const ids = new Set(listed.map(one => one.id))
+  const above: NestorEntry[] = []
+  for (const one of listed) {
+    let held = cache[parentOf(one) ?? '']
+    while (held !== undefined && !ids.has(held.id)) {
+      ids.add(held.id)
+      above.push({ ...held, isContext: true })
+      held = cache[parentOf(held) ?? '']
+    }
+  }
+
+  return [...listed, ...above]
+}
+
+/** Changes the listed rows; a row that leaves them stays known as an ancestor, since a listed subtask may still sit under it. */
+async function relist($: EngineInterface, change: (all: NestorItem[]) => NestorItem[]) {
+  const before = await read($, items)
+  const ids = new Set((await update($, items, change)).map(one => one.id))
+  const left = before.filter(one => !ids.has(one.id))
+  if (left.length > 0) {
+    await update($, ancestors, all => ({
+      ...all,
+      ...Object.fromEntries(left.map(one => [one.id, one])),
+    }))
+  }
+}
+
+/** The first page of a whole view of one project: no filter, sort, limit or narrower projection. */
+function wholeViewOf(call: Loose): { view: NestorView; projectId: string } | null {
+  const scope = isRecord(call.scope) ? call.scope : null
+  const isNarrowed =
+    ['filters', 'sort', 'limit', 'views', 'cursors'].some(key => call[key] !== undefined) ||
+    (call.projection !== undefined && call.projection !== 'compact')
+  if (
+    isNarrowed ||
+    (call.view !== 'active' && call.view !== 'backlog') ||
+    scope?.mode !== 'project' ||
+    typeof scope.projectId !== 'string'
+  ) {
+    return null
+  }
+
+  return { view: call.view, projectId: scope.projectId }
+}
+
+/** One page of the pane's view: a whole read replaces that view, a page of its cursors adds to it; any other read leaves it. */
 async function absorbPage($: EngineInterface, server: string, call: Loose, page: Loose) {
   const fresh = Array.isArray(page.items) ? page.items.filter(isItem) : null
-  const view = typeof page.view === 'string' ? page.view : call.view
-  if (fresh === null || (view !== 'active' && view !== 'backlog')) {
+  const cursor = typeof call.cursor === 'string' ? call.cursor : null
+  const isNewRead = cursor === null
+  const whole = cursor === null ? wholeViewOf(call) : null
+  const view = cursor === null ? whole?.view : (await read($, cursors))[cursor]
+  if (fresh === null || view === undefined) {
     return
   }
-  const isNewRead = typeof call.cursor !== 'string'
-  const scope = isRecord(call.scope) ? call.scope : null
-  const projectId = scope && typeof scope.projectId === 'string' ? scope.projectId : null
+  const projectId = whole?.projectId ?? null
   const known = await read($, project)
-  if (isNewRead && projectId === null) {
-    return
-  }
   const isNewProject = projectId !== null && projectId !== known?.id
   if (isNewProject) {
     const named = fresh.find(one => one.project?.id === projectId)?.project
     await update($, project, () => ({ id: projectId, name: named?.name ?? projectId }))
     await update($, details, () => ({}))
+    await update($, ancestors, () => ({}))
     await update($, expanded, () => ({}))
     await update($, showBacklog, () => false)
   }
-  await update($, items, all => {
+  const nextCursor =
+    page.hasMore === true && typeof page.nextCursor === 'string' ? page.nextCursor : null
+  const reread = (all: NestorItem[]) => {
     const kept = isNewProject
       ? []
       : !isNewRead
@@ -322,6 +395,20 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
     const ids = new Set(merged.map(one => one.id))
 
     return [...merged, ...fresh.filter(one => !ids.has(one.id))]
+  }
+  if (isNewProject) {
+    await update($, items, reread)
+  } else {
+    await relist($, reread)
+  }
+  await update($, cursors, all => {
+    const rest = Object.fromEntries(
+      Object.entries(isNewProject ? {} : all).filter(([held, of]) =>
+        cursor === null ? of !== view : held !== cursor,
+      ),
+    )
+
+    return nextCursor === null ? rest : { ...rest, [nextCursor]: view }
   })
   if (view === 'backlog') {
     await update($, showBacklog, () => true)
@@ -342,34 +429,39 @@ async function absorbPage($: EngineInterface, server: string, call: Loose, page:
   void $.ui.open({ id: PANE, title: `Nestor · ${named?.name ?? 'tâches'}` })
 }
 
-/** One item read in full: its detail, and its row when a listed item names it as parent. */
-async function absorbItem($: EngineInterface, item: NestorItem & Loose) {
-  const detail: NestorDetail = { readAt: Date.now() }
-  if (typeof item.body === 'string') {
-    detail.body = item.body
-  }
-  if (isRecord(item.specification)) {
-    detail.specification = item.specification
-  }
-  await update($, details, all => ({ ...all, [item.id]: detail }))
-  const { body: _body, specification: _spec, ...compact } = item
-  await update($, items, all => {
-    if (all.some(one => one.id === item.id)) {
-      return all.map(one =>
-        one.id === item.id ? ({ ...one, ...compact, type: one.type } as NestorEntry) : one,
-      )
+/** One item read: its detail unless the server kept its content unchanged, its row when listed, else its place among the ancestors. */
+async function absorbItem($: EngineInterface, item: NestorItem & Loose, isContentKept: boolean) {
+  if (!isContentKept) {
+    const detail: NestorDetail = { readAt: Date.now() }
+    if (typeof item.body === 'string') {
+      detail.body = item.body
     }
-    const isNamed = all.some(one => parentOf(one) === item.id)
+    if (isRecord(item.specification)) {
+      detail.specification = item.specification
+    }
+    await update($, details, all => ({ ...all, [item.id]: detail }))
+  }
+  const { body: _body, specification: _spec, ...compact } = item
+  if ((await read($, items)).some(one => one.id === item.id)) {
+    await update($, items, all =>
+      all.map(one =>
+        one.id === item.id ? ({ ...one, ...compact, type: one.type } as NestorItem) : one,
+      ),
+    )
 
-    return isNamed ? [...all, { ...(compact as NestorItem), isContext: true as const }] : all
-  })
+    return
+  }
+  await update($, ancestors, all => ({
+    ...all,
+    [item.id]: { ...all[item.id], ...compact } as NestorItem,
+  }))
 }
 
 async function absorbRead($: EngineInterface, page: Loose) {
   const entries = Array.isArray(page.results) ? page.results : [page]
   for (const entry of entries) {
     if (isRecord(entry) && isItem(entry.item)) {
-      await absorbItem($, entry.item as NestorItem & Loose)
+      await absorbItem($, entry.item as NestorItem & Loose, entry.contentUnchanged === true)
     }
   }
 }
@@ -381,7 +473,43 @@ async function absorbProject($: EngineInterface, page: Loose) {
   }
 }
 
-/** A mutation Claude made: the listed row follows it, and a task or plan created in the project joins the list. */
+/** The fields of an update_item patch that a row draws; null clears one. */
+const PATCHED = [
+  'title',
+  'priority',
+  'dueAt',
+  'scheduledAt',
+  'backlog',
+  'parentTaskId',
+  'planId',
+  'parentPlanId',
+] as const
+
+/** A row as a mutation leaves it: the patch Claude sent, then the status and slug the server answered. */
+function patched(
+  one: NestorItem,
+  patch: Loose,
+  status: NestorTaskStatus | undefined,
+  slug: string | undefined,
+): NestorItem {
+  const next: Loose = { ...one, ...(slug === undefined ? {} : { slug }) }
+  for (const key of PATCHED) {
+    if (key in patch) {
+      if (patch[key] === null) {
+        delete next[key]
+      } else {
+        next[key] = patch[key]
+      }
+    }
+  }
+  if (patch.backlog === true) {
+    delete next.scheduledAt
+  }
+
+  return (one.type === 'task' && status !== undefined ? { ...next, status } : next) as NestorItem
+}
+
+/** A mutation Claude made: the row or ancestor it touches follows it, and a task or plan created in the project joins the list. */
 async function absorbMutation($: EngineInterface, name: string, call: Loose, page: Loose) {
   const item = isRecord(page.item) ? page.item : null
   if (item === null || typeof item.id !== 'string') {
@@ -390,40 +518,71 @@ async function absorbMutation($: EngineInterface, name: string, call: Loose, pag
   const id = item.id
   const status = typeof item.status === 'string' ? (item.status as NestorTaskStatus) : undefined
   const slug = typeof item.slug === 'string' ? item.slug : undefined
-  const all = await read($, items)
-  if (all.some(one => one.id === id)) {
-    await update($, items, list =>
-      list.map(one => {
-        if (one.id !== id) {
-          return one
-        }
-        const next = { ...one, ...(slug === undefined ? {} : { slug }) }
+  // The server answers a mutation with the status and slug alone: the rest comes from what Claude sent.
+  const patch = name === 'update_item' && isRecord(call.patch) ? call.patch : {}
+  const named = await read($, project)
+  const scope = isRecord(call.scope) ? call.scope : null
+  const target = isRecord(call.targetScope) ? call.targetScope : null
+  const isRemoved =
+    patch.trashed === true ||
+    patch.archived === true ||
+    (target !== null && target.projectId !== named?.id)
+  const isListed = (await read($, items)).some(one => one.id === id)
+  const isCached = (await read($, ancestors))[id] !== undefined
+  if (isCached) {
+    await update($, ancestors, all => {
+      const { [id]: held, ...rest } = all
 
-        return (
-          one.type === 'task' && status !== undefined ? { ...next, status } : next
-        ) as NestorEntry
-      }),
+      return isRemoved || held === undefined
+        ? rest
+        : { ...rest, [id]: patched(held, patch, status, slug) }
+    })
+  }
+  if (isListed) {
+    await update($, items, list =>
+      list.map(one => (one.id === id ? patched(one, patch, status, slug) : one)),
     )
+    const others = (list: NestorItem[]) => list.filter(one => one.id !== id)
+    if (isRemoved) {
+      await update($, items, others)
+    } else if (patch.backlog === true && !(await read($, showBacklog))) {
+      await relist($, others)
+    }
+  }
+  if (isListed || isCached) {
     await update($, details, list => {
       const { [id]: _stale, ...rest } = list
 
       return rest
     })
+  }
+  if (isListed) {
+    return
+  }
+  if (name === 'update_item' && named !== null) {
+    // A row the pane does not list may come back into the view, as Claude's default global scope or the project's: only a reread knows its fields.
+    const mayReturn =
+      patch.backlog === false ||
+      patch.trashed === false ||
+      patch.archived === false ||
+      typeof patch.status === 'string'
+    const isPaneScope = scope?.mode === 'global' || scope?.projectId === named.id
+    if ((isPaneScope && mayReturn) || target?.projectId === named.id) {
+      await refresh($)
+    }
 
     return
   }
   if (name !== 'create_item') {
     return
   }
-  const named = await read($, project)
-  const scope = isRecord(call.scope) ? call.scope : null
   const title = typeof call.title === 'string' ? call.title : null
   if (named === null || scope?.projectId !== named.id || title === null) {
     return
   }
   const parent = (key: string) =>
     typeof call[key] === 'string' ? (call[key] as string) : undefined
-  let entry: NestorEntry | null = null
+  let entry: NestorItem | null = null
   if (item.type === 'task') {
     const priority =
       typeof call.priority === 'string' ? (call.priority as NestorPriority) : 'normal'
@@ -475,7 +634,7 @@ async function resolveSource($: EngineInterface): Promise<NestorSource | null> {
   for (const tool of tools) {
     const server = NESTOR_LIST.exec(tool.name)?.[1]
     if (server !== undefined && /nestor|journal/i.test(`${server} ${tool.description}`)) {
-      const found: NestorSource = { server, versionHash: 'unknown' }
+      const found: NestorSource = { server, versionHash: VERSION_HASH }
       await update($, source, () => found)
 
       return found
@@ -534,10 +693,11 @@ async function callNestor(
   return page
 }
 
-async function readView($: EngineInterface, view: 'active' | 'backlog') {
+/** Reads the whole view, every page; false when a page fails, the toast saying why. */
+async function readView($: EngineInterface, view: NestorView): Promise<boolean> {
   const named = await read($, project)
   if (named === null) {
-    return
+    return false
   }
   const scope = { mode: 'project', projectId: named.id }
   let cursor: string | undefined
@@ -545,13 +705,15 @@ async function readView($: EngineInterface, view: 'active' | 'backlog') {
     const args: Loose = cursor === undefined ? { scope, view } : { cursor }
     const page = await callNestor($, 'list_items', args)
     if (page === null) {
-      return
+      return false
     }
     const src = await read($, source)
-    await absorbPage($, src?.server ?? '', { ...args, view, version_hash: src?.versionHash }, page)
+    await absorbPage($, src?.server ?? '', { ...args, version_hash: src?.versionHash }, page)
     cursor =
       page.hasMore === true && typeof page.nextCursor === 'string' ? page.nextCursor : undefined
   } while (cursor !== undefined)
+
+  return true
 }
 
 async function refresh($: EngineInterface) {
@@ -574,7 +736,7 @@ async function toggleBacklog($: EngineInterface) {
     return
   }
   if (await read($, showBacklog)) {
-    await update($, items, all => all.filter(one => !isBacklog(one)))
+    await relist($, all => all.filter(one => !isBacklog(one)))
     await update($, showBacklog, () => false)
 
     return
@@ -617,12 +779,15 @@ async function openProject($: EngineInterface, name: string): Promise<{ text: st
     let found = await callNestor($, 'get_project', { name }, { isQuiet: true })
     if (found === null || typeof found.id !== 'string' || typeof found.name !== 'string') {
       const search = await callNestor($, 'search_project', { query: name })
-      const candidates = search && Array.isArray(search.items) ? search.items.filter(isRecord) : []
+      if (search === null) {
+        return { text: `Nestor : recherche du projet « ${name} » impossible.` }
+      }
+      const candidates = Array.isArray(search.items) ? search.items.filter(isRecord) : []
       const names = candidates.map(one => String(one.name ?? one.id))
       if (candidates.length === 0) {
         return { text: `Nestor : aucun projet ne correspond à « ${name} ».` }
       }
-      if (candidates.length > 1 || search?.hasMore === true) {
+      if (candidates.length > 1 || search.hasMore === true) {
         return {
           text: `Nestor : plusieurs projets correspondent à « ${name} » : ${names.join(', ')}.`,
         }
@@ -635,14 +800,21 @@ async function openProject($: EngineInterface, name: string): Promise<{ text: st
     const named: NestorProject = { id: found.id, name: found.name }
     await update($, project, () => named)
     await update($, items, () => [])
+    await update($, ancestors, () => ({}))
     await update($, details, () => ({}))
     await update($, expanded, () => ({}))
     await update($, counts, () => null)
+    await update($, cursors, () => ({}))
+    await update($, readAt, () => null)
     await update($, showBacklog, () => false)
-    await readView($, 'active')
+    const isRead = await readView($, 'active')
     await $.ui.open({ id: PANE, title: `Nestor · ${named.name}` })
 
-    return { text: `Panneau Nestor ouvert sur ${named.name}.` }
+    return {
+      text: isRead
+        ? `Panneau Nestor ouvert sur ${named.name}.`
+        : `Nestor : lecture de ${named.name} impossible.`,
+    }
   } finally {
     await setBusy($, null)
   }
@@ -745,7 +917,7 @@ export const register: Register = on => {
     const { Box, Button, Text } = elements
     const Markdown = 'Markdown' in elements ? elements.Markdown : undefined
     const named = await read($, project)
-    const all = await read($, items)
+    const all = withAncestors(await read($, items), await read($, ancestors))
     const known = await read($, details)
     const open = await read($, expanded)
     const total = await read($, counts)
@@ -904,13 +1076,13 @@ export const register: Register = on => {
       )
     }
 
-    // A section opens wherever the server's order switches between plans and other items.
+    // One section for plans and one for the rest, in the order of their first rows.
     const sections: { isPlan: boolean; rows: JSX.Element[] }[] = []
     for (const one of roots) {
       const isPlan = one.type === 'plan'
-      const last = sections.at(-1)
-      if (last?.isPlan === isPlan) {
-        last.rows.push(rowOf(one))
+      const same = sections.find(section => section.isPlan === isPlan)
+      if (same !== undefined) {
+        same.rows.push(rowOf(one))
       } else {
         sections.push({ isPlan, rows: [rowOf(one)] })
       }

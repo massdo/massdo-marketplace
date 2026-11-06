@@ -70,11 +70,18 @@ export type NestorEntry = NestorItem & { isContext?: true }
 
 export type NestorStep = { action?: string; verification?: string }
 
+/** A code task's specification or a plan's: each holds only its own parts. */
 export type NestorSpecification = {
   context?: string
   steps?: NestorStep[]
   doneWhen?: string[]
   repository?: string
+  objective?: string
+  requirements?: string[]
+  architecture?: string
+  dataHandling?: string
+  errorHandling?: string
+  verificationPlan?: string[]
 }
 
 export type NestorDetail = {
@@ -84,6 +91,9 @@ export type NestorDetail = {
 }
 
 export type NestorCounts = { active: number; backlog: number }
+
+/** A view the pane shows whole. */
+export type NestorView = 'active' | 'backlog'
 
 /** The Nestor server and the plugin hash of the last captured call: what the pane's own calls need. */
 export type NestorSource = { server: string; versionHash: string }
@@ -95,10 +105,12 @@ declare module 'claude-code' {
   interface PluginState {
     'nestor-beta': {
       project: NestorProject | null
-      items: NestorEntry[]
+      items: NestorItem[]
+      ancestors: Record<string, NestorItem>
       details: Record<string, NestorDetail>
       expanded: Record<string, true>
       counts: NestorCounts | null
+      cursors: Record<string, NestorView>
       source: NestorSource | null
       readAt: number | null
       showBacklog: boolean

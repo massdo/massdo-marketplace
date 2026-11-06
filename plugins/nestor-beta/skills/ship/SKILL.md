@@ -19,7 +19,7 @@ once at the start.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "2cebff959578a0f6c" }` on every Nestor MCP call.
+Pass `{ "version_hash": "222ccd33b8468a583" }` on every Nestor MCP call.
 
 ## Modes
 
