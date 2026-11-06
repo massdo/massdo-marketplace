@@ -898,3 +898,43 @@ test('a subtask that goes through the backlog comes back under its ancestor read
   expect(await rows(ui)).toEqual(['row:t1', 'row:tP', 'row:t9'])
   await ui.unmount()
 })
+
+test('a parent sent to the hidden backlog stays above its active subtask, through Rafraîchir too', async ($, on) => {
+  const PARENT = { ...ORPHAN, id: 'tA', title: 'préparer la livraison' }
+  const CHILD = { ...ORPHAN, id: 't9', title: 'vérifier les tests', parentTaskId: 'tA' }
+  const pages: Pages = { first: [TASK, PARENT, CHILD] }
+  world(on, pages, undefined, {
+    tool: call =>
+      call.tool === UPDATE
+        ? { item: { id: call.id, type: 'task', version: 2, status: 'todo', slug: 'amber_koala' }, etag: 'e2' }
+        : undefined,
+  })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tA', 'row:t9'])
+
+  pages.first = [TASK, CHILD]
+  await $.tool.call({ tool: UPDATE, version_hash: 'h1', scope: SCOPE, id: 'tA', operation: 'patch', patch: { backlog: true } })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tA', 'row:t9'])
+  expect(await ui.find({ type: 'Text', text: /^hors vue$/ })).toBeDefined()
+
+  await ui.press({ key: 'refresh' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tA', 'row:t9'])
+  await ui.unmount()
+})
+
+test('hiding the backlog keeps a backlog parent above its active subtask', async ($, on) => {
+  const PARENT = { ...LATER, id: 'tB', title: 'chantier en attente' }
+  const CHILD = { ...ORPHAN, id: 't9', title: 'vérifier les tests', parentTaskId: 'tB' }
+  world(on, { first: [TASK, CHILD], backlog: [PARENT] })
+  await $.session.start(STARTED)
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  await ui.press({ key: 'backlog' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tB', 'row:t9'])
+  await ui.press({ key: 'backlog' })
+  expect(await rows(ui)).toEqual(['row:t1', 'row:tB', 'row:t9'])
+  await ui.unmount()
+})
