@@ -19,7 +19,7 @@ import type {
 } from '../types'
 
 /** This plugin's release hash, prefix 2, for a call no captured read lends one to; validate.py keeps it equal to plugin-release.json. */
-const VERSION_HASH = '222ccd33b8468a583'
+const VERSION_HASH = '281af537c946e10d6'
 const PANE = 'nestor-taches'
 const COMMAND = 'nestor-taches'
 const NESTOR_TOOL =
