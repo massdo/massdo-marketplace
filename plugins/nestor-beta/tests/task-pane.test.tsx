@@ -664,7 +664,7 @@ test('/nestor-taches X says the read failed when the server does not answer, nev
   await ui.unmount()
 })
 
-test('a filtered, sorted, limited, versions-only or foreign-cursor read by Claude leaves the pane’s view as it is', async ($, on) => {
+test('a filtered, sorted, versions-only or foreign-cursor read by Claude leaves the pane’s view as it is', async ($, on) => {
   const FOREIGN = { ...ORPHAN, id: 'zz9', project: { id: 'OTHR', name: 'Autre' } }
   const GLOBAL_COUNTS = { taskViewCounts: { ...COUNTS, active: 57, backlog: 12 } }
   world(on, { first: [PLAN, TASK, ORPHAN] }, undefined, {

@@ -344,11 +344,11 @@ async function relist($: EngineInterface, change: (all: NestorItem[]) => NestorI
   }
 }
 
-/** The first page of a whole view of one project: no filter, sort, limit or narrower projection. */
+/** The first page of a whole view of one project: no filter, sort or narrower projection. A limit only sizes the page; its cursors bring the rest. */
 function wholeViewOf(call: Loose): { view: NestorView; projectId: string } | null {
   const scope = isRecord(call.scope) ? call.scope : null
   const isNarrowed =
-    ['filters', 'sort', 'limit', 'views', 'cursors'].some(key => call[key] !== undefined) ||
+    ['filters', 'sort', 'views', 'cursors'].some(key => call[key] !== undefined) ||
     (call.projection !== undefined && call.projection !== 'compact')
   if (
     isNarrowed ||
