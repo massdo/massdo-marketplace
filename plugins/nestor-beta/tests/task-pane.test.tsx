@@ -327,6 +327,20 @@ test('a next-tasks read fills the pane: the plan, its task beneath, the orphan a
   }
 })
 
+test('a next-tasks read that sets a page size still fills and opens the pane, its next page too', async ($, on) => {
+  const { opened } = world(on, { first: [TASK, PLAN], next: [ORPHAN] })
+  await $.session.start(STARTED)
+
+  // list_items offers limit as a page size, from 1 to 50: a model sets it on its own.
+  await $.tool.call({ tool: LIST, version_hash: 'h1', scope: SCOPE, view: 'active', limit: 50 })
+  await $.tool.call({ tool: LIST, version_hash: 'h1', cursor: 'c1' })
+  expect(opened).toContain('Nestor · Skyline')
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await titles(ui)).toEqual([PLAN.title, TASK.title, ORPHAN.title])
+  await ui.unmount()
+})
+
 const CONNECTOR = 'aa0a02b5-f069-4e28-9150-4f77a92e0089'
 const CONNECTOR_TOOLS = [
   { name: `mcp__${CONNECTOR}__list_items`, description: 'Lists journal items.', mcp: true },
@@ -650,7 +664,7 @@ test('/nestor-taches X says the read failed when the server does not answer, nev
   await ui.unmount()
 })
 
-test('a filtered, sorted, limited, versions-only or foreign-cursor read by Claude leaves the pane’s view as it is', async ($, on) => {
+test('a filtered, sorted, versions-only or foreign-cursor read by Claude leaves the pane’s view as it is', async ($, on) => {
   const FOREIGN = { ...ORPHAN, id: 'zz9', project: { id: 'OTHR', name: 'Autre' } }
   const GLOBAL_COUNTS = { taskViewCounts: { ...COUNTS, active: 57, backlog: 12 } }
   world(on, { first: [PLAN, TASK, ORPHAN] }, undefined, {

@@ -1,5 +1,5 @@
 {
-  "version": "0.15.1",
-  "version_hash": "22ccd33b8468a583",
-  "changelog": "The Nestor task pane opens a project in a new session, says when a read fails, keeps its whole view when Claude reads a filtered or partial list, and follows edits, plan specifications and the ancestors outside the view."
+  "version": "0.15.2",
+  "version_hash": "81af537c946e10d6",
+  "changelog": "The Nestor task pane now opens and fills when Claude reads a project's tasks with a page size, as /nestor-beta:next-tasks does, without waiting for Rafraîchir."
 }

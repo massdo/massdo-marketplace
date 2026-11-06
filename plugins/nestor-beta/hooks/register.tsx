@@ -19,7 +19,7 @@ import type {
 } from '../types'
 
 /** This plugin's release hash, prefix 2, for a call no captured read lends one to; validate.py keeps it equal to plugin-release.json. */
-const VERSION_HASH = '222ccd33b8468a583'
+const VERSION_HASH = '281af537c946e10d6'
 const PANE = 'nestor-taches'
 const COMMAND = 'nestor-taches'
 const NESTOR_TOOL =
@@ -344,11 +344,11 @@ async function relist($: EngineInterface, change: (all: NestorItem[]) => NestorI
   }
 }
 
-/** The first page of a whole view of one project: no filter, sort, limit or narrower projection. */
+/** The first page of a whole view of one project: no filter, sort or narrower projection. A limit only sizes the page; its cursors bring the rest. */
 function wholeViewOf(call: Loose): { view: NestorView; projectId: string } | null {
   const scope = isRecord(call.scope) ? call.scope : null
   const isNarrowed =
-    ['filters', 'sort', 'limit', 'views', 'cursors'].some(key => call[key] !== undefined) ||
+    ['filters', 'sort', 'views', 'cursors'].some(key => call[key] !== undefined) ||
     (call.projection !== undefined && call.projection !== 'compact')
   if (
     isNarrowed ||
