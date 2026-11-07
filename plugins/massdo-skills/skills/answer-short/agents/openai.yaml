@@ -1,7 +1,7 @@
 interface:
   display_name: "Answer Short"
-  short_description: "Réponses courtes en style ASD-STE100 — $massdo-skills:answer-short [budget en mots (défaut 120), ou reset]"
-  default_prompt: "Utilise $massdo-skills:answer-short [budget en mots (défaut 120), ou reset] pour plafonner mes réponses en style ASD-STE100, ou pour lever ce verrou."
+  short_description: "Short replies in ASD-STE100 style — $massdo-skills:answer-short [word budget (default 120), or reset]"
+  default_prompt: "Use $massdo-skills:answer-short [word budget (default 120), or reset] to cap my replies in ASD-STE100 style, or to lift that lock."
 
 policy:
   allow_implicit_invocation: false

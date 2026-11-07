@@ -1,67 +1,69 @@
 ---
 name: answer-short
-description: Rédiger les réponses en anglais technique simplifié ASD-STE100 transposé au français, sous un plafond de 120 mots ou du nombre passé en argument. Le verrou reste actif jusqu'à l'argument reset, qui lève le style et son plafond. À n'appliquer que sur demande explicite de l'utilisateur, via /massdo-skills:answer-short ou une consigne équivalente ; ne jamais s'activer de soi-même, la longueur d'une réponse restant sinon un choix contextuel.
-argument-hint: "[budget en mots (défaut 120), ou reset]"
+description: Write replies under the ASD-STE100 Simplified Technical English rules, applied to the user's language, within a cap of 120 words or the number given as argument. The lock stays active until the reset argument, which lifts the style and its cap. Apply only on the user's explicit request, through /massdo-skills:answer-short or an equivalent instruction; never activate it on your own, since reply length otherwise stays a contextual choice.
+argument-hint: "[word budget (default 120), or reset]"
 disable-model-invocation: true
 ---
 
-N'applique ce skill que sur demande explicite de l'utilisateur, par son invocation ou une consigne équivalente. Ne l'active jamais de toi-même : sans cette demande, la longueur d'une réponse reste un choix contextuel.
+Apply this skill only on the user's explicit request, through its invocation or an equivalent instruction. Never activate it on your own: without that request, reply length stays a contextual choice.
 
-L'argument est le texte écrit après le nom du skill à l'invocation ; selon le client, il peut arriver dans une ligne finale `ARGUMENTS: …`. Pour une consigne équivalente en langage naturel, lis-le dans le message de l'utilisateur. Il décide du mode :
+The argument is the text written after the skill name at invocation; depending on the client, it may arrive on a final `ARGUMENTS: …` line. For an equivalent instruction in natural language, read it from the user's message. It sets the mode:
 
-- `reset` lève le verrou. Va directement à la section « Lever le verrou ».
-- un nombre fixe le plafond en mots.
-- rien du tout vaut 120 mots.
+- `reset` lifts the lock. Go directly to the "Lifting the lock" section.
+- a number sets the word cap.
+- no argument at all means 120 words.
 
-## Portée du verrou
+## Scope of the lock
 
-Applique la contrainte à toutes tes réponses suivantes, jusqu'à ce que l'utilisateur la lève. S'il demande de développer un point, développe-le, puis reprends le format court.
+Apply the constraint to all your following replies, until the user lifts it. If they ask you to expand on a point, expand on it, then return to the short format.
 
-Elle porte sur ce que tu **dis**, pas sur ce que tu **produis** : code, fichiers, commits et documentation gardent une longueur normale. C'est le commentaire autour du livrable qui doit être court, pas le livrable.
+It covers what you **say**, not what you **produce**: code, files, commits and documentation keep a normal length. The commentary around the deliverable must be short, not the deliverable.
 
-Confirme en une ligne.
+Confirm in one line.
 
-## Tenir le budget
+## Keeping the budget
 
-Compte les mots de ta réponse et reste sous le plafond. Le budget couvre le texte que tu adresses à l'utilisateur, blocs de code et sorties d'outils exclus.
+Count the words of your reply and stay under the cap. The budget covers the text you address to the user, code blocks and tool output excluded.
 
-Pour te calibrer : 120 mots font un paragraphe dense, ou cinq à six phrases courtes.
+To calibrate: 120 words make one dense paragraph, or five to six short sentences.
 
-C'est un plafond, pas une cible. Une réponse de trois mots qui répond à la question est un succès, pas un budget sous-utilisé.
+It is a cap, not a target. A three-word reply that answers the question is a success, not an underused budget.
 
-## ASD-STE100 transposé au français
+## ASD-STE100 in the user's language
 
-- **Une idée par phrase**, 20 mots au plus. Une phrase longue cache presque toujours deux idées mal séparées.
-- **Un sujet par paragraphe**, six phrases au plus.
-- **Voix active, présent.** « Le test échoue » plutôt que « un échec est observé au niveau du test ».
-- **Un mot, un sens.** Choisis un terme par concept et garde-le. Alterner « fonction », « méthode » et « helper » pour la même chose force le lecteur à chercher une distinction qui n'existe pas.
-- **Pas de groupe nominal de plus de trois mots.** « la configuration du serveur de cache de session » devient « la configuration du cache de session, côté serveur ».
-- **Impératif pour les instructions.** « Lance `pnpm build` », pas « il faudrait sans doute lancer ».
-- **Garde les articles.** Le style télégraphique (« Build cassé, cause = import manquant ») économise des mots et coûte de la précision. STE demande des phrases complètes et courtes, pas des fragments.
+Write in the user's language and apply these rules to it:
 
-## Escalade
+- **One idea per sentence**, 20 words at most. A long sentence almost always hides two badly separated ideas.
+- **One topic per paragraph**, six sentences at most.
+- **Active voice, present tense.** "The test fails" rather than "a failure is observed at the test level".
+- **One word, one meaning.** Choose one term per concept and keep it. Alternating "function", "method" and "helper" for the same thing makes the reader look for a distinction that does not exist.
+- **No noun group of more than three words.** "the session cache server configuration" becomes "the session cache configuration, on the server side".
+- **Imperative for instructions.** "Run `pnpm build`", not "you should probably run the build".
+- **Keep the articles.** Telegraphic style ("Build broken, cause = missing import") saves words and costs precision. STE asks for complete, short sentences, not fragments.
 
-Trois signaux déclenchent ce format : l'utilisateur dit qu'il ne comprend pas, il repose la même question, ou il demande un audit ou une review. Réponds alors en trois blocs, dans cet ordre et sans autre section :
+## Escalation
+
+Three signals trigger this format: the user says they do not understand, they ask the same question again, or they ask for an audit or a review. Then reply in three blocks, in this order and with no other section. Title the blocks in the user's language, such as ISSUES, EXAMPLE and SOLUTIONS in English or ENJEUX, EXEMPLE and SOLUTIONS in French:
 
 ```
-ENJEUX
-- une ligne par enjeu, le plus important en premier
+ISSUES
+- one line per issue, the most important first
 
-EXEMPLE
-Un seul cas concret, en deux ou trois phrases.
+EXAMPLE
+A single concrete case, in two or three sentences.
 
 SOLUTIONS
-1. une action par ligne, à l'impératif
+1. one action per line, in the imperative
 ```
 
-Pas de chemins de fichiers ni de preuves détaillées, sauf demande. Les règles ASD-STE100 s'appliquent à chaque ligne. Cette réponse peut dépasser le plafond, jusqu'au double, une seule fois : la réponse suivante revient sous le plafond. Le signal vaut pour le point en cours, pas pour toute la conversation.
+No file paths and no detailed evidence, unless asked. The ASD-STE100 rules apply to every line. This reply may exceed the cap, up to double, once: the next reply returns under the cap. The signal holds for the current point, not for the whole conversation.
 
-## Lever le verrou
+## Lifting the lock
 
-Cette section ne s'applique qu'avec l'argument `reset`. Ignore tout ce qui précède.
+This section applies only with the `reset` argument. Ignore everything above.
 
-Le verrou ASD-STE100 et son budget de mots ne s'appliquent plus. Reviens à ton comportement normal : longueur adaptée à la question, structure libre, tableaux et schémas de nouveau autorisés quand ils servent.
+The ASD-STE100 lock and its word budget no longer apply. Return to your normal behavior: a length suited to the question, free structure, and tables and diagrams allowed again when they help.
 
-Garde quand même ce qui était bon à prendre — pas de préambule, pas de récapitulatif redondant, pas de remplissage. Tu lèves le plafond, tu n'abandonnes pas la concision.
+Still keep what was worth keeping — no preamble, no redundant recap, no filler. You lift the cap; you do not give up concision.
 
-Confirme en une ligne.
+Confirm in one line.
