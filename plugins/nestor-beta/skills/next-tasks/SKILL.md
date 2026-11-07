@@ -17,7 +17,7 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "281af537c946e10d6" }` on every Nestor MCP call.
+Pass `{ "version_hash": "23fe162bd751c24e0" }` on every Nestor MCP call.
 
 ## Invocation
 
@@ -109,9 +109,9 @@ mark the presentation partial; never turn the child into an autonomous entry.
 Display each item once in an indented hierarchy. Keep groups in first-encounter order
 and preserve the server's relative order among siblings, including across pages; do not
 sort locally by priority, date or type. A child returned before its parent still appears
-under that parent. In the Skyline example, `scarlet_tiglon (migration du core et de
-l’API publique)` appears under `silver_whitefish (refonte de l’architecture)`, with its
-reduced core/API scope, rather than as an independent workstream.
+under that parent. In the Skyline example, `scarlet_tiglon (core and public API migration)`
+appears under `silver_whitefish (architecture overhaul)`, with its reduced core/API scope,
+rather than as an independent workstream.
 
 For a Task, show its returned status. For a Plan or sub-plan, show its kind, the returned
 calculated `progress` (`not_started`, `in_progress`, `blocked` or `completed`) and its

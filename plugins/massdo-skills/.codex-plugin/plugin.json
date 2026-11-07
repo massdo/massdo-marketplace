@@ -1,6 +1,6 @@
 {
   "name": "massdo-skills",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "Skills for response style, raw text and code analysis: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, extract-signal, and implicit-state-machines.",
   "author": {
     "name": "Dorian Massoulier",
@@ -17,8 +17,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Massdo Skills",
-    "shortDescription": "Outils du marketplace massdo",
-    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, extract the information in raw text while preserving meaning and uncertainty, and find the implicit state machines in code without changing it.",
+    "shortDescription": "Tools from the massdo marketplace",
+    "longDescription": "Cap reply length under the ASD-STE100 Simplified Technical English rules, applied to the user's language, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, extract the information in raw text while preserving meaning and uncertainty, and find the implicit state machines in code without changing it.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [
@@ -26,7 +26,7 @@
     ],
     "websiteURL": "https://github.com/massdo/massdo-marketplace",
     "defaultPrompt": [
-      "Utilise $massdo-skills:answer-short pour plafonner mes réponses.",
+      "Use $massdo-skills:answer-short to cap my replies.",
       "Use $massdo-skills:articulate 100 to write articulately under a word cap.",
       "Use $massdo-skills:chief-of-staff to take the stance.",
       "Use $massdo-skills:extract-signal to clarify this dictation transcript and act on it.",

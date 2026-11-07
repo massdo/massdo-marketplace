@@ -1,4 +1,4 @@
 {
-  "version": "0.12.0",
-  "changelog": "New implicit-state-machines skill: it finds the implicit state machines in code, describes their states, transitions, events and guards with file and line, separates demonstrated defects from risks, and says whether an explicit form would pay off, without changing the code."
+  "version": "0.12.1",
+  "changelog": "answer-short is now written in English and applies the ASD-STE100 rules to the user's language, with the same word cap, escalation format and reset."
 }
