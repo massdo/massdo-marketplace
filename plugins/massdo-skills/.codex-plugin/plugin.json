@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.11.4",
-  "description": "Skills for response style and extracting information from raw text: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, and extract-signal.",
+  "version": "0.12.0",
+  "description": "Skills for response style, raw text and code analysis: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, extract-signal, and implicit-state-machines.",
   "author": {
     "name": "Dorian Massoulier",
     "url": "https://github.com/massdo"
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Massdo Skills",
     "shortDescription": "Outils du marketplace massdo",
-    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, and extract the information in raw text while preserving meaning and uncertainty.",
+    "longDescription": "Borner la longueur des réponses en anglais technique simplifié ASD-STE100 transposé au français, write articulate replies under an optional word cap, take a chief-of-staff stance that decides instead of offering menus, extract the information in raw text while preserving meaning and uncertainty, and find the implicit state machines in code without changing it.",
     "developerName": "Dorian Massoulier",
     "category": "Productivity",
     "capabilities": [
@@ -29,7 +29,8 @@
       "Utilise $massdo-skills:answer-short pour plafonner mes réponses.",
       "Use $massdo-skills:articulate 100 to write articulately under a word cap.",
       "Use $massdo-skills:chief-of-staff to take the stance.",
-      "Use $massdo-skills:extract-signal to clarify this dictation transcript and act on it."
+      "Use $massdo-skills:extract-signal to clarify this dictation transcript and act on it.",
+      "Use $massdo-skills:implicit-state-machines to find the implicit state machines in this code."
     ]
   }
 }

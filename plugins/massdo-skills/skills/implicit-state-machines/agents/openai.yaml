@@ -1,0 +1,7 @@
+interface:
+  display_name: "Implicit State Machines"
+  short_description: "Find implicit state machines in code — $massdo-skills:implicit-state-machines [path]"
+  default_prompt: "Use $massdo-skills:implicit-state-machines [path] to find the implicit state machines in this code, without changing it."
+
+policy:
+  allow_implicit_invocation: true

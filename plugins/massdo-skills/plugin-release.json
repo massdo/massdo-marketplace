@@ -1,4 +1,4 @@
 {
-  "version": "0.11.4",
-  "changelog": "Answer-short gains an escalation format: when the user says they do not understand, asks the same question again or requests an audit, the reply comes in three blocks, ENJEUX, EXEMPLE and SOLUTIONS, and may exceed the word cap once."
+  "version": "0.12.0",
+  "changelog": "New implicit-state-machines skill: it finds the implicit state machines in code, describes their states, transitions, events and guards with file and line, separates demonstrated defects from risks, and says whether an explicit form would pay off, without changing the code."
 }
