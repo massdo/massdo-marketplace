@@ -13,7 +13,7 @@ The server owns approval, selection, ordering, reservation and status transition
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "281af537c946e10d6" }` on every Nestor MCP call.
+Pass `{ "version_hash": "23fe162bd751c24e0" }` on every Nestor MCP call.
 
 ## Arguments
 

@@ -25,7 +25,7 @@ it names, otherwise that of its request.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "281af537c946e10d6" }` on every Nestor MCP call.
+Pass `{ "version_hash": "23fe162bd751c24e0" }` on every Nestor MCP call.
 
 ## Starting point
 
@@ -154,7 +154,7 @@ authorises them. An explicit draft or later approval saves without approving; an
 stop received before saving prevents every write.
 
 After the writes, close under the rule below: the status of the saved work, then
-« Tape detail pour voir le détail. » Use the equivalent in the user's language. When the
+"Type detail to see the detail." in the user's language. When the
 user then answers `detail` or an equivalent, show the saved work without writing again:
 every specification, the complete tree with each node's kind (Plan, sub-plan or code
 Task), justified dependencies, the existing items changed and the fields replaced. Any
@@ -245,11 +245,11 @@ Build.
 ## User messages
 
 Close with one short message: cite the selection using Nestor's item citation rule, say
-that it is saved and give its actual status in plain words, then add « Tape detail pour
-voir le détail. » unless the detail is already shown. The statuses are: ready to build;
-draft, not approved; saved, approval postponed. Add no business summary and no build
-command. This closing replaces Nestor's per-mutation report. When the project was
-inferred from Git rather than named, name it in the status sentence.
+that it is saved and give its actual status in plain words, then add "Type detail to see
+the detail." in the user's language, unless the detail is already shown. The statuses
+are: ready to build; draft, not approved; saved, approval postponed. Add no business
+summary and no build command. This closing replaces Nestor's per-mutation report. When
+the project was inferred from Git rather than named, name it in the status sentence.
 
 When a write fails, say what was not saved or approved and the action needed. Never
 present a failure as a success, duplicate work after it or ask for a replacement

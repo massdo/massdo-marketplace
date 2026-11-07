@@ -1,5 +1,5 @@
 {
-  "version": "0.15.2",
-  "version_hash": "81af537c946e10d6",
-  "changelog": "The Nestor task pane now opens and fills when Claude reads a project's tasks with a page size, as /nestor-beta:next-tasks does, without waiting for Rafraîchir."
+  "version": "0.15.3",
+  "version_hash": "3fe162bd751c24e0",
+  "changelog": "The spec and next-tasks skills are now written entirely in English: spec's closing line and the next-tasks examples no longer carry French text."
 }

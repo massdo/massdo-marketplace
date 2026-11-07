@@ -6,20 +6,20 @@ project with confirmed values.
 ## Read without root filters
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"281af537c946e10d6","scope":{"mode":"project","projectId":"QYQi"},"view":"active"}}
+{"tool":"list_items","arguments":{"version_hash":"23fe162bd751c24e0","scope":{"mode":"project","projectId":"QYQi"},"view":"active"}}
 ```
 
 Read every page. A short next-page reference restores the original scope and view:
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"281af537c946e10d6","cursor":"c1"}}
+{"tool":"list_items","arguments":{"version_hash":"23fe162bd751c24e0","cursor":"c1"}}
 ```
 
 If an ancestor is missing from the collected pages, read its known identity instead of
 searching or listing its descendants. Missing full content uses null in `known`:
 
 ```json
-{"tool":"get_item","arguments":{"version_hash":"281af537c946e10d6","scope":{"mode":"project","projectId":"QYQi"},"ref":["5snR"],"known":[null]}}
+{"tool":"get_item","arguments":{"version_hash":"23fe162bd751c24e0","scope":{"mode":"project","projectId":"QYQi"},"ref":["5snR"],"known":[null]}}
 ```
 
 A held complete ancestor uses its own matched version and ETag instead. Batch at most
@@ -29,8 +29,8 @@ five and follow any further ancestor relation; a failed reference stays unresolv
 
 For a complete active result containing the Task and its Plan, even in that order:
 
-- `silver_whitefish (refonte de l’architecture)` — Plan; progression : en cours ; approbation courante.
-  - `scarlet_tiglon (migration du core et de l’API publique)` — prête à build.
+- `silver_whitefish (architecture overhaul)` — Plan; progress: in progress; current approval.
+  - `scarlet_tiglon (core and public API migration)` — ready to build.
 
 The Task is not a second independent workstream. Its scope remains core/API; the Plan
 holds the wider refactoring objective. A zero Task count cannot hide a returned Plan.
@@ -40,9 +40,9 @@ holds the wider refactoring objective. A zero Task count cannot hide a returned 
 For a building Task whose sub-plan and root Plan are absent from active results, read
 those two ancestors only as context:
 
-- `silver_whitefish (refonte de l’architecture)` — Plan ; contexte hors vue ; progression et approbation renvoyées.
-  - `gray_xerinae (migration de l’API)` — sous-plan ; contexte hors vue ; progression et approbation renvoyées.
-    - `scarlet_tiglon (migration du core et de l’API publique)` — build en cours.
+- `silver_whitefish (architecture overhaul)` — Plan; context outside the view; progress and approval as returned.
+  - `gray_xerinae (API migration)` — sub-plan; context outside the view; progress and approval as returned.
+    - `scarlet_tiglon (core and public API migration)` — building.
 
 Do not expand the ancestors' other children. If an ancestor read fails, show the Task's
 unresolved parent reference and say the presentation is partial. Do not promote it to an
@@ -51,13 +51,13 @@ inventing a Plan.
 
 ## Backlog after an explicit request
 
-> A: Aucune tâche ni aucun Plan actif dans Skyline. Le backlog compte 2 tâches ; veux-tu le voir ?
-> U: Oui.
+> A: No active Task or Plan in Skyline. The backlog holds 2 Tasks; do you want to see it?
+> U: Yes.
 
 Only then read it:
 
 ```json
-{"tool":"list_items","arguments":{"version_hash":"281af537c946e10d6","scope":{"mode":"project","projectId":"QYQi"},"view":"backlog"}}
+{"tool":"list_items","arguments":{"version_hash":"23fe162bd751c24e0","scope":{"mode":"project","projectId":"QYQi"},"view":"backlog"}}
 ```
 
 The returned Tasks remain visible under contextual ancestors. Label the Task as backlog,
