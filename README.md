@@ -267,8 +267,8 @@ Every session of the Claude Code desktop app in one pane, and a jump to the one 
 claude plugin install agent-queue@massdo-marketplace
 ```
 
-- `/open-agent-queue` — opens the **Agents** pane, in Claude Code's colors: yellow for a question, with its text, blue for finished, grey for working. A btw or a fork sits under its session, and **Here:** names the project and session you are in
-- `/next` — opens the session that has waited on you longest: finished ones first, then the questions still unanswered, in turn
+- `/open-agent-queue` — opens the **Agents** pane, in Claude Code's colors: yellow for a question, with its text, blue for finished, grey for working. A btw, a fork or a session Claude started sits under its session, and **Here:** names the project and session you are in
+- `/next` — opens the session that has waited on you longest: finished ones first, then the questions still unanswered, in turn. It skips a btw, a fork or a session Claude started, even one with a question: open it from the pane
 
 Optional: a global shortcut, ⌘@ by default, that does `/next` from any app. Build it once, and again after an update. If no key types `@` on your keyboard, give another one, as in `install.sh '§'`.
 
