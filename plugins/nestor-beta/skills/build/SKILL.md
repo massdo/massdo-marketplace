@@ -87,7 +87,9 @@ For an incomplete plan, stop using the closing rule below; never repair it here.
 
 Read `CLAUDE.md`, `AGENTS.md` and `CONTRIBUTING.md` where present. Their workflow and hooks
 apply. Branch names, commit subjects and PR titles describe changes without Nestor ids or
-slugs. Commit subjects, PR titles and PR descriptions are in English.
+slugs. Commit subjects, PR titles and PR descriptions are in the language these files set
+for commits or pull requests, explicitly or through a rule on all written texts; the
+language they are written in does not count. Without such a rule, they are in English.
 
 1. Check the checkout's `origin` URL, in HTTPS form without `.git`, against the effective
    repository. Confirm a clean working tree; never stash or discard user changes. With
@@ -207,7 +209,7 @@ For the active Task, before completion:
 
 1. Push the common branch without force or history rewriting. Open or update its common PR
    with `gh`, explicitly using `targetBranch` as base when creating it. Keep hooks enabled.
-   Adjust the English title and description to the complete current scope.
+   Adjust the title and description, in that language, to the complete current scope.
 2. End its description with one visible last line, nothing after it:
 
    ```
@@ -218,7 +220,7 @@ For the active Task, before completion:
    and add the Tasks and Plans the changes actually contribute to; dependencies alone do
    not belong. Keep all Nestor references in this footer.
 3. Read back `gh pr view --json url,state,title,body,baseRefName,headRefName,headRefOid`.
-   Verify OPEN, target base, common head branch, English descriptive title and footer.
+   Verify OPEN, target base, common head branch, descriptive title in that language and footer.
    Check the full local commit SHA against the pushed remote head and PR head. Correct
    metadata and reread when needed. A failed push, missing PR or wrong reference stops
    completion. Record the verified `git.pullRequestUrl` on the context with ownership.
