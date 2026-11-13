@@ -562,7 +562,7 @@ if any(path.is_file() for path in installers):
 plugin_hash_prefixes = {"nestor": "1", "nestor-beta": "2"}
 for plugin in plugin_dirs:
     name = plugin.name
-    if name == "massdo-skills":
+    if name in ("massdo-skills", "thoth"):
         for resource in sorted(plugin.rglob("*")):
             if resource.is_file():
                 content = resource.read_text(encoding="utf-8", errors="ignore")
