@@ -17,7 +17,7 @@ only decides which project to read and which tasks to show.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "23fe162bd751c24e0" }` on every Nestor MCP call.
+Pass `{ "version_hash": "26a6cbdc877e45439" }` on every Nestor MCP call.
 
 ## Invocation
 

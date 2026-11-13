@@ -2,7 +2,7 @@
 name: nestor-beta
 description: Extension of the nestor skill. Use whenever code is written from Nestor tasks, and whenever a branch, a commit or a pull request is created or updated for such code, to trace those tasks in the pull request footer and keep their ids and slugs out of branch names, commit subjects and pull request titles. Trigger even when the user mentions neither a footer nor traceability, in any language. Do not trigger for journal operations that involve no code change.
 metadata:
-  pluginVersion: "0.15.3"
+  pluginVersion: "0.15.4"
 ---
 
 # Nestor Beta
@@ -12,7 +12,7 @@ rules that link code to the Nestor tasks it implements.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "23fe162bd751c24e0" }` on every Nestor MCP call.
+Pass `{ "version_hash": "26a6cbdc877e45439" }` on every Nestor MCP call.
 
 ## Trace tasks in the pull request footer
 
@@ -40,4 +40,6 @@ the new ones, and adjust the title when the scope changes.
 A Nestor id or slug never goes in a branch name, a commit subject or a pull request title:
 the footer is the only reference. Each of them describes the change instead — a branch such
 as `feat/csv-export`, a commit subject that says what the commit changes — and the title is
-in English. The repository's own conventions decide the rest.
+in the language that `CLAUDE.md`, `AGENTS.md` or `CONTRIBUTING.md` at the repository root
+set for commits or pull requests, explicitly or through a rule on all written texts, in
+English when they set none. The repository's own conventions decide the rest.
