@@ -1,7 +1,7 @@
 {
   "name": "massdo-skills",
-  "version": "0.12.1",
-  "description": "Skills for response style, raw text and code analysis: short ASD-STE100 answers, articulate replies, a chief-of-staff stance, extract-signal, and implicit-state-machines.",
+  "version": "0.12.2",
+  "description": "Skills for response style, raw text and code analysis: short ASD-STE100 answers, articulate replies, extract-signal, and implicit-state-machines.",
   "author": {
     "name": "Dorian Massoulier"
   },
