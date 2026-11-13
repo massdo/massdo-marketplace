@@ -255,7 +255,6 @@ Changes how your agent talks to you, and reads your code on request. A style sta
 
 - `/massdo-skills:answer-short` — short answers, 120 words max
 - `/massdo-skills:articulate` — full sentences that connect
-- `/massdo-skills:chief-of-staff` — decides instead of handing you a menu
 - `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
 - `/massdo-skills:implicit-state-machines` — finds the state machines your code never declares, checks their transitions and says if an explicit form is worth it; it never edits code (give a path to narrow it)
 

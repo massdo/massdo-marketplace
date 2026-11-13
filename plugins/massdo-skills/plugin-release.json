@@ -1,4 +1,4 @@
 {
-  "version": "0.12.1",
-  "changelog": "answer-short is now written in English and applies the ASD-STE100 rules to the user's language, with the same word cap, escalation format and reset."
+  "version": "0.12.2",
+  "changelog": "chief-of-staff is removed: massdo-skills no longer provides /massdo-skills:chief-of-staff or $massdo-skills:chief-of-staff."
 }
