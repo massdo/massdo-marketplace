@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review open pull requests, check their English title and Nestor Task or Plan footer, and answer first with only the proposed action, such as which ones to merge into main, giving the readable details and each pull request's risk in words on request; then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
+description: Review open pull requests, check their title's language and Nestor Task or Plan footer, and answer first with only the proposed action, such as which ones to merge into main, giving the readable details and each pull request's risk in words on request; then follow the repository's own release procedure. Run only after a direct user invocation, such as /nestor-beta:ship or $nestor-beta:ship; never invoke it autonomously. The optional list argument returns only the PR list in read-only mode. It needs Git, the GitHub CLI and the Nestor MCP server, and only targets main. Without list, every pull request edit, merge, tag, workflow run or publication waits for the user's agreement at that moment.
 argument-hint: "[list]"
 disable-model-invocation: true
 ---
@@ -194,7 +194,12 @@ or a conflict is never a green light.
 A pull request also has to say what it delivers and which Nestor Tasks or Plans it serves.
 Check both on every open pull request, from the `title` and `body` read above.
 
-**Title.** It is in English and carries no Nestor id or slug.
+**Title.** It is in the language that the repository's instruction files set for commits or
+pull requests: read `CLAUDE.md`, `AGENTS.md` and `CONTRIBUTING.md` at the root of the
+checkout, where present, once per invocation. A rule counts when it sets that language
+explicitly or through a rule on all written texts; the language the files are written in,
+or a rule limited to replies or documentation, does not count. Without such a rule, the
+title is in English. It carries no Nestor id or slug.
 
 **Footer.** A pull request that contributes to Nestor Tasks or Plans ends its description
 with one visible line, the last of the description:
@@ -305,7 +310,7 @@ local work only when it blocks the action.
 1. **Header.** One line: the repository and the number of PRs in each state.
 2. **One block per PR.** Its title carries the link and says what the PR does in plain
    words, drawn from the diff and the Nestor items you read — never a word-for-word
-   translation of its English title. Four lines follow: **What it changes**, the effect for
+   translation of its title. Four lines follow: **What it changes**, the effect for
    the user or the product in one sentence; **State**, ready, blocked or out of selection,
    with the cause and the action needed when it is not ready; **Risk**, low, medium or high,
    with its reason in one sentence; **Task**, the Tasks or Plans of its footer, cited with
