@@ -40,4 +40,6 @@ the new ones, and adjust the title when the scope changes.
 A Nestor id or slug never goes in a branch name, a commit subject or a pull request title:
 the footer is the only reference. Each of them describes the change instead — a branch such
 as `feat/csv-export`, a commit subject that says what the commit changes — and the title is
-in English. The repository's own conventions decide the rest.
+in the language that `CLAUDE.md`, `AGENTS.md` or `CONTRIBUTING.md` at the repository root
+set for commits or pull requests, explicitly or through a rule on all written texts, in
+English when they set none. The repository's own conventions decide the rest.
