@@ -1,0 +1,16 @@
+{
+  "name": "thoth",
+  "version": "2.0.0",
+  "description": "Pilote les traductions de Thoth depuis Claude Code : connexion au serveur de l'agence, identité de session, restriction des outils par étape et relevés de consommation.",
+  "author": {
+    "name": "Dorian Massoulier"
+  },
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "Adresse du serveur Thoth",
+      "description": "Adresse du serveur Thoth de l'agence, sans barre finale, par exemple https://thoth.example.org.",
+      "required": true
+    }
+  }
+}

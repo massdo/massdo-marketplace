@@ -50,6 +50,16 @@
         "desktop",
         "macos"
       ]
+    },
+    {
+      "name": "thoth",
+      "source": "./plugins/thoth",
+      "description": "Pilote les traductions de Thoth depuis Claude Code : connexion au serveur de l'agence, identité de session, restriction des outils par étape et relevés de consommation.",
+      "category": "productivity",
+      "tags": [
+        "traduction",
+        "mcp"
+      ]
     }
   ]
 }
