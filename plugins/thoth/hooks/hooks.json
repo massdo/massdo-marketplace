@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/inject-identity.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/inject-identity.mjs\""
           }
         ]
       },
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/restrict-tools.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/restrict-tools.mjs\""
           }
         ]
       }
@@ -36,15 +36,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/remember-step.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/remember-step.mjs\""
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/announce-wait.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/announce-wait.mjs\""
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/wait-step.mjs\"",
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/wait-step.mjs\"",
             "asyncRewake": true,
             "timeout": 7800
           }
@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
           }
         ]
       }
@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/remember-agent-step.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/remember-agent-step.mjs\""
           }
         ]
       }
@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
           }
         ]
       }
@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
+            "command": "thoth_node=\"$HOME/.local/share/thoth/node/bin/node\"; [ -x \"$thoth_node\" ] || thoth_node=node; exec \"$thoth_node\" \"${CLAUDE_PLUGIN_ROOT}/hooks/report-usage.mjs\""
           }
         ]
       }

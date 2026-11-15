@@ -1,0 +1,23 @@
+{
+  "name": "massdo-marketplace",
+  "owner": {
+    "name": "Dorian Massoulier"
+  },
+  "description": "Nestor journal integrations for Claude Code.",
+  "plugins": [
+    {
+      "name": "thoth",
+      "source": {
+        "source": "archive",
+        "url": "https://raw.githubusercontent.com/massdo/massdo-marketplace/main/archives/thoth-2.1.0-acb18db32848.zip",
+        "sha256": "acb18db32848bb3f8ab552471241b7c24105d08898dc4cc7ca2f8243375205f7"
+      },
+      "description": "Pilote les traductions de Thoth depuis Claude Code : connexion au serveur de l'agence, identité de session, restriction des outils par étape et relevés de consommation.",
+      "category": "productivity",
+      "tags": [
+        "traduction",
+        "mcp"
+      ]
+    }
+  ]
+}
