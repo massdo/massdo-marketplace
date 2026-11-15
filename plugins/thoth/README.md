@@ -4,16 +4,18 @@ Le plugin relie Claude Code au serveur Thoth de l'agence. La session pilote du t
 
 ## Prérequis
 
-- Claude Code.
-- Node 22 au moins : les hooks sont des scripts Node. Avec une version plus ancienne, le plugin le signale au démarrage de la session et ses hooks restent inactifs.
+- Claude Code, dans un terminal ou dans l'onglet Code de l'app Claude.
+- Node 22 au moins : les hooks sont des scripts Node. Chaque hook prend d'abord le Node que `/setup` pose dans `~/.local/share/thoth/node/bin/node`, sinon celui du PATH. Avec une version plus ancienne, le plugin le signale au démarrage de la session et ses hooks restent inactifs.
+
+Un Mac qui n'a que l'app Claude n'a ni la commande `claude`, ni Node, ni Git : l'app garde son Claude Code hors du PATH, et sans les outils de développement d'Apple, `git` n'ouvre que la fenêtre qui propose de les installer. L'installation se passe des trois ([ADR 0043](../docs/adr/0043-plugin-installs-without-developer-tools.md)).
 
 ## Installation
 
-Le plugin est publié dans la marketplace publique de l'agence, `massdo-marketplace` (dépôt GitHub `massdo/massdo-marketplace`) : `claude plugin install thoth@massdo-marketplace`. L'installation tient en trois gestes :
+Le plugin est publié dans la marketplace publique de l'agence, `massdo-marketplace` (dépôt GitHub `massdo/massdo-marketplace`). Son catalogue servi en HTTPS, `.claude-plugin/marketplace-http.json`, donne Thoth en archive ZIP, que Claude Code installe sans Git ; le catalogue du dépôt reste valable pour un poste qui a Git. L'installation tient en trois gestes :
 
-1. Ouvrir `<adresse>/install`, page publique où renvoie aussi la page de connexion ; une fois connecté, Installation et la page Flux, tant qu'aucun flux n'existe, la donnent aussi. La section « Installer Thoth dans Claude Code » y donne le prompt « Lance `curl -fsSL <adresse>/setup` et suis les instructions affichées. » et son bouton Copier.
-2. Coller ce prompt dans Claude Code, qui lit `/setup` par curl, tel quel, sans ouvrir de navigateur. La page `/setup`, publique et sans secret, lui donne les commandes : vérifier Node 22 et `claude`, ajouter ou mettre à jour `massdo-marketplace` (sans clé SSH pour GitHub, Claude Code la clone en HTTPS de lui-même), installer `thoth@massdo-marketplace` et poser son adresse par `claude plugin configure thoth@massdo-marketplace --values-stdin`.
-3. Se connecter dans le navigateur : `/setup` fait lancer `claude mcp login plugin:thoth:thoth`, comme décrit ci-dessous, puis une nouvelle session Claude Code donne `/thoth:translate`.
+1. Ouvrir `<adresse>/install`, page publique où renvoie aussi la page de connexion ; une fois connecté, Installation et la page Flux, tant qu'aucun flux n'existe, la donnent aussi. La section « Installer Thoth dans Claude Code » y donne le prompt d'installation et son bouton Copier : il demande d'installer le plugin, d'activer sa mise à jour automatique et, si Node 22 manque, de télécharger le Node officiel, puis de lancer `curl -fsSL <adresse>/setup` et de suivre les instructions affichées.
+2. Coller ce prompt dans Claude Code, qui lit `/setup` par curl, tel quel, sans ouvrir de navigateur. La page `/setup`, publique et sans secret, lui fait lancer Claude Code par `"${CLAUDE_CODE_EXECPATH:-claude}"`, le Claude Code de l'app hors du PATH, sinon la commande `claude` ; poser Node 22 si besoin, téléchargé de nodejs.org et vérifié par son empreinte, sans mot de passe ; ajouter ou mettre à jour `massdo-marketplace` par son catalogue HTTPS ; activer sa mise à jour automatique ; installer `thoth@massdo-marketplace` et poser son adresse par `plugin configure thoth@massdo-marketplace --values-stdin`.
+3. Se connecter dans le navigateur : `/setup` fait lancer `mcp login plugin:thoth:thoth`, comme décrit ci-dessous, puis une nouvelle session Claude Code donne `/thoth:translate`.
 
 ## Connexion au serveur
 
@@ -27,12 +29,14 @@ La page Installation, dans l'interface de Thoth, liste les connexions de Claude 
 
 Depuis la version 2.0.0 du plugin (12 novembre 2026), il se connecte par OAuth, sans jeton ni option `token`, ses hooks s'authentifient par leur session Claude Code, et le skill `replay`, outil de développement, n'est plus dans la version publiée : il reste dans le dépôt et dans la marketplace locale `thoth-dev`. Les skills et l'agent de lot lisent leur procédure sur le serveur après la connexion : le plugin n'en garde que le nom.
 
+Depuis la version 2.1.0 du plugin (15 novembre 2026), `/thoth:resume <flowId>` reprend un flux déjà démarré dans le mode de son lancement ; il lit la procédure de `translate` avec `resume <flowId>`.
+
 Depuis la version 2.0.1 (14 novembre 2026), le hook qui ajoute l'identité autorise lui-même chaque appel à Thoth : en mode de permission auto, Claude Code refusait ces appels, parce que le hook les modifie. Les outils de Thoth ne demandent donc plus de confirmation, dans aucun mode ; les règles de refus des réglages de Claude Code s'appliquent toujours. Avec la version 2.0.0, une session en mode de permission auto ne joint plus Thoth : lancer `claude plugin marketplace update massdo-marketplace`, puis `claude plugin update thoth@massdo-marketplace`, et ouvrir une nouvelle session.
 
 Aucune variable d'environnement n'est à définir sur le poste. Pour changer d'adresse, lancer `/plugin configure thoth@massdo-marketplace`, puis ouvrir une nouvelle session. Sans adresse, le serveur MCP ne se connecte pas et les hooks n'envoient rien : les relevés de consommation attendent sur le poste.
 
 ## Mise à jour du plugin
 
-Activer une fois la mise à jour automatique de `massdo-marketplace`, désactivée par défaut pour une marketplace tierce : dans Claude Code, `/plugin` → Marketplaces → `massdo-marketplace` → Enable auto-update. Une nouvelle version se charge alors à la session suivante ; une session en cours garde la sienne.
+La mise à jour automatique de `massdo-marketplace`, désactivée par défaut pour une marketplace tierce, est activée par `/setup` : `"autoUpdate": true` sur l'entrée `massdo-marketplace` de `extraKnownMarketplaces`, dans `~/.claude/settings.json`. Sur un poste installé avant, relancer `/setup` ou l'activer dans Claude Code : `/plugin` → Marketplaces → `massdo-marketplace` → Enable auto-update. Claude Code met alors le plugin à jour en arrière-plan après le début d'une session, et la nouvelle version se charge à la session suivante ; une session en cours garde la sienne. Chaque publication doit monter la version du plugin : Claude Code ne remplace pas une copie de même version.
 
-Quand une version plus récente existe, le serveur le signale une fois dans la session, qui continue. Quand il refuse le plugin, périmé pour le template du flux ou inconnu, la session lance `claude plugin update thoth@massdo-marketplace`, s'arrête et donne la commande à taper dans une nouvelle session, `/thoth:translate resume <flowId>` pour un flux démarré : l'empreinte du plugin s'écrit au démarrage de la session, et seule une nouvelle session envoie celle de la nouvelle version. Cette consigne vient du serveur, dans le champ `action` de l'avis et du refus : elle change sans republier le plugin ([ADR 0035](../docs/adr/0035-plugin-update-instruction-from-server.md)). L'empreinte ne compte pas les marqueurs que Claude Code écrit à la racine du dossier installé.
+Quand une version plus récente existe, le serveur le signale une fois dans la session, qui continue. Quand il refuse le plugin, périmé pour le template du flux ou inconnu, la session lance `"${CLAUDE_CODE_EXECPATH:-claude}" plugin update thoth@massdo-marketplace`, s'arrête et donne la commande à taper dans une nouvelle session, `/thoth:resume <flowId>` pour un flux démarré : l'empreinte du plugin s'écrit au démarrage de la session, et seule une nouvelle session envoie celle de la nouvelle version. Cette consigne vient du serveur, dans le champ `action` de l'avis et du refus : elle change sans republier le plugin ([ADR 0035](../docs/adr/0035-plugin-update-instruction-from-server.md)). L'empreinte ne compte pas les marqueurs que Claude Code écrit à la racine du dossier installé.
