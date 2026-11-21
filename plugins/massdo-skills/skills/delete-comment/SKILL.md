@@ -84,7 +84,8 @@ comment, the code may be the defect. Leave the comment and report a possible def
 1. Take the inventory. List every comment in the scope with its file and line. Use a
    tokenizer, a parser or the project's linter for each language when one is available,
    since comment markers also appear inside strings and URLs. Record, before any edit, the
-   number of comments and the number of lines that hold only a comment.
+   number of comments, the number of lines that hold only a comment, and the number of
+   lines in the source files of the scope.
 2. Sort every comment into a class.
 3. Act on each comment by its class:
    - functional: keep it;
@@ -92,9 +93,10 @@ comment, the code may be the defect. Leave the comment and report a possible def
    - excuse: file an issue, then delete it;
    - decision record: write it into an ADR, then delete it;
    - unsorted: keep it.
-4. Run the checks the project defines, such as its formatter, linter, type checker, tests
+4. Add the lint rule and its ratchet. When a rule from an earlier pass exists, lower its
+   baseline to the comments that remain.
+5. Run the checks the project defines, such as its formatter, linter, type checker, tests
    and build. A check that passed before the pass must still pass.
-5. Add the lint rule and its ratchet.
 6. Measure, then report.
 
 On a scope too large for one pass, finish whole files: a file is either fully sorted or
@@ -113,6 +115,9 @@ a check requires is functional. This holds for a linter that requires a doc comm
 for one that accepts an empty block only when it holds a comment. In that second case the
 empty block is still an excuse: file its issue and keep the comment. List the restored
 comments in the limits of the report.
+
+The ratchet of an earlier pass is not such a check: it fails until its baseline is lowered,
+which is the expected result of a deletion.
 
 ### Excuse: an issue
 
@@ -150,8 +155,10 @@ comment.
 
 The rule reports every comment in the scope of the pass except the functional ones, even
 where the project's lint covers less code today. It knows a functional comment by its form,
-such as a position in the file or a directive prefix, and exempts only the forms this pass
-kept. The code the pass adds for the rule holds no comment.
+as the tool that reads it defines that form, such as a position in the file or a directive
+prefix. It exempts the forms this pass kept and the other directives of the tools the
+project runs, so a directive used for the first time passes. The code the pass adds for the
+rule holds no comment.
 
 Add it to the linter the project already runs: a built-in rule, a plugin the project can
 accept, or a small custom rule or script in the project's language. Make the command that
@@ -160,18 +167,20 @@ second lint tool or a second pipeline for it.
 
 When comments remain in the scope, add a ratchet:
 
-- a baseline file under version control records, for each file, the number of comments
-  the rule reports;
-- the check fails when a file holds more comments than its baseline, and when a file absent
-  from the baseline holds any;
-- the check also fails when a file holds fewer comments than its baseline, and names the
-  command that lowers the baseline, so a deleted comment cannot come back.
+- a baseline file under version control records, for each file, the text of each comment
+  the rule reports and the number of times it occurs. A count for each file is not enough:
+  a new comment could take the place of a deleted one;
+- the check fails on a comment that the baseline does not hold, and on one that occurs
+  more often than the baseline records;
+- the check also fails when the baseline holds a comment that is gone, and names the
+  command that lowers the baseline, so a deleted comment cannot come back. That command
+  only removes entries.
 
 Do not build the ratchet from inline suppression comments: they add what the rule bans.
 When no comment remains, the plain rule is enough and no baseline is needed.
 
-When a rule from an earlier pass exists, keep it and lower its baseline. Widen its scope
-only if this pass covered more code.
+When a rule from an earlier pass exists, keep it and lower its baseline before the project
+checks run. Widen its scope only if this pass covered more code.
 
 Prove the rule works. Add a comment to a file in the scope and confirm the check fails,
 then remove the comment and confirm the check passes.
@@ -203,7 +212,7 @@ number that remain. Then give:
   that could not be filed, with its text;
 - **ADRs**: each ADR written or completed, with its path and the decision in one line;
 - **lint rule**: where it is declared, the command that runs it, the baseline file and the
-  count it records, and the result of the proof;
+  number of comments it records, and the result of the proof;
 - **lines of code**: the three figures from "Measuring";
 - **possible defects**: each comment that contradicts the code, with `file:line`;
 - **unsorted**: the comments left in place, grouped by reason when there are many;
