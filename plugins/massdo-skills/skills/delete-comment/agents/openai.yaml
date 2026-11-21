@@ -1,0 +1,7 @@
+interface:
+  display_name: "Delete Comment"
+  short_description: "Sort and delete code comments, then ban them — $massdo-skills:delete-comment [path]"
+  default_prompt: "Use $massdo-skills:delete-comment [path] to sort every code comment, delete the empty ones, file issues for hacks, move decisions into ADRs and add a lint rule with a ratchet."
+
+policy:
+  allow_implicit_invocation: false

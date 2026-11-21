@@ -251,12 +251,13 @@ Behind the scenes, `nestor-beta` signs your pull requests with a `nestor tasks:`
 
 ### massdo-skills · for style
 
-Changes how your agent talks to you, and reads your code on request. A style stays on until `reset`.
+Changes how your agent talks to you, and reads or cleans your code on request. A style stays on until `reset`.
 
 - `/massdo-skills:answer-short` — short answers, 120 words max
 - `/massdo-skills:articulate` — full sentences that connect
 - `/massdo-skills:extract-signal` — sorts raw text, then acts on it (`raw` returns the sorted text only)
 - `/massdo-skills:implicit-state-machines` — finds the state machines your code never declares, checks their transitions and says if an explicit form is worth it; it never edits code (give a path to narrow it)
+- `/massdo-skills:delete-comment` — sorts every code comment, deletes the ones that say nothing, turns each excused hack into an issue and each decision into an ADR, then adds a lint rule so comments can only go down (give a path to narrow it)
 
 ### agent-queue · for Claude Code on a Mac
 

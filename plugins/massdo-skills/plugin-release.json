@@ -1,4 +1,4 @@
 {
-  "version": "0.12.2",
-  "changelog": "chief-of-staff is removed: massdo-skills no longer provides /massdo-skills:chief-of-staff or $massdo-skills:chief-of-staff."
+  "version": "0.13.0",
+  "changelog": "New skill delete-comment: /massdo-skills:delete-comment [path] sorts every code comment, deletes the tautologies and the stale ones, files an issue for each hack a comment excused, moves each decision into an ADR, and adds a lint rule with a ratchet."
 }
