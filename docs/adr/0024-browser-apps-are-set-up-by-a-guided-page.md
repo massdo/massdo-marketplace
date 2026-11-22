@@ -1,8 +1,8 @@
 # Browser apps are set up from their own page, with a guide
 
-claude.ai and ChatGPT have no command line: Nestor is added from their own page. The installer cannot read their state and cannot check what the browser did. For these apps the wizard shows the steps, offers to open the page, and ends the app with a guided result. The menu always offers them, unchecked.
+claude.ai and ChatGPT have no command line: Nestor is added from their own page. The installer cannot read their state and cannot check what the browser did. For these apps the wizard shows the steps and offers to open the page. The menu always offers them, unchecked.
 
-In `install.sh` the summary shows the guided result.
+In `install.sh` the app ends with a guided result, which the summary shows. In `install.ps1`, `Show-Guide` ends with exit code 0.
 
 Code:
 
