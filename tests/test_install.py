@@ -1,4 +1,3 @@
-"""Exercise the installer with isolated CLI doubles, never real accounts."""
 import json
 import os
 import re
@@ -53,7 +52,6 @@ class Installer(unittest.TestCase):
                            'target.parent.mkdir(parents=True)\n'
                            'shutil.copytree(source, target)\n')
             git.chmod(0o755)
-            # The browser apps offer to open a page: the opener only records the call.
             for opener in ('open', 'xdg-open'):
                 double = self.bin / opener
                 double.write_text('#!/usr/bin/env python3\n'
@@ -562,8 +560,6 @@ function Invoke-WebRequest {
         self.assert_no_mutations()
 
     def test_codex_inventory_names_the_marketplace(self):
-        # Without a marketplace name, Codex also refreshes its remote plugin
-        # catalog, which exceeded the inventory time budget on a cold cache.
         self.run_installer('codex')
         inventories = [call[1:] for call in self.calls()
                        if call[1:3] == ['plugin', 'list'] and '--help' not in call]
@@ -744,7 +740,6 @@ function Invoke-WebRequest {
     def test_menu_offers_the_browser_apps_without_any_installed_app(self):
         for client in ('codex', 'claude', 'cursor-agent'):
             (self.bin / client).unlink()
-        # Only the doubles and the system tools remain, so no real app is found.
         (self.bin / 'jq').symlink_to(shutil.which('jq'))
         self.env['PATH'] = os.pathsep.join([str(self.bin), os.path.dirname(sys.executable), '/usr/bin', '/bin'])
         prompt = 'Where should Nestor be installed'

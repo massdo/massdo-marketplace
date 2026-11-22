@@ -15,7 +15,6 @@ cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 cursor_mcp="$HOME/.cursor/mcp.json"
 cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
 
-# A spinner is gum spin waiting for a flag file; stopping it creates the file.
 spinner_start() {
     [ -n "$gum_bin" ] && [ "$terminal" = true ] || return 0
     spinner_flag="$scratch/spinner-$$-$RANDOM"
@@ -63,7 +62,6 @@ ensure_jq() {
     chmod 700 "$jq_bin"
 }
 
-# Same pinned menu tool as install.sh; only needed to ask which apps to clean.
 ensure_gum() {
     if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
         gum_bin=$(command -v gum)
@@ -91,8 +89,6 @@ ensure_gum() {
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
 
-# Keystrokes typed while the apps were being checked would otherwise reach the
-# menu as answers; they are discarded first.
 flush_terminal_input() {
     local junk timeout=1
     [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.2
@@ -131,7 +127,6 @@ client_icon() {
     esac
 }
 
-# Removes the ~/.cursor/mcp.json entry only when install.sh added it.
 cursor_remove_server() {
     local updated
     [ -f "$cursor_server_marker" ] && [ -f "$cursor_mcp" ] || return 0
@@ -151,7 +146,6 @@ add_client() {
     clients+=("$1")
 }
 
-# One line per app for the menu, read without changing anything.
 inventory() {
     local target=$1 file
     case "$target" in
@@ -205,7 +199,6 @@ EOT
     fi
 }
 
-# Runs in a subshell per app: fail ends that app only.
 remove_client() {
     client=$1
     scratch="$scratch/$client"

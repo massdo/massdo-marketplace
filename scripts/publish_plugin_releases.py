@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-"""Publish current plugin releases and their verified history to the journal server."""
-
 import json
 import os
 import sys
@@ -14,7 +12,6 @@ from plugin_release_history import load_history
 
 
 ROOT = Path(__file__).resolve().parent.parent
-# The independent style plugin is released through manifests, not the journal.
 RELEASE_NAMES = tuple(
     sorted(path.parent.name for path in (ROOT / "plugins").glob("*/plugin-release.json")
            if path.parent.name != "massdo-skills")

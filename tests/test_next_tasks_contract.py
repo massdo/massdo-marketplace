@@ -1,8 +1,3 @@
-"""Check documented requests against the captured MCP catalogue, not an agent.
-
-MCP shapes come from client.listTools() on an isolated Journal server.
-"""
-
 import json
 import re
 import unittest

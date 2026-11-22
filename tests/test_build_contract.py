@@ -1,9 +1,3 @@
-"""Validate Build documentation inputs and outputs, not server business rules.
-
-Selection, ownership and progression behavior belongs to Journal's focused tests.
-The captured schemas come from client.listTools(), shared with the Spec checks.
-"""
-
 import json
 import re
 import unittest

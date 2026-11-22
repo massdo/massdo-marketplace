@@ -1,5 +1,3 @@
-"""Check the invocation policy that the delete-comment skill ships."""
-
 import re
 import unittest
 

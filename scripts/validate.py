@@ -25,8 +25,6 @@ PLUGINS = ROOT / "plugins"
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 VERSION_HASH = re.compile(r"[0-9a-f]{16}")
 
-# Root catalog -> how that ecosystem spells a plugin's entry name and source
-# path. Kimi Code names its entries `id` where the others use `name`.
 CATALOGS = {
     "codex": (ROOT / ".agents" / "plugins" / "marketplace.json",
               lambda entry: entry["name"], lambda entry: entry["source"]["path"]),
@@ -38,7 +36,6 @@ CATALOGS = {
              lambda entry: entry["id"], lambda entry: entry["source"]),
 }
 
-# Ecosystem -> the manifest a plugin must ship to appear in that catalog.
 MANIFESTS = {
     "codex": ".codex-plugin/plugin.json",
     "claude": ".claude-plugin/plugin.json",
@@ -46,9 +43,6 @@ MANIFESTS = {
     "kimi": ".kimi-plugin/plugin.json",
 }
 
-# Codex parses its catalog into a Rust enum: an unknown variant rejects the
-# whole file, so the marketplace stops being addable at all.
-# codex-rs/core-plugins/src/marketplace.rs
 CODEX_POLICY = {
     "installation": {"AVAILABLE", "NOT_AVAILABLE"},
     "authentication": {"ON_INSTALL", "ON_USE"},
@@ -68,7 +62,6 @@ def read_json(path: Path) -> dict:
 
 
 def read_json_at(ref: str, path: Path) -> dict | None:
-    """Read a release from an already resolved commit; allow new plugins."""
     relative = path.relative_to(ROOT).as_posix()
     listed = subprocess.run(
         ["git", "ls-tree", "--name-only", ref, "--", relative],
@@ -93,8 +86,6 @@ def read_json_at(ref: str, path: Path) -> dict | None:
     return document
 
 
-# A release is published by the file tree alone, so every check below reads the
-# tree. Resolve the baseline once so a missing commit never disables checks.
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--baseline", metavar="git-ref")
 parser.add_argument("--require-release", action="store_true",
@@ -129,8 +120,6 @@ if args.require_release:
 
 plugin_dirs = sorted(p for p in PLUGINS.iterdir() if p.is_dir())
 check(plugin_dirs, "plugins/ holds no plugin")
-
-# --- Every catalog entry points at a plugin that exists and can serve it. ----
 
 for ecosystem, (catalog_path, name_of, source_of) in CATALOGS.items():
     catalog = read_json(catalog_path)
@@ -168,10 +157,6 @@ for ecosystem, (catalog_path, name_of, source_of) in CATALOGS.items():
                     f"{sorted(allowed)} — an unknown value rejects the catalog",
                 )
 
-# --- Each plugin is internally coherent. ------------------------------------
-
-# Plugin name -> the hash its plugin-release.json publishes. Filled below, read
-# by the pass that checks the hashes skills hard-code.
 published_hashes: dict[str, str] = {}
 plugin_skills: dict[str, set[str]] = {}
 
@@ -184,10 +169,6 @@ for plugin in plugin_dirs:
     }
     check(manifests, f"{name}: no ecosystem manifest, the plugin is unreachable")
 
-    # Claude Code falls back to the Git commit SHA when a manifest pins no
-    # version, so a missing version there would drift from Codex, Cursor and
-    # Kimi Code, which pin. One shared number releases the four ecosystems
-    # at once.
     versions: dict[str, object] = {}
     for ecosystem, manifest in manifests.items():
         check(
@@ -206,12 +187,6 @@ for plugin in plugin_dirs:
         f"{name}: manifests disagree on the version: {versions}",
     )
 
-    # Every release document agrees with its manifests. The independent style
-    # plugin keeps version and changelog without a journal identity hash.
-    #
-    # The document itself is the trigger, not a namesake skill: a plugin can
-    # publish a release without shipping a skill named after it. A namesake
-    # skill still requires one, since that skill *is* the installable plugin.
     agreed = next(iter(set(versions.values())), None)
     namesake_skill = plugin / "skills" / name / "SKILL.md"
     release_path = plugin / "plugin-release.json"
@@ -269,8 +244,6 @@ for plugin in plugin_dirs:
                     f"{len(changelog_lines)} non-empty lines, expected 1 to 3",
                 )
 
-            # The changelog is what a client shows for the new version. A
-            # bump that keeps the previous text describes the wrong release.
             published = (
                 read_json_at(BASELINE, release_path)
                 if BASELINE is not None
@@ -298,8 +271,6 @@ for plugin in plugin_dirs:
                     f"{name}: version {published.get('version')!r} becomes "
                     f"{release.get('version')!r} but the changelog is unchanged",
                 )
-                # The hash is what the server compares. A bump that keeps
-                # it tells outdated clients they are current.
                 check(
                     name == "massdo-skills"
                     or published.get("version") == release.get("version")
@@ -313,9 +284,6 @@ for plugin in plugin_dirs:
     if namesake_skill.is_file():
         skill_text = namesake_skill.read_text(encoding="utf-8")
         if name == "nestor":
-            # The antipatterns are declared once, as the bullets of the body's
-            # `## antipattern` section: the body is what a client injects, and
-            # the frontmatter keeps the portable Agent Skills fields only.
             section = re.search(
                 r"^## antipattern\n(?P<entries>.*?)(?=^## |\Z)",
                 skill_text,
@@ -377,8 +345,6 @@ for plugin in plugin_dirs:
                 in skill_text,
                 "nestor: skill drops the empty-conflict get_item fallback",
             )
-        # pluginVersion belongs to this repository, not to Agent Skills, so it
-        # lives in the metadata map, whose values are strings.
         frontmatter = re.match(r"^---\n(?P<body>.*?)\n---\n", skill_text, re.DOTALL)
         plugin_version = None
         if frontmatter is not None:
@@ -411,12 +377,9 @@ for plugin in plugin_dirs:
         )
 
 
-    # A path a manifest declares must resolve, or the ecosystem loads nothing.
     for ecosystem, manifest in manifests.items():
         for key in ("skills", "commands", "mcpServers", "hooks", "agents", "rules"):
             value = manifest.get(key)
-            # Kimi Code declares mcpServers as an inline server map, not as
-            # a path to a file the way Codex and Cursor do.
             if isinstance(value, dict):
                 continue
             for declared in [value] if isinstance(value, str) else (value or []):
@@ -427,12 +390,6 @@ for plugin in plugin_dirs:
                     f"{name}: {ecosystem} manifest declares {key}={declared}, missing",
                 )
 
-    # A skill is reached one way: by its own name. A command wrapper that
-    # inlines a skill gives the same instructions a second entry point, which
-    # Claude Code then counts twice in the menu and in `plugin details`, while
-    # Codex never sees it at all. The directory is checked too: Cursor and
-    # Claude Code find commands by convention, so dropping the declaration
-    # without dropping the files would quietly restore the duplicate.
     for ecosystem, manifest in manifests.items():
         check(
             manifest.get("commands") is None,
@@ -445,8 +402,6 @@ for plugin in plugin_dirs:
         "it inlines instead of adding a surface",
     )
 
-    # Cursor reads mcp.json, Claude Code and Codex read .mcp.json. Two files,
-    # one server: a drift here sends one ecosystem at a dead endpoint.
     dotted, plain = plugin / ".mcp.json", plugin / "mcp.json"
     if dotted.is_file() and plain.is_file():
         check(
@@ -454,8 +409,6 @@ for plugin in plugin_dirs:
             f"{name}: .mcp.json and mcp.json have diverged",
         )
 
-    # Kimi Code declares its MCP servers inline in its manifest instead of
-    # pointing at a file. Same server, same URL, same drift to catch.
     kimi_manifest = manifests.get("kimi")
     if kimi_manifest is not None and plain.is_file():
         declared = kimi_manifest.get("mcpServers") or {}
@@ -467,8 +420,6 @@ for plugin in plugin_dirs:
                 f"mcp.json has {config.get('url')!r}",
             )
 
-    # Skills are shared by reference across ecosystems, never copied. Two
-    # SKILL.md claiming one name inside a plugin means a stale duplicate.
     by_name: dict[str, list[str]] = {}
     for skill in sorted(plugin.rglob("SKILL.md")):
         text = skill.read_text(encoding="utf-8")
@@ -485,10 +436,6 @@ for plugin in plugin_dirs:
             re.search(r"^description: .+", metadata, re.MULTILINE) is not None,
             f"{where}: frontmatter declares no description",
         )
-        # Agent Skills requires the declared name to be the directory name,
-        # and every client resolves an invocation through the directory. A
-        # mismatch makes `/<plugin>:<name>` reach nothing while the skill
-        # still looks present.
         if declared is not None:
             by_name.setdefault(declared.group("name"), []).append(str(where))
             check(
@@ -497,9 +444,6 @@ for plugin in plugin_dirs:
                 f"{skill.parent.name}/ — the two must be the same",
             )
 
-        # user-invocable: false hides a skill from the menu, and together with
-        # disable-model-invocation nothing can reach it any more. Neither is a
-        # portable field, and this repository uses the second one alone.
         check(
             re.search(r"^user-invocable:", metadata, re.MULTILINE) is None,
             f"{where}: declares user-invocable — with disable-model-invocation "
@@ -513,8 +457,6 @@ for plugin in plugin_dirs:
         )
     plugin_skills[name] = set(by_name)
 
-# Standalone download entry points cannot read repository files at runtime.
-# Their embedded probes must follow the plugin that this tree distributes.
 installers = (ROOT / "install.sh", ROOT / "install.ps1")
 if any(path.is_file() for path in installers):
     mcp_path = PLUGINS / "nestor" / "mcp.json"
@@ -555,10 +497,6 @@ if any(path.is_file() for path in installers):
         check(re.findall(r"^endpoint=(\S+)$", source, re.MULTILINE) == [expected_endpoint],
               "uninstall.sh: endpoint must match plugins/nestor/mcp.json")
 
-# --- Journal-integrated skills declare their plugin's identity. ------------
-
-# The prefix preserves plugin identity after the published hash changes.
-# Other plugins keep their existing unprefixed contract.
 plugin_hash_prefixes = {"nestor": "1", "nestor-beta": "2"}
 for plugin in plugin_dirs:
     name = plugin.name
@@ -593,7 +531,6 @@ for plugin in plugin_dirs:
             declared.group(1) == plugin_hash_prefixes.get(name, "") + published_hashes[name],
             f"{where}: version_hash does not match {name}/plugin-release.json",
         )
-    # A hooks module that calls Nestor itself sends the same hash as its skills.
     for module in sorted((plugin / "hooks").glob("*.tsx")):
         for declared in re.findall(r"^const VERSION_HASH = '([^']*)'$",
                                    module.read_text(encoding="utf-8"), re.MULTILINE):
@@ -603,11 +540,6 @@ for plugin in plugin_dirs:
                 f"{name}/plugin-release.json",
             )
 
-# Nestor examples are executable input shapes, even though this repository
-# ships no MCP implementation. Catch obsolete tools and malformed conditional
-# reads in every distributed Markdown resource, including references. A
-# {tool, arguments} block is checked as a call of that tool; a bare object
-# with `ref` is a get_item call; a {tool, result} block is a response.
 for name in ("nestor", "nestor-beta"):
     for resource in sorted((PLUGINS / name).rglob("*.md")):
         text = resource.read_text(encoding="utf-8")
@@ -656,16 +588,12 @@ for name in ("nestor", "nestor-beta"):
                     and isinstance(pair["etag"], str) and bool(pair["etag"])
                 ), f"{where}: known needs null or a complete version/ETag pair")
 
-# --- Verified release history. --------------------------------------------
-
 try:
     releases = [{"name": plugin.name, **read_json(plugin / "plugin-release.json")}
                 for plugin in plugin_dirs if (plugin / "plugin-release.json").is_file()]
     load_history(ROOT, releases, BASELINE)
 except (OSError, ValueError, TypeError, KeyError) as error:
     errors.append(f"release history: {error}")
-
-# --- Crude secret guard. ----------------------------------------------------
 
 bearer_header = "Authorization:" + " Bearer"
 for path in ROOT.rglob("*"):

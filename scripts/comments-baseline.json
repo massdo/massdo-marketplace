@@ -1,0 +1,13 @@
+{
+  "tests/test_install.py": {
+    "# Keys sent to the setup menu; each answer is followed by Enter.": 1,
+    "# Down twice and Enter unchecks Cursor Agent; Down three times and Enter": 1,
+    "# passes the browser apps and launches with nothing checked.": 1,
+    "# Down and Enter twice: check Claude Code, uncheck Cursor Agent. Then Down": 1,
+    "# three times and Enter: past the browser apps, launch from the last line.": 1,
+    "# Enter checks claude.ai, the first row; Down twice and Enter launches from the last line.": 1
+  },
+  "tests/test_validation.py": {
+    "# Only the dotted file moves, so the Kimi check against mcp.json stays green.": 1
+  }
+}

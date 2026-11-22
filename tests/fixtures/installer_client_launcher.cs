@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-// Windows tests need native executables because production never invokes a shell shim.
 class InstallerClientLauncher
 {
     static string Quote(string value)

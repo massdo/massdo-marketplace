@@ -1,5 +1,4 @@
 #!/bin/sh
-# Check exactly the index without stashing or changing the user's worktree.
 set -eu
 
 root=$(git rev-parse --show-toplevel)
@@ -19,8 +18,6 @@ trap 'rm -rf -- "$snapshot"' EXIT
 trap 'exit 1' HUP INT TERM
 git checkout-index --all --prefix="$snapshot/"
 
-# Keep history available to --baseline, but make every file read use the index
-# snapshot. A partial commit's temporary index is no longer needed here.
 unset GIT_INDEX_FILE
 export GIT_DIR="$git_dir" GIT_WORK_TREE="$snapshot"
 cd "$snapshot"

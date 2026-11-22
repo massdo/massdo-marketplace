@@ -26,11 +26,9 @@ menu_tty=
 cursor_plugin="$HOME/.cursor/plugins/local/nestor"
 cursor_mcp="$HOME/.cursor/mcp.json"
 cursor_server_marker="$cursor_plugin/.massdo-mcp-server"
-# claude.ai and ChatGPT have no command line: Nestor is added from these pages.
 claude_ai_page=https://claude.ai/customize/connectors
 chatgpt_page=https://chatgpt.com/plugins
 
-# The braces also silence the shell's own "Terminated" notice for the job.
 stop_process() {
     {
         kill "$1" || :
@@ -40,8 +38,6 @@ stop_process() {
     } 2>/dev/null
 }
 
-# A spinner is gum spin waiting for a flag file; stopping it creates the file,
-# so it ends cleanly even from a shell that is not its parent.
 spinner_start() {
     [ -n "$gum_bin" ] && [ "$terminal" = true ] || return 0
     spinner_flag="$scratch/spinner-$$-$RANDOM"
@@ -77,8 +73,6 @@ show_client_error() {
     if [ -n "$client_error" ] && [ -s "$client_error" ]; then tail -n 12 "$client_error" >&2; fi
 }
 
-# Result lines go to stdout; the marks are colored only on a terminal. That is
-# decided once, here: tint mostly runs inside $(...), where stdout is a pipe.
 colors=false
 [ ! -t 1 ] || colors=true
 tint() { if [ "$colors" = true ]; then printf '\033[%sm%s\033[0m' "$1" "$2"; else printf '%s' "$2"; fi; }
@@ -86,7 +80,6 @@ say() { printf '%s\n' "$*"; }
 
 fail() { spinner_stop; printf '%s\n' "$*" >&2; show_client_error; exit 1; }
 
-# Each app ends with one of these two results, in its own subshell.
 succeed() {
     spinner_stop
     say "  $(tint 32 '✔') Nestor is installed and connected to your account."
@@ -171,9 +164,6 @@ ensure_jq() {
     chmod 700 "$jq_bin"
 }
 
-# The spinners and the sign-in question are drawn by gum (charmbracelet/gum),
-# pinned by version and SHA-256 like jq. It is only needed when the setup
-# command has to ask which apps to set up; a run with --client never downloads it.
 ensure_gum() {
     if command -v gum >/dev/null 2>&1 && gum choose --help 2>&1 | grep -q -- '--label-delimiter'; then
         gum_bin=$(command -v gum)
@@ -201,8 +191,6 @@ ensure_gum() {
 
 json() { "$jq_bin" "$@" 2>/dev/null; }
 
-# Keystrokes typed while the apps were being checked would otherwise reach the
-# menu as answers; they are discarded first.
 flush_terminal_input() {
     local junk timeout=1
     [ "${BASH_VERSINFO[0]}" -lt 4 ] || timeout=0.2
@@ -323,9 +311,6 @@ cursor_check() {
     grep -Eq '(^|[^[:alnum:]_])get_item([^[:alnum:]_]|$)' "$scratch/tools"
 }
 
-# Cursor Agent only connects to servers listed in ~/.cursor/mcp.json, so the
-# plugin copy alone is invisible to it. The entry is added once, remembered by
-# a marker, and removed by uninstall.sh only when that marker is present.
 cursor_add_server() {
     local current='{}' updated
     if [ -f "$cursor_mcp" ]; then
@@ -357,8 +342,6 @@ cursor_install() {
 
 plugin_state() {
     if [ "$client" = codex ]; then
-        # Without a marketplace name, Codex also refreshes its remote plugin
-        # catalog, which can take longer than the time budget on a cold cache.
         capture 30 "$scratch/plugins.json" "$binary" plugin list --json -m massdo-marketplace || return 1
         json -e '.installed | type == "array"' "$scratch/plugins.json" >/dev/null || return 1
         json -ce '[.installed[] | select(.pluginId == "nestor@massdo-marketplace")]' "$scratch/plugins.json" >"$scratch/selected.json" || return 1
@@ -405,9 +388,6 @@ abort_installation() {
     fail "$*"
 }
 
-# Cursor Agent echoes the first characters of the OAuth authorization code it
-# received; its sign-in output reaches the terminal without that line. A flag
-# file marks the end of the relay, so the wizard's next line waits for it.
 relay_login_output() {
     local line
     while IFS= read -r line || [ -n "$line" ]; do
@@ -426,10 +406,6 @@ relay_login_wait() {
     done
 }
 
-# Keystrokes typed before the sign-in are discarded first. Codex also reads a
-# pasted callback URL from a terminal and cancels the sign-in on a bare Enter,
-# so it gets a pipe held open instead: nothing to read, and the browser
-# callback alone completes the sign-in.
 login() {
     local server=nestor deadline=$((SECONDS + 300)) result
     [ "$client" != claude ] || server=plugin:nestor:nestor
@@ -462,8 +438,6 @@ login() {
     return "$result"
 }
 
-# Asks a yes-or-no question; the menu tool draws it when it is available,
-# otherwise the terminal reads one line.
 ask() {
     local answer
     if [ -n "$gum_bin" ]; then
@@ -475,7 +449,6 @@ ask() {
     case "$answer" in o|O|oui|y|Y|yes) return 0 ;; *) return 1 ;; esac
 }
 
-# Asks before opening the native OAuth flow.
 ask_login() { ask 'Open your browser to connect Nestor?'; }
 
 verify() {
@@ -509,7 +482,6 @@ client_icon() {
     esac
 }
 
-# A guided app has no command line: the wizard shows its steps instead.
 client_guided() { case "$1" in claude-ai|chatgpt) return 0 ;; esac; return 1; }
 
 client_binary() {
@@ -527,9 +499,6 @@ add_client() {
     clients+=("$name")
 }
 
-# One line per app for the menu: what the app already has, read without
-# changing anything. Collisions and unreadable inventories are reported here
-# as a state and again, in full, when the app is set up.
 inventory() {
     local target=$1 state
     case "$target" in
@@ -556,11 +525,6 @@ inventory() {
     esac
 }
 
-# The menu is drawn here, not by gum: gum choose cannot check an app with Enter
-# and stay open, and starting it again after each Enter made the menu blink.
-# Each key redraws the same lines in place, with line wrapping off so that a
-# narrow terminal clips them instead of shifting the redraw. Between keys the
-# cursor waits on the first line, so closing the menu erases it from there.
 menu_restore() {
     [ -n "$menu_tty" ] || return 0
     printf '\033[J\033[?7h\033[?25h' >&3
@@ -568,12 +532,9 @@ menu_restore() {
     menu_tty=
 }
 
-# Enter on an app checks or unchecks it; Enter on the last line starts the
-# setup of the checked apps.
 choose_clients() {
     local candidates=() labels=() checked=() rows=() candidate state shown index cursor=0 key rest
     local frame notice= timeout=1
-    # The menu is drawn on the terminal, whatever stdout is.
     local colors=true
     local header help on pointer launch
     header=$(tint '38;5;117' 'Where should Nestor be installed?')
@@ -585,7 +546,6 @@ choose_clients() {
     command -v codex >/dev/null 2>&1 && candidates+=(codex)
     command -v claude >/dev/null 2>&1 && candidates+=(claude)
     command -v cursor-agent >/dev/null 2>&1 && candidates+=(cursor)
-    # The browser apps are always offered, unchecked: their state cannot be read.
     candidates+=(claude-ai chatgpt)
     ensure_gum
     for candidate in "${candidates[@]}"; do
@@ -623,7 +583,6 @@ choose_clients() {
             fi
         done
         printf '%s' "$frame" >&3
-        # Back to the first line: the next frame overwrites this one.
         printf '\033[%sA' "$((${#rows[@]} + 2))" >&3
         IFS= read -rsn1 key <&3 || key=$'\033'
         case "$key" in
@@ -667,8 +626,6 @@ installed_version() {
     [ -z "$version" ] || printf ' %s' "$version"
 }
 
-# Checks the connection, offers the native sign-in once, and ends the app with
-# its result: connected, installed but not connected, or failed.
 finish() {
     local status
     spinner_start 'Verifying the Nestor connection'
@@ -697,9 +654,6 @@ finish() {
     esac
 }
 
-# Opens a page with the system opener when there is one; the URL stays on
-# screen either way. The opener is detached and outlives this terminal, so the
-# page still opens when the wizard ends or the window closes first.
 open_page() {
     local opener
     case "$(uname -s)" in Darwin) opener=open ;; *) opener=xdg-open ;; esac
@@ -708,9 +662,6 @@ open_page() {
     ( nohup "$opener" "$1" >/dev/null 2>&1 </dev/null & )
 }
 
-# claude.ai and ChatGPT have no command line: Nestor is added from their own
-# page, so the wizard shows the steps, offers to open that page, and ends the
-# app with the guided result. It cannot check what the browser did.
 guide_client() {
     local page
     if [ "$client" = claude-ai ]; then
@@ -746,8 +697,6 @@ guide_client() {
     exit 3
 }
 
-# Runs in a subshell per app: fail, incomplete, succeed and the guided result
-# end that app only, and the exit code becomes the app's result in the summary.
 run_client() {
     client=$1
     trap cleanup_processes EXIT
@@ -775,7 +724,6 @@ run_client() {
         finish
     fi
     for capability in 'plugin list' 'plugin marketplace list' 'plugin marketplace add' 'mcp login'; do
-        # Capability names are fixed here, never supplied by the caller.
         capture 15 "$scratch/help" "$binary" $capability --help || fail 'This app version is not supported. Update your app, then run this setup command again.'
     done
     if [ "$client" = codex ]; then
@@ -801,7 +749,6 @@ run_client() {
         fi
         if [ "$installed" = false ] || [ "$enabled" = false ]; then
             if [ "$client" = codex ]; then
-                # The native add command also enables an existing plugin; it does not run OAuth.
                 capture 120 "$scratch/add-plugin" "$binary" plugin add "$plugin" --json
             elif [ "$installed" = true ]; then
                 capture 120 "$scratch/add-plugin" "$binary" plugin enable "$plugin" --scope user
@@ -855,7 +802,6 @@ for name in "${clients[@]}"; do
     printf '%s\n' "$(client_icon "$name") $(client_label "$name")"
     ( run_client "$name" ); status=$?
     printf '\n'
-    # Each line reads like the menu: the app's icon and name, then its state.
     case "$status" in
         0) line=$(tint 32 '✔ installed and connected') ;;
         2) pending=true; line=$(tint 33 '⚠ finish connecting your account') ;;
