@@ -1,5 +1,3 @@
-"""Validate reviewed release associations against their published Git trees."""
-
 import json
 import re
 import subprocess

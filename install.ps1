@@ -9,7 +9,6 @@ $ErrorActionPreference = 'Stop'
 $plugin = 'nestor@massdo-marketplace'
 $endpoint = 'https://journal.mcp-marketplace.org/mcp'
 $origin = 'https://journal.mcp-marketplace.org'
-# claude.ai and ChatGPT have no command line: Nestor is added from these pages.
 $claudeAiPage = 'https://claude.ai/customize/connectors'
 $chatGptPage = 'https://chatgpt.com/plugins'
 $requiredSkills = '["nestor","activity","tree","explain","pause","resume","check-for-updates"]' | ConvertFrom-Json
@@ -67,7 +66,6 @@ function Field($Object, [string]$Name) {
 }
 
 function Quote-Argument([string]$Value) {
-    # ProcessStartInfo.Arguments uses argv quoting, without a command shell.
     return '"' + [regex]::Replace([regex]::Replace($Value, '(\\*)"', '$1$1\"'), '(\\+)$', '$1$1') + '"'
 }
 
@@ -160,8 +158,6 @@ function Read-ClientJson([string[]]$Arguments, [switch]$Array) {
 
 function Read-Plugins {
     if ($Client -ceq 'codex') {
-        # Without a marketplace name, Codex also refreshes its remote plugin
-        # catalog, which can take longer than the time budget on a cold cache.
         $document = Read-ClientJson @('plugin', 'list', '--json', '-m', 'massdo-marketplace')
         $entries = Field $document 'installed'
         if ($entries -isnot [array]) { throw 'Invalid plugin inventory.' }
@@ -321,9 +317,6 @@ function Test-Claude {
     return 1
 }
 
-# claude.ai and ChatGPT have no command line: Nestor is added from their own
-# page, so the wizard shows the steps, offers to open that page, and cannot
-# check what the browser did.
 function Show-Guide([bool]$Terminal) {
     if ($Client -ceq 'claude-ai') {
         $label = 'claude.ai'
@@ -380,7 +373,6 @@ function Test-Installation {
 
 try {
     [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-    # .NET Framework uses Console.InputEncoding when it creates the redirected writer.
     [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
     $errorWriter = New-Object System.IO.StreamWriter([Console]::OpenStandardError(), [Console]::OutputEncoding)
     $errorWriter.AutoFlush = $true
@@ -388,7 +380,6 @@ try {
     $terminal = -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected
     if (-not $Client) {
         if (-not $terminal) { Stop-Installer 'Without a terminal, specify -Client codex, claude, claude-ai or chatgpt.' }
-        # The browser apps are always offered: their state cannot be read.
         $choices = @(@('codex', 'claude') | Where-Object { Get-Command $_ -CommandType Application -ErrorAction SilentlyContinue }) + @('claude-ai', 'chatgpt')
         [Console]::Write("Choose your app ($($choices -join '/')): ")
         $Client = [Console]::ReadLine()

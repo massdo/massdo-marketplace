@@ -1,5 +1,3 @@
-"""Exercise real Git commits/merges and the same entry points used in CI."""
-
 import importlib.util
 import json
 import os
@@ -24,7 +22,6 @@ class RepositoryValidation(unittest.TestCase):
         self.root.mkdir()
         self.bin = Path(self.temp.name) / "bin"
         self.bin.mkdir()
-        # Only the CLI boundary is stubbed. Git and repository validation are real.
         self.claude = self.bin / "claude"
         self.claude.write_text(
             '#!/bin/sh\n[ "$1 $2 $4" = "plugin validate --strict" ] || exit 42\n'
@@ -42,7 +39,8 @@ class RepositoryValidation(unittest.TestCase):
             (self.root / directory).mkdir()
         for source in (ROOT / ".githooks").iterdir():
             shutil.copy2(source, self.root / ".githooks" / source.name)
-        for name in ("check.sh", "check-ci.sh", "check-commit.sh", "validate.py", "validate_skills.py", "plugin_release_history.py"):
+        for name in ("check.sh", "check-ci.sh", "check-commit.sh", "validate.py", "validate_skills.py",
+                     "plugin_release_history.py", "check_comments.py"):
             shutil.copy2(ROOT / "scripts" / name, self.root / "scripts" / name)
         self.write(".gitignore", "__pycache__/\n")
         self.write("README.md", "Fixture marketplace\n")
@@ -57,7 +55,6 @@ class RepositoryValidation(unittest.TestCase):
                 source = {"source": "local", "path": "./plugins/demo"}
                 entry, root = {"name": "demo", "source": source}, {"name": "fixture"}
             elif ecosystem == "kimi":
-                # Kimi Code names its entries `id` and versions the catalog root.
                 entry, root = {"id": "demo", "source": "./plugins/demo"}, {"version": "2"}
             else:
                 entry, root = {"name": "demo", "source": "./plugins/demo"}, {"name": "fixture"}
@@ -92,7 +89,6 @@ class RepositoryValidation(unittest.TestCase):
         self.write(path, json.dumps(data) + "\n")
 
     def write_skill(self, version_hash="0123456789abcdef", description="Fixture skill."):
-        # A released plugin's skill declares its release's hash; None declares none.
         body = f'Pass `{{ "version_hash": "{version_hash}" }}`.\n' if version_hash else "Body.\n"
         self.write(self.skill, f"---\nname: example\ndescription: {description}\n---\n{body}")
 
@@ -386,8 +382,6 @@ class RepositoryValidation(unittest.TestCase):
         self.assertIn("not an available commit", result.stderr)
 
     def test_release_absent_from_base_is_allowed(self):
-        # A base from before the plugin published a release. The hook now refuses
-        # that state, so the commit is built the way a clone without hooks would.
         self.git("rm", self.release)
         self.write_skill(None)
         self.git("add", ".")
@@ -590,13 +584,12 @@ class RepositoryValidation(unittest.TestCase):
 
     def test_ci_compares_multi_commit_push_to_before_sha(self):
         self.bump(changelog="Initial release")
-        # Simulate commits from a clone without hooks; no bypass of active hooks.
         self.git("add", ".")
         tree = self.git("write-tree").stdout.strip()
         bad = subprocess.run(["git", "commit-tree", tree, "-p", self.base],
                              cwd=self.root, env=self.env, input="bad release\n",
                              capture_output=True, text=True, check=True).stdout.strip()
-        self.check("--baseline", bad)  # Comparing just the last commit misses it.
+        self.check("--baseline", bad)
         result = self.run_command("./scripts/check-ci.sh", ok=False, env={
             "GITHUB_EVENT_NAME": "push", "PUSH_BEFORE_SHA": self.base, "PUSH_CREATED": "false",
         })
@@ -610,7 +603,6 @@ class RepositoryValidation(unittest.TestCase):
         self.run_command("./scripts/check-ci.sh", ok=False, env={"GITHUB_EVENT_NAME": "pull_request", "PR_BASE_SHA": ""})
 
     def test_missing_claude_is_visible_locally_and_fails_ci(self):
-        # Restrict PATH so a real installation cannot mask the missing CLI.
         git_path = shutil.which("git")
         (self.bin / "git").symlink_to(git_path)
         self.claude.unlink()

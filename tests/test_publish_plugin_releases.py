@@ -1,5 +1,3 @@
-"""Exercise historical Git evidence and the publisher's real HTTP boundary."""
-
 import json
 import os
 import shutil
@@ -96,7 +94,6 @@ class PluginReleasePublication(unittest.TestCase):
             with self.subTest(version=version):
                 independent.update(version=version, changelog="Standalone skills " + version)
                 self.write_releases()
-                # Import in the fixture to exercise real discovery, not the patched names.
                 payload = json.loads(subprocess.check_output(
                     [sys.executable, "-c", "import sys; sys.path.insert(0, 'scripts'); "
                      "import publish_plugin_releases as p; print(p.release_payload().decode())"],

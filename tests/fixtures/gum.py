@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Offline double for the gum menu tool: prompts on stderr, one line read from the terminal."""
 import json
 import os
 import sys

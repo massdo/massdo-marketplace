@@ -1,9 +1,3 @@
-"""Check example inputs against a snapshot of the delivered MCP catalogue.
-
-These checks validate documentation shapes, not approval or build policies. The
-domain's behavior is exercised by Journal's focused approval/selection tests.
-"""
-
 import importlib.util
 import json
 import re

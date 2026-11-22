@@ -1,5 +1,4 @@
 #!/bin/sh
-# The PR checkout is GitHub's merge tree; a push may contain several commits.
 set -eu
 export CI=true
 root=$(git rev-parse --show-toplevel)

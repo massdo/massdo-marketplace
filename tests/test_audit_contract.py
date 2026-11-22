@@ -1,5 +1,3 @@
-"""Check the audit skill's invocation policy in every client that reads it."""
-
 import re
 import sys
 import unittest
@@ -7,7 +5,6 @@ from pathlib import Path
 
 import yaml
 
-# `python3 -m unittest tests.test_audit_contract` runs from the root, where the sibling module is not importable.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_spec_contract import ROOT, skills
 

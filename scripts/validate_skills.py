@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Validate shared skill YAML without rejecting intentional client extensions."""
 
 import re
 import sys
@@ -15,7 +14,6 @@ except ImportError:
 
 
 class UniqueKeyLoader(yaml.SafeLoader):
-    """Duplicate keys otherwise silently replace the field being checked."""
 
     def construct_mapping(self, node, deep=False):
         mapping = {}
