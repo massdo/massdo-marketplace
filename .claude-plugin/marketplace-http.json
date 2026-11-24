@@ -9,8 +9,8 @@
       "name": "thoth",
       "source": {
         "source": "archive",
-        "url": "https://raw.githubusercontent.com/massdo/massdo-marketplace/main/archives/thoth-2.2.0-7eb081b9eeac.zip",
-        "sha256": "7eb081b9eeacdb8bc569128cfe30575f61258ab427bc0742ecd95f822ac428fa"
+        "url": "https://raw.githubusercontent.com/massdo/massdo-marketplace/main/archives/thoth-2.2.1-b90a90985a95.zip",
+        "sha256": "b90a90985a95497050723950340c2218a1336ad29a5105a06811a4750f1ba9b5"
       },
       "description": "Pilote les traductions de Thoth depuis Claude Code : connexion au serveur de l'agence, identité de session, restriction des outils par étape et relevés de consommation.",
       "category": "productivity",

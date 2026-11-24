@@ -1,7 +1,7 @@
 ---
 name: translate-yolo
 description: Lance en mode YOLO un flux de Thoth pas encore démarré, seulement sur la commande /thoth:translate-yolo tapée par le traducteur expert.
-argument-hint: "[flowId] [<slot>=<tactic>[@<version>][,…]]… [<yolo-tactic>[@<version>]]"
+argument-hint: "[flowId | fichier.docx] [<slot>=<tactic>[@<version>][,…]]… [<yolo-tactic>[@<version>]]"
 disable-model-invocation: true
 ---
 

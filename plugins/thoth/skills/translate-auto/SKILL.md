@@ -1,7 +1,7 @@
 ---
 name: translate-auto
 description: Lance en mode auto un flux de Thoth pas encore démarré, seulement sur la commande /thoth:translate-auto tapée par le traducteur expert.
-argument-hint: "[flowId] [<slot>=<tactic>[@<version>][,…]]… [<auto-tactic>[@<version>]]"
+argument-hint: "[flowId | fichier.docx] [<slot>=<tactic>[@<version>][,…]]… [<auto-tactic>[@<version>]]"
 disable-model-invocation: true
 ---
 

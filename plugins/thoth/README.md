@@ -33,6 +33,8 @@ Depuis la version 2.1.0 du plugin (15 novembre 2026), `/thoth:resume <flowId>` r
 
 Depuis la version 2.2.0 du plugin, l'agent de lot peut appeler `thoth_read_style_rules` et `thoth_search_style_rules` pour lire et chercher les règles de style du flux : son instruction de style, puis le guide de style de l'organisation et la Bible qu'il a retenus.
 
+Depuis la version 2.2.1 du plugin (24 novembre 2026), l'aide de `/thoth:translate`, `/thoth:translate-auto` et `/thoth:translate-yolo` nomme `fichier.docx` : un Word anglais donné à la commande est l'original, que la session pilote dépose avant de créer son flux.
+
 Depuis la version 2.0.1 (14 novembre 2026), le hook qui ajoute l'identité autorise lui-même chaque appel à Thoth : en mode de permission auto, Claude Code refusait ces appels, parce que le hook les modifie. Les outils de Thoth ne demandent donc plus de confirmation, dans aucun mode ; les règles de refus des réglages de Claude Code s'appliquent toujours. Avec la version 2.0.0, une session en mode de permission auto ne joint plus Thoth : lancer `claude plugin marketplace update massdo-marketplace`, puis `claude plugin update thoth@massdo-marketplace`, et ouvrir une nouvelle session.
 
 Aucune variable d'environnement n'est à définir sur le poste. Pour changer d'adresse, lancer `/plugin configure thoth@massdo-marketplace`, puis ouvrir une nouvelle session. Sans adresse, le serveur MCP ne se connecte pas et les hooks n'envoient rien : les relevés de consommation attendent sur le poste.
