@@ -1,7 +1,7 @@
 ---
 name: translate
 description: Fait avancer un flux de traduction de Thoth depuis cette session, à la demande du traducteur expert de traduire, de continuer ou de reprendre un flux.
-argument-hint: "[flowId] [<slot>=<tactic>[@<version>][,…]]… | resume <flowId>"
+argument-hint: "[flowId | fichier.docx] [<slot>=<tactic>[@<version>][,…]]… | resume <flowId>"
 ---
 
 Appelle l'outil `thoth_read_procedure` avec `name` : `translate`, puis suis le texte qu'il rend, avec ces arguments : `$ARGUMENTS`
