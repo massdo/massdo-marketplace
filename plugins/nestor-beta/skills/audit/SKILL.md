@@ -1,6 +1,6 @@
 ---
 name: audit
-description: Have an independent agent audit one Nestor Plan or Task, or one pull request given by its number, by default a subagent of the current client; only the word cli among the arguments runs a Codex or Claude CLI process instead, Codex sol6.1 at xhigh by default. The other arguments choose the agent, model and effort by their meaning. For a Plan or Task, it audits the stored specification against the repository until the item is delivered, then the delivered code against that specification; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use when the user or an agent asks to audit an item reference or a pull request number; an agent invokes it on its own with the same arguments and ends with the report as the result. Do not use for a review that the agent makes itself.
+description: Have an independent agent audit one Nestor Plan or Task, or one pull request given by its number, by default a subagent of the current client; only the word cli among the arguments runs a Codex or Claude CLI process instead, Codex sol6.2 at xhigh by default. The other arguments choose the agent, model and effort by their meaning. For a Plan or Task, it audits the stored specification against the repository until the item is delivered, then the delivered code against that specification; the report is logged in a Nestor note linked to the audited item. For a pull request number, it audits that pull request's changes against its title and description. Use when the user or an agent asks to audit an item reference or a pull request number; an agent invokes it on its own with the same arguments and ends with the report as the result. Do not use for a review that the agent makes itself.
 argument-hint: "<plan-or-task-id-or-slug|pr-number> [cli] [codex|claude] [model] [effort]"
 ---
 
@@ -15,7 +15,7 @@ audit: each step lives in the reference files it names.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "26a6cbdc877e45439" }` on every Nestor MCP call.
+Pass `{ "version_hash": "27079aafb477394d6" }` on every Nestor MCP call.
 
 ## 1. Invocation
 
