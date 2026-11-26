@@ -15,7 +15,7 @@ audit: each step lives in the reference files it names.
 
 ## Identify the plugin version
 
-Pass `{ "version_hash": "26a6cbdc877e45439" }` on every Nestor MCP call.
+Pass `{ "version_hash": "27079aafb477394d6" }` on every Nestor MCP call.
 
 ## 1. Invocation
 
