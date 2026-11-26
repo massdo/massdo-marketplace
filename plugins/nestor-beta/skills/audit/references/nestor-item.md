@@ -79,7 +79,7 @@ mode, their changes in the diff are neither issues nor outside the scope.
 
 Once the mode file returns the report, log it in a note in the audited item's project and
 link that note to the item. Title it `Audit <model> <effort> — <item title>`, with the model
-and the effort that the mode file chose, as it reads them, such as `sol6.1`, `astra 6` or
+and the effort that the mode file chose, as it reads them, such as `sol6.2`, `astra 6.2` or
 `opus`; leave out each one that it did not choose, down to `Audit — <item title>` when it
 chose neither. Its body is one header line, an empty line, then the report as is. The header
 line gives the local date and time, the client that ran the subagent or the CLI command, the

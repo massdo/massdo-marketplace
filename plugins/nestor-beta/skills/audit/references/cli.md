@@ -12,19 +12,19 @@ agent that audits, its model and its effort:
 
 | Agent | Families | Latest model, for `best` or no version | Efforts |
 | --- | --- | --- | --- |
-| `codex`, the Codex CLI | `sol`, `astra` | `gpt-6.1-sol` (sol6.1), `gpt-6-astra` (astra 6) | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
+| `codex`, the Codex CLI | `sol`, `astra` | `gpt-6.2-sol` (sol6.2), `gpt-6.2-astra` (astra 6.2) | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
 | `claude`, Claude Code | `opus`, `fable`, `sonnet`, `haiku` | the family name, which Claude Code resolves | `low`, `medium`, `high`, `xhigh`, `max` |
 
 A model family alone names its agent, and `codex` without a family runs sol. A version the
-words name runs that model, such as `sol 6` for `gpt-6-sol` or `opus 5.5` for
-`claude-opus-5-5`. Without an agent or a model, the audit runs sol6.1; without an effort, it
+words name runs that model, such as `sol 6.1` for `gpt-6.1-sol` or `opus 5.5` for
+`claude-opus-5-5`. Without an agent or a model, the audit runs sol6.2; without an effort, it
 runs at `xhigh`.
 
 | Words | Audit |
 | --- | --- |
-| `cli codex sol best max` | sol6.1 at max |
+| `cli codex sol best max` | sol6.2 at max |
 | `cli claude op best max` | the latest Opus at max |
-| `cli codex astra` | astra 6 at xhigh |
+| `cli codex astra` | astra 6.2 at xhigh |
 | `cli claude fable best` | the latest Fable at xhigh |
 
 When a word means nothing here, when the words name two agents, models or efforts, or a
@@ -46,7 +46,7 @@ there.
 Run the agent's command from the repository root, with the brief's directory as `<dir>` and
 the effort read above as `<effort>`.
 
-For Codex, `<model>` is the model read above, such as `gpt-6.1-sol` or `gpt-6-astra`,
+For Codex, `<model>` is the model read above, such as `gpt-6.2-sol` or `gpt-6.2-astra`,
 `<repo-root>` is the repository root, and `<skills-off>` holds one
 `{path="<file>",enabled=false}` entry, comma separated, for each file that
 `find -L ~/.codex/skills ~/.agents/skills -name SKILL.md` returns:
